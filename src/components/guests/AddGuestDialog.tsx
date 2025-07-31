@@ -28,12 +28,28 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GuestFormValues, guestFormSchema, GUEST_ROLES } from "@/types/guest";
 import { useEffect } from "react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import { ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { VipGuest } from "@/types/vip-guest";
 
 interface AddGuestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: GuestFormValues) => void;
   defaultValues?: GuestFormValues | null;
+  allVipGuests: VipGuest[];
 }
 
 export const AddGuestDialog = ({
@@ -41,6 +57,7 @@ export const AddGuestDialog = ({
   onOpenChange,
   onSubmit,
   defaultValues,
+  allVipGuests,
 }: AddGuestDialogProps) => {
   const form = useForm<GuestFormValues>({
     resolver: zodResolver(guestFormSchema),
@@ -132,11 +149,56 @@ export const AddGuestDialog = ({
               control={form.control}
               name="referrer"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Người giới thiệu</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nhập người giới thiệu" {...field} />
-                  </FormControl>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value
+                            ? allVipGuests.find(
+                                (guest) => guest.name === field.value
+                              )?.name
+                            : "Chọn người giới thiệu"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <Command>
+                        <CommandInput placeholder="Tìm kiếm khách..." />
+                        <CommandEmpty>Không tìm thấy khách.</CommandEmpty>
+                        <CommandGroup>
+                          {allVipGuests.map((guest) => (
+                            <CommandItem
+                              value={guest.name}
+                              key={guest.id}
+                              onSelect={() => {
+                                form.setValue("referrer", guest.name);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  guest.name === field.value
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              {guest.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}

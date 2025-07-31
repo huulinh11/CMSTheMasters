@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Guest, GuestFormValues, GUEST_ROLES, GuestRole } from "@/types/guest";
+import { VipGuest } from "@/types/vip-guest";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -43,6 +44,15 @@ const RegularGuestTab = () => {
     queryKey: ['guests'],
     queryFn: async () => {
       const { data, error } = await supabase.from('guests').select('*').order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const { data: vipGuests = [] } = useQuery<VipGuest[]>({
+    queryKey: ['vip_guests_for_referrer'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('vip_guests').select('id, name').order('created_at', { ascending: false });
       if (error) throw new Error(error.message);
       return data || [];
     }
@@ -210,6 +220,7 @@ const RegularGuestTab = () => {
         onOpenChange={setIsDialogOpen}
         onSubmit={handleAddOrEditGuest}
         defaultValues={editingGuest}
+        allVipGuests={vipGuests}
       />
 
       <ViewGuestSheet
