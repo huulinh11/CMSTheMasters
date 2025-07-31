@@ -8,9 +8,10 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, ChevronDown, Trash2, Upload, Download } from "lucide-react";
+import { PlusCircle, ChevronDown, Trash2, Upload, Download, MoreVertical } from "lucide-react";
 import { GuestTable } from "@/components/guests/GuestTable";
 import { GuestCards } from "@/components/guests/GuestCards";
 import { AddGuestDialog } from "@/components/guests/AddGuestDialog";
@@ -144,54 +145,118 @@ const RegularGuestTab = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
-        <div className="flex items-center gap-2">
-          <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export</Button>
-          <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button>
-          <Button onClick={() => { setEditingGuest(null); setIsDialogOpen(true); }}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Thêm
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col md:flex-row items-center gap-2">
-        <Input
-          placeholder="Tìm kiếm theo tên, SĐT, vai trò..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-grow"
-        />
-        <div className="flex w-full md:w-auto items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto justify-between">
-                Lọc theo vai trò <ChevronDown className="ml-2 h-4 w-4" />
+      {isMobile ? (
+        <>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
+            <div className="flex items-center gap-2">
+              <Button onClick={() => { setEditingGuest(null); setIsDialogOpen(true); }} size="sm">
+                <PlusCircle className="mr-2 h-4 w-4" /> Thêm
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {GUEST_ROLES.map((role) => (
-                <DropdownMenuCheckboxItem
-                  key={role}
-                  checked={roleFilters.includes(role)}
-                  onCheckedChange={(checked) => {
-                    setRoleFilters(
-                      checked ? [...roleFilters, role] : roleFilters.filter((r) => r !== role)
-                    );
-                  }}
-                >
-                  {role}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    <Download className="mr-2 h-4 w-4" /> Export
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Upload className="mr-2 h-4 w-4" /> Import
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Tìm kiếm..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-grow bg-white/80 border-slate-300"
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-auto justify-between bg-white/80 border-slate-300">
+                  Lọc <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {GUEST_ROLES.map((role) => (
+                  <DropdownMenuCheckboxItem
+                    key={role}
+                    checked={roleFilters.includes(role)}
+                    onCheckedChange={(checked) => {
+                      setRoleFilters(
+                        checked ? [...roleFilters, role] : roleFilters.filter((r) => r !== role)
+                      );
+                    }}
+                  >
+                    {role}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           {selectedGuests.length > 0 && (
-            <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending}>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending} className="w-full">
               <Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})
             </Button>
           )}
-        </div>
-      </div>
+        </>
+      ) : (
+        <>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
+            <div className="flex items-center gap-2">
+              <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export</Button>
+              <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button>
+              <Button onClick={() => { setEditingGuest(null); setIsDialogOpen(true); }}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Thêm
+              </Button>
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row items-center gap-2">
+            <Input
+              placeholder="Tìm kiếm theo tên, SĐT, vai trò..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-grow bg-white/80 border-slate-300"
+            />
+            <div className="flex w-full md:w-auto items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full md:w-auto justify-between bg-white/80 border-slate-300">
+                    Lọc theo vai trò <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {GUEST_ROLES.map((role) => (
+                    <DropdownMenuCheckboxItem
+                      key={role}
+                      checked={roleFilters.includes(role)}
+                      onCheckedChange={(checked) => {
+                        setRoleFilters(
+                          checked ? [...roleFilters, role] : roleFilters.filter((r) => r !== role)
+                        );
+                      }}
+                    >
+                      {role}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {selectedGuests.length > 0 && (
+                <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})
+                </Button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {isLoading ? (
         <div className="space-y-4">
