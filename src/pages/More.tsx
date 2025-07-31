@@ -7,10 +7,12 @@ import {
   Settings,
   ChevronRight,
   LucideIcon,
+  Megaphone,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 const moreLinks = [
+  { to: "/media-benefits", icon: Megaphone, label: "Quyền lợi truyền thông" },
   { to: "/information", icon: Info, label: "Thông tin" },
   { to: "/revenue", icon: CircleDollarSign, label: "Doanh thu" },
   { to: "/timeline", icon: CalendarClock, label: "Timeline" },
