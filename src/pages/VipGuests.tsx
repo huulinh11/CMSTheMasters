@@ -45,13 +45,23 @@ const VipGuests = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from('vip_guests').select('*').order('created_at', { ascending: false });
       if (error) throw new Error(error.message);
-      return data || [];
+      // Map snake_case from DB to camelCase for the app
+      return (data || []).map((item: any) => ({
+        ...item,
+        secondaryInfo: item.secondary_info,
+      }));
     }
   });
 
   const addOrEditMutation = useMutation({
     mutationFn: async (guest: Omit<VipGuest, 'created_at'>) => {
-      const { error } = await supabase.from('vip_guests').upsert(guest);
+      // Map camelCase from app to snake_case for the DB
+      const { secondaryInfo, ...rest } = guest;
+      const guestForDb = {
+        ...rest,
+        secondary_info: secondaryInfo,
+      };
+      const { error } = await supabase.from('vip_guests').upsert(guestForDb);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
