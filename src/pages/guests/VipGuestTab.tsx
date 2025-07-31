@@ -9,7 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, ChevronDown, Trash2, Upload, Download } from "lucide-react";
+import { PlusCircle, ChevronDown, Trash2, Upload, Download, Edit } from "lucide-react";
 import { VipGuestTable } from "@/components/vip-guests/VipGuestTable";
 import { VipGuestCards } from "@/components/vip-guests/VipGuestCards";
 import { AddVipGuestDialog } from "@/components/vip-guests/AddVipGuestDialog";
@@ -88,7 +88,7 @@ const VipGuestTab = () => {
     return guests.filter((guest) => {
       const searchMatch =
         guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        guest.phone.includes(searchTerm) ||
+        (guest.phone && guest.phone.includes(searchTerm)) ||
         guest.role.toLowerCase().includes(searchTerm.toLowerCase());
       const roleMatch = roleFilters.length === 0 || roleFilters.includes(guest.role);
       return searchMatch && roleMatch;
@@ -125,6 +125,13 @@ const VipGuestTab = () => {
 
   const handleViewGuest = (guest: VipGuest) => {
     setViewingGuest(guest);
+  };
+
+  const handleEditFromView = (guest: VipGuest) => {
+    setViewingGuest(null);
+    setTimeout(() => {
+      handleOpenEditDialog(guest);
+    }, 150);
   };
 
   const handleDeleteGuest = (id: string) => {
@@ -231,6 +238,7 @@ const VipGuestTab = () => {
         guest={viewingGuest}
         open={!!viewingGuest}
         onOpenChange={(open) => !open && setViewingGuest(null)}
+        onEdit={handleEditFromView}
       />
     </div>
   );

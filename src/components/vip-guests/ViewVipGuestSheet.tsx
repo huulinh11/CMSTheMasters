@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -11,15 +12,18 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
+  DrawerFooter,
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { VipGuest } from "@/types/vip-guest";
-import { Phone, User, Info, FileText } from "lucide-react";
+import { Phone, User, Info, FileText, Edit } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ViewVipGuestSheetProps {
   guest: VipGuest | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit: (guest: VipGuest) => void;
 }
 
 const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value?: string }) => {
@@ -44,13 +48,18 @@ const GuestDetails = ({ guest }: { guest: VipGuest }) => (
   </div>
 );
 
-export const ViewVipGuestSheet = ({ guest, open, onOpenChange }: ViewVipGuestSheetProps) => {
+export const ViewVipGuestSheet = ({ guest, open, onOpenChange, onEdit }: ViewVipGuestSheetProps) => {
   const isMobile = useIsMobile();
 
   if (!guest) return null;
 
   const title = guest.name;
-  const description = `${guest.role} - ID: ${guest.id}`;
+  const descriptionComponent = (
+    <div className="flex items-center text-sm bg-primary/10 px-2 py-1 rounded-md w-fit mt-1">
+      <span className="text-primary font-medium">{guest.role}</span>
+      <span className="text-slate-500 ml-1.5">({guest.id})</span>
+    </div>
+  );
 
   if (isMobile) {
     return (
@@ -58,11 +67,16 @@ export const ViewVipGuestSheet = ({ guest, open, onOpenChange }: ViewVipGuestShe
         <DrawerContent>
           <DrawerHeader className="text-left">
             <DrawerTitle>{title}</DrawerTitle>
-            <DrawerDescription>{description}</DrawerDescription>
+            <DrawerDescription asChild>{descriptionComponent}</DrawerDescription>
           </DrawerHeader>
           <div className="p-4">
             <GuestDetails guest={guest} />
           </div>
+          <DrawerFooter>
+            <Button onClick={() => onEdit(guest)}>
+              <Edit className="mr-2 h-4 w-4" /> Sửa
+            </Button>
+          </DrawerFooter>
         </DrawerContent>
       </Drawer>
     );
@@ -73,11 +87,16 @@ export const ViewVipGuestSheet = ({ guest, open, onOpenChange }: ViewVipGuestShe
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription asChild>{descriptionComponent}</DialogDescription>
         </DialogHeader>
         <div className="py-4">
           <GuestDetails guest={guest} />
         </div>
+        <DialogFooter>
+          <Button onClick={() => onEdit(guest)}>
+            <Edit className="mr-2 h-4 w-4" /> Sửa
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

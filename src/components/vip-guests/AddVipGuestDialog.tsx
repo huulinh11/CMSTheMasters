@@ -181,6 +181,20 @@ const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests }: { class
                     <CommandInput placeholder="Tìm kiếm khách..." />
                     <CommandEmpty>Không tìm thấy khách.</CommandEmpty>
                     <CommandGroup>
+                      <CommandItem
+                        value=""
+                        onSelect={() => {
+                          form.setValue("referrer", "");
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            !field.value ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        (Không có)
+                      </CommandItem>
                       {referrerOptions.map((guest) => (
                         <CommandItem
                           value={guest.name}

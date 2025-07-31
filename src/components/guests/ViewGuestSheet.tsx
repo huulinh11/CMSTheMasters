@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -11,15 +12,18 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
+  DrawerFooter,
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Guest } from "@/types/guest";
-import { Phone, User, FileText } from "lucide-react";
+import { Phone, User, FileText, Edit } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ViewGuestSheetProps {
   guest: Guest | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit: (guest: Guest) => void;
 }
 
 const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value?: string }) => {
@@ -43,13 +47,18 @@ const GuestDetails = ({ guest }: { guest: Guest }) => (
   </div>
 );
 
-export const ViewGuestSheet = ({ guest, open, onOpenChange }: ViewGuestSheetProps) => {
+export const ViewGuestSheet = ({ guest, open, onOpenChange, onEdit }: ViewGuestSheetProps) => {
   const isMobile = useIsMobile();
 
   if (!guest) return null;
 
   const title = guest.name;
-  const description = `${guest.role} - ID: ${guest.id}`;
+  const descriptionComponent = (
+    <div className="flex items-center text-sm bg-primary/10 px-2 py-1 rounded-md w-fit mt-1">
+      <span className="text-primary font-medium">{guest.role}</span>
+      <span className="text-slate-500 ml-1.5">({guest.id})</span>
+    </div>
+  );
 
   if (isMobile) {
     return (
@@ -57,11 +66,16 @@ export const ViewGuestSheet = ({ guest, open, onOpenChange }: ViewGuestSheetProp
         <DrawerContent>
           <DrawerHeader className="text-left">
             <DrawerTitle>{title}</DrawerTitle>
-            <DrawerDescription>{description}</DrawerDescription>
+            <DrawerDescription asChild>{descriptionComponent}</DrawerDescription>
           </DrawerHeader>
           <div className="p-4">
             <GuestDetails guest={guest} />
           </div>
+          <DrawerFooter>
+            <Button onClick={() => onEdit(guest)}>
+              <Edit className="mr-2 h-4 w-4" /> Sửa
+            </Button>
+          </DrawerFooter>
         </DrawerContent>
       </Drawer>
     );
@@ -72,11 +86,16 @@ export const ViewGuestSheet = ({ guest, open, onOpenChange }: ViewGuestSheetProp
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription asChild>{descriptionComponent}</DialogDescription>
         </DialogHeader>
         <div className="py-4">
           <GuestDetails guest={guest} />
         </div>
+        <DialogFooter>
+          <Button onClick={() => onEdit(guest)}>
+            <Edit className="mr-2 h-4 w-4" /> Sửa
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

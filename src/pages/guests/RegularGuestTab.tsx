@@ -89,7 +89,7 @@ const RegularGuestTab = () => {
     return guests.filter((guest) => {
       const searchMatch =
         guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        guest.phone.includes(searchTerm) ||
+        (guest.phone && guest.phone.includes(searchTerm)) ||
         guest.role.toLowerCase().includes(searchTerm.toLowerCase());
       const roleMatch = roleFilters.length === 0 || roleFilters.includes(guest.role);
       return searchMatch && roleMatch;
@@ -133,6 +133,13 @@ const RegularGuestTab = () => {
 
   const handleViewGuest = (guest: Guest) => {
     setViewingGuest(guest);
+  };
+
+  const handleEditFromView = (guest: Guest) => {
+    setViewingGuest(null);
+    setTimeout(() => {
+      handleOpenEditDialog(guest);
+    }, 150);
   };
 
   return (
@@ -227,6 +234,7 @@ const RegularGuestTab = () => {
         guest={viewingGuest}
         open={!!viewingGuest}
         onOpenChange={(open) => !open && setViewingGuest(null)}
+        onEdit={handleEditFromView}
       />
     </div>
   );
