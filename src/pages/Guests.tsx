@@ -14,13 +14,9 @@ import { GuestTable } from "@/components/guests/GuestTable";
 import { GuestCards } from "@/components/guests/GuestCards";
 import { AddGuestDialog } from "@/components/guests/AddGuestDialog";
 import { showSuccess, showError } from "@/utils/toast";
-
-const MOCK_GUESTS: Guest[] = [
-  { id: "KPT001", name: "Trần Văn B", role: "Khách phổ thông", phone: "0911223344", referrer: "Nguyễn Văn A", notes: "Đã xác nhận tham gia" },
-  { id: "VIP001", name: "Ngô Thị D", role: "VIP", phone: "0988776655", referrer: "Lê Thị C", notes: "Yêu cầu chỗ ngồi hàng đầu" },
-  { id: "SVP001", name: "Đinh Văn E", role: "Super Vip", phone: "0905112233", referrer: "", notes: "Đón tại sân bay" },
-  { id: "VTN001", name: "Bùi Thị F", role: "Vé trải nghiệm", phone: "0333444555", referrer: "Trần Văn B", notes: "" },
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const generateId = (role: GuestRole, existingGuests: Guest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -33,13 +29,49 @@ const generateId = (role: GuestRole, existingGuests: Guest[]): string => {
 };
 
 const Guests = () => {
-  const [guests, setGuests] = useState<Guest[]>(MOCK_GUESTS);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
   const isMobile = useIsMobile();
+
+  const { data: guests = [], isLoading } = useQuery<Guest[]>({
+    queryKey: ['guests'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('guests').select('*').order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const addOrEditMutation = useMutation({
+    mutationFn: async (guest: Omit<Guest, 'created_at'>) => {
+      const { error } = await supabase.from('guests').upsert(guest);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      showSuccess(editingGuest ? "Cập nhật khách mời thành công!" : "Thêm khách mời thành công!");
+      setIsDialogOpen(false);
+      setEditingGuest(null);
+    },
+    onError: (error) => showError(error.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from('guests').delete().in('id', ids);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      showSuccess(`Đã xóa ${variables.length} khách mời.`);
+      setSelectedGuests([]);
+    },
+    onError: (error) => showError(error.message),
+  });
 
   const filteredGuests = useMemo(() => {
     return guests.filter((guest) => {
@@ -63,18 +95,11 @@ const Guests = () => {
   };
 
   const handleAddOrEditGuest = (values: GuestFormValues) => {
-    if (editingGuest) {
-      setGuests(guests.map(g => g.id === editingGuest.id ? { ...editingGuest, ...values } : g));
-      showSuccess("Cập nhật khách mời thành công!");
-    } else {
-      const newGuest: Guest = {
-        id: generateId(values.role, guests),
-        ...values,
-      };
-      setGuests([...guests, newGuest]);
-      showSuccess("Thêm khách mời thành công!");
-    }
-    setEditingGuest(null);
+    const guestToUpsert = {
+      id: editingGuest ? editingGuest.id : generateId(values.role, guests),
+      ...values,
+    };
+    addOrEditMutation.mutate(guestToUpsert);
   };
 
   const handleOpenEditDialog = (guest: Guest) => {
@@ -83,9 +108,7 @@ const Guests = () => {
   };
 
   const handleDeleteGuest = (id: string) => {
-    setGuests(guests.filter(g => g.id !== id));
-    setSelectedGuests(selectedGuests.filter(guestId => guestId !== id));
-    showSuccess("Xóa khách mời thành công!");
+    deleteMutation.mutate([id]);
   };
 
   const handleBulkDelete = () => {
@@ -93,9 +116,7 @@ const Guests = () => {
       showError("Vui lòng chọn ít nhất một khách mời để xóa.");
       return;
     }
-    setGuests(guests.filter(g => !selectedGuests.includes(g.id)));
-    setSelectedGuests([]);
-    showSuccess(`Đã xóa ${selectedGuests.length} khách mời.`);
+    deleteMutation.mutate(selectedGuests);
   };
 
   return (
@@ -142,14 +163,22 @@ const Guests = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           {selectedGuests.length > 0 && (
-            <Button variant="destructive" onClick={handleBulkDelete}>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending}>
               <Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})
             </Button>
           )}
         </div>
       </div>
 
-      {isMobile ? (
+      {isLoading ? (
+        <div className="space-y-4">
+          {isMobile ? (
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)
+          ) : (
+            <Skeleton className="h-96 w-full rounded-lg" />
+          )}
+        </div>
+        ) : isMobile ? (
         <GuestCards
           guests={filteredGuests}
           selectedGuests={selectedGuests}

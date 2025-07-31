@@ -15,13 +15,9 @@ import { VipGuestCards } from "@/components/vip-guests/VipGuestCards";
 import { AddVipGuestDialog } from "@/components/vip-guests/AddVipGuestDialog";
 import { ViewVipGuestSheet } from "@/components/vip-guests/ViewVipGuestSheet";
 import { showSuccess, showError } from "@/utils/toast";
-
-const MOCK_GUESTS: VipGuest[] = [
-  { id: "PS001", name: "Nguyễn Văn A", role: "Prime Speaker", phone: "0912345678", secondaryInfo: "CEO ABC Corp", referrer: "Trần Thị B", notes: "Cần chuẩn bị slide" },
-  { id: "GS001", name: "Lê Thị C", role: "Guest Speaker", phone: "0987654321", secondaryInfo: "CTO XYZ Inc", referrer: "Nguyễn Văn A", notes: "" },
-  { id: "ME001", name: "Phạm Văn D", role: "Mentor kiến tạo", phone: "0905123456", secondaryInfo: "Founder Startup Z", referrer: "", notes: "Tham gia phiên thảo luận" },
-  { id: "PB001", name: "Hoàng Thị E", role: "Phó BTC", phone: "0333444555", secondaryInfo: "Phụ trách hậu cần", referrer: "", notes: "Liên hệ thường xuyên" },
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const generateId = (role: Role, existingGuests: VipGuest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -35,7 +31,7 @@ const generateId = (role: Role, existingGuests: VipGuest[]): string => {
 };
 
 const VipGuests = () => {
-  const [guests, setGuests] = useState<VipGuest[]>(MOCK_GUESTS);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
@@ -43,6 +39,42 @@ const VipGuests = () => {
   const [editingGuest, setEditingGuest] = useState<VipGuest | null>(null);
   const [viewingGuest, setViewingGuest] = useState<VipGuest | null>(null);
   const isMobile = useIsMobile();
+
+  const { data: guests = [], isLoading } = useQuery<VipGuest[]>({
+    queryKey: ['vip_guests'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('vip_guests').select('*').order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const addOrEditMutation = useMutation({
+    mutationFn: async (guest: Omit<VipGuest, 'created_at'>) => {
+      const { error } = await supabase.from('vip_guests').upsert(guest);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      showSuccess(editingGuest ? "Cập nhật khách thành công!" : "Thêm khách thành công!");
+      setIsFormOpen(false);
+      setEditingGuest(null);
+    },
+    onError: (error) => showError(error.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from('vip_guests').delete().in('id', ids);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      showSuccess(`Đã xóa ${variables.length} khách.`);
+      setSelectedGuests([]);
+    },
+    onError: (error) => showError(error.message),
+  });
 
   const filteredGuests = useMemo(() => {
     return guests.filter((guest) => {
@@ -66,18 +98,11 @@ const VipGuests = () => {
   };
 
   const handleAddOrEditGuest = (values: VipGuestFormValues) => {
-    if (editingGuest) {
-      setGuests(guests.map(g => g.id === editingGuest.id ? { ...editingGuest, ...values } : g));
-      showSuccess("Cập nhật khách mời thành công!");
-    } else {
-      const newGuest: VipGuest = {
-        id: generateId(values.role, guests),
-        ...values,
-      };
-      setGuests([...guests, newGuest]);
-      showSuccess("Thêm khách mời thành công!");
-    }
-    setEditingGuest(null);
+    const guestToUpsert = {
+      id: editingGuest ? editingGuest.id : generateId(values.role, guests),
+      ...values,
+    };
+    addOrEditMutation.mutate(guestToUpsert);
   };
 
   const handleOpenEditDialog = (guest: VipGuest) => {
@@ -95,19 +120,15 @@ const VipGuests = () => {
   };
 
   const handleDeleteGuest = (id: string) => {
-    setGuests(guests.filter(g => g.id !== id));
-    setSelectedGuests(selectedGuests.filter(guestId => guestId !== id));
-    showSuccess("Xóa khách mời thành công!");
+    deleteMutation.mutate([id]);
   };
 
   const handleBulkDelete = () => {
     if (selectedGuests.length === 0) {
-      showError("Vui lòng chọn ít nhất một khách mời để xóa.");
+      showError("Vui lòng chọn ít nhất một khách để xóa.");
       return;
     }
-    setGuests(guests.filter(g => !selectedGuests.includes(g.id)));
-    setSelectedGuests([]);
-    showSuccess(`Đã xóa ${selectedGuests.length} khách mời.`);
+    deleteMutation.mutate(selectedGuests);
   };
 
   return (
@@ -154,14 +175,22 @@ const VipGuests = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           {selectedGuests.length > 0 && (
-            <Button variant="destructive" onClick={handleBulkDelete}>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending}>
               <Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})
             </Button>
           )}
         </div>
       </div>
 
-      {isMobile ? (
+      {isLoading ? (
+        <div className="space-y-4">
+          {isMobile ? (
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)
+          ) : (
+            <Skeleton className="h-96 w-full rounded-lg" />
+          )}
+        </div>
+        ) : isMobile ? (
         <VipGuestCards
           guests={filteredGuests}
           selectedGuests={selectedGuests}
