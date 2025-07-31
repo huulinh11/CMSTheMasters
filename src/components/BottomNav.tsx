@@ -68,7 +68,7 @@ const BottomNav = () => {
               <span className="text-xs font-medium">Khác</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-3/4 p-4 bg-slate-50">
+          <SheetContent side="right" className="w-3/4 p-4 bg-transparent">
             <SheetHeader className="mb-6 text-left">
               <SheetTitle className="text-2xl font-bold text-slate-800">Khác</SheetTitle>
             </SheetHeader>

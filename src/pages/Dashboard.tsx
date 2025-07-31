@@ -4,7 +4,7 @@ import { Bell, Cloud, Users, UserCheck, CircleDollarSign, ClipboardList } from "
 
 const Dashboard = () => {
   return (
-    <div className="p-4 md:p-6 bg-slate-50 min-h-full">
+    <div className="p-4 md:p-6 bg-transparent min-h-full">
       <header className="flex justify-between items-center mb-6">
         <div>
           <p className="text-slate-500 text-sm md:text-base">Welcome home</p>
