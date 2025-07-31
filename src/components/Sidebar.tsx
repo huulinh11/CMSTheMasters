@@ -2,7 +2,6 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  UserCheck,
   Megaphone,
   ClipboardList,
   Info,
@@ -15,7 +14,6 @@ import {
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/vip-guests", icon: UserCheck, label: "Khách chức vụ" },
   { to: "/guests", icon: Users, label: "Khách mời" },
   { to: "/media-benefits", icon: Megaphone, label: "Quyền lợi truyền thông" },
   { to: "/event-tasks", icon: ClipboardList, label: "Tác vụ sự kiện" },

@@ -2,7 +2,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
-  UserCheck,
   Users,
   ClipboardList,
   MoreHorizontal,
@@ -26,13 +25,12 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Home", end: true },
-  { to: "/vip-guests", icon: UserCheck, label: "Chức vụ" },
   { to: "/guests", icon: Users, label: "Khách mời" },
+  { to: "/media-benefits", icon: Megaphone, label: "Quyền lợi" },
   { to: "/event-tasks", icon: ClipboardList, label: "Tác vụ" },
 ];
 
 const moreLinks = [
-  { to: "/media-benefits", icon: Megaphone, label: "Quyền lợi truyền thông" },
   { to: "/information", icon: Info, label: "Thông tin" },
   { to: "/revenue", icon: CircleDollarSign, label: "Doanh thu" },
   { to: "/timeline", icon: CalendarClock, label: "Timeline" },

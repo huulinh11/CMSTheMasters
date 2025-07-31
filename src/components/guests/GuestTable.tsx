@@ -24,6 +24,7 @@ interface GuestTableProps {
   onSelectAll: (checked: boolean) => void;
   onEdit: (guest: Guest) => void;
   onDelete: (id: string) => void;
+  onView: (guest: Guest) => void;
 }
 
 export const GuestTable = ({
@@ -33,6 +34,7 @@ export const GuestTable = ({
   onSelectAll,
   onEdit,
   onDelete,
+  onView,
 }: GuestTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
@@ -67,7 +69,11 @@ export const GuestTable = ({
                   />
                 </TableCell>
                 <TableCell className="font-medium">{guest.id}</TableCell>
-                <TableCell className="font-semibold text-slate-800">{guest.name}</TableCell>
+                <TableCell className="font-semibold text-slate-800">
+                  <button onClick={() => onView(guest)} className="text-left hover:underline">
+                    {guest.name}
+                  </button>
+                </TableCell>
                 <TableCell>{guest.role}</TableCell>
                 <TableCell>{guest.phone}</TableCell>
                 <TableCell>{guest.referrer}</TableCell>

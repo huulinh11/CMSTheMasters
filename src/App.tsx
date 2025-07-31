@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
-import VipGuests from "./pages/VipGuests";
 import Guests from "./pages/Guests";
 import MediaBenefits from "./pages/MediaBenefits";
 import EventTasks from "./pages/EventTasks";
@@ -28,7 +27,6 @@ const App = () => (
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/vip-guests" element={<VipGuests />} />
             <Route path="/guests" element={<Guests />} />
             <Route path="/media-benefits" element={<MediaBenefits />} />
             <Route path="/event-tasks" element={<EventTasks />} />
