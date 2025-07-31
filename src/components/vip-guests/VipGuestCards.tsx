@@ -16,6 +16,7 @@ interface VipGuestCardsProps {
   onSelectGuest: (id: string) => void;
   onEdit: (guest: VipGuest) => void;
   onDelete: (id: string) => void;
+  onView: (guest: VipGuest) => void;
 }
 
 export const VipGuestCards = ({
@@ -24,15 +25,18 @@ export const VipGuestCards = ({
   onSelectGuest,
   onEdit,
   onDelete,
+  onView,
 }: VipGuestCardsProps) => {
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
         guests.map((guest) => (
           <Card key={guest.id} className="bg-white shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-semibold text-slate-800">{guest.name}</CardTitle>
-              <div className="flex items-center space-x-2">
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+              <button onClick={() => onView(guest)} className="text-left pr-2">
+                <CardTitle className="text-lg font-semibold text-slate-800 hover:underline">{guest.name}</CardTitle>
+              </button>
+              <div className="flex items-center space-x-2 flex-shrink-0">
                 <Checkbox
                   checked={selectedGuests.includes(guest.id)}
                   onCheckedChange={() => onSelectGuest(guest.id)}

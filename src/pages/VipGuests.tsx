@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { VipGuest, VipGuestFormValues, ROLES, Role } from "@/types/vip-guest";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { PlusCircle, ChevronDown, Trash2, Upload, Download } from "lucide-react"
 import { VipGuestTable } from "@/components/vip-guests/VipGuestTable";
 import { VipGuestCards } from "@/components/vip-guests/VipGuestCards";
 import { AddVipGuestDialog } from "@/components/vip-guests/AddVipGuestDialog";
+import { ViewVipGuestSheet } from "@/components/vip-guests/ViewVipGuestSheet";
 import { showSuccess, showError } from "@/utils/toast";
 
 const MOCK_GUESTS: VipGuest[] = [
@@ -38,8 +39,9 @@ const VipGuests = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState<VipGuest | null>(null);
+  const [viewingGuest, setViewingGuest] = useState<VipGuest | null>(null);
   const isMobile = useIsMobile();
 
   const filteredGuests = useMemo(() => {
@@ -65,11 +67,9 @@ const VipGuests = () => {
 
   const handleAddOrEditGuest = (values: VipGuestFormValues) => {
     if (editingGuest) {
-      // Edit
       setGuests(guests.map(g => g.id === editingGuest.id ? { ...editingGuest, ...values } : g));
       showSuccess("Cập nhật khách mời thành công!");
     } else {
-      // Add
       const newGuest: VipGuest = {
         id: generateId(values.role, guests),
         ...values,
@@ -82,7 +82,16 @@ const VipGuests = () => {
 
   const handleOpenEditDialog = (guest: VipGuest) => {
     setEditingGuest(guest);
-    setIsDialogOpen(true);
+    setIsFormOpen(true);
+  };
+  
+  const handleOpenAddDialog = () => {
+    setEditingGuest(null);
+    setIsFormOpen(true);
+  };
+
+  const handleViewGuest = (guest: VipGuest) => {
+    setViewingGuest(guest);
   };
 
   const handleDeleteGuest = (id: string) => {
@@ -108,7 +117,7 @@ const VipGuests = () => {
         <div className="flex items-center gap-2">
           <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export</Button>
           <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button>
-          <Button onClick={() => { setEditingGuest(null); setIsDialogOpen(true); }}>
+          <Button onClick={handleOpenAddDialog}>
             <PlusCircle className="mr-2 h-4 w-4" /> Thêm
           </Button>
         </div>
@@ -159,6 +168,7 @@ const VipGuests = () => {
           onSelectGuest={handleSelectGuest}
           onEdit={handleOpenEditDialog}
           onDelete={handleDeleteGuest}
+          onView={handleViewGuest}
         />
       ) : (
         <VipGuestTable
@@ -168,14 +178,22 @@ const VipGuests = () => {
           onSelectAll={handleSelectAll}
           onEdit={handleOpenEditDialog}
           onDelete={handleDeleteGuest}
+          onView={handleViewGuest}
         />
       )}
 
       <AddVipGuestDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
         onSubmit={handleAddOrEditGuest}
         defaultValues={editingGuest}
+        allGuests={guests}
+      />
+      
+      <ViewVipGuestSheet
+        guest={viewingGuest}
+        open={!!viewingGuest}
+        onOpenChange={(open) => !open && setViewingGuest(null)}
       />
     </div>
   );

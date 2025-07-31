@@ -24,6 +24,7 @@ interface VipGuestTableProps {
   onSelectAll: (checked: boolean) => void;
   onEdit: (guest: VipGuest) => void;
   onDelete: (id: string) => void;
+  onView: (guest: VipGuest) => void;
 }
 
 export const VipGuestTable = ({
@@ -33,6 +34,7 @@ export const VipGuestTable = ({
   onSelectAll,
   onEdit,
   onDelete,
+  onView,
 }: VipGuestTableProps) => {
   const allSelected = guests.length > 0 && selectedGuests.length === guests.length;
   const isIndeterminate = selectedGuests.length > 0 && selectedGuests.length < guests.length;
@@ -71,7 +73,11 @@ export const VipGuestTable = ({
                   />
                 </TableCell>
                 <TableCell className="font-medium">{guest.id}</TableCell>
-                <TableCell className="font-semibold text-slate-800">{guest.name}</TableCell>
+                <TableCell className="font-semibold text-slate-800">
+                  <button onClick={() => onView(guest)} className="text-left hover:underline">
+                    {guest.name}
+                  </button>
+                </TableCell>
                 <TableCell>{guest.role}</TableCell>
                 <TableCell>{guest.secondaryInfo}</TableCell>
                 <TableCell>{guest.phone}</TableCell>
