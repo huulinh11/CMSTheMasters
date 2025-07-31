@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { Guest } from "@/types/guest";
+import { GUEST_ROLE_COLORS } from "@/lib/role-colors";
 
 interface GuestTableProps {
   guests: Guest[];
@@ -74,7 +75,11 @@ export const GuestTable = ({
                     {guest.name}
                   </button>
                 </TableCell>
-                <TableCell>{guest.role}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-md text-xs font-medium ${GUEST_ROLE_COLORS[guest.role]}`}>
+                    {guest.role}
+                  </span>
+                </TableCell>
                 <TableCell>{guest.phone}</TableCell>
                 <TableCell>{guest.referrer}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{guest.notes}</TableCell>

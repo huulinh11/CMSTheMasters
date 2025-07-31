@@ -18,6 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Guest } from "@/types/guest";
 import { Phone, User, FileText, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GUEST_ROLE_COLORS } from "@/lib/role-colors";
 
 interface ViewGuestSheetProps {
   guest: Guest | null;
@@ -54,8 +55,10 @@ export const ViewGuestSheet = ({ guest, open, onOpenChange, onEdit }: ViewGuestS
 
   const title = guest.name;
   const descriptionComponent = (
-    <div className="flex items-center text-sm bg-primary/10 px-2 py-1 rounded-md w-fit mt-1">
-      <span className="text-primary font-medium">{guest.role}</span>
+    <div className="flex items-center mt-1">
+      <span className={`px-2 py-1 rounded-md text-sm font-medium ${GUEST_ROLE_COLORS[guest.role]}`}>
+        {guest.role}
+      </span>
       <span className="text-slate-500 ml-1.5">({guest.id})</span>
     </div>
   );

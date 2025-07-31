@@ -18,6 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { VipGuest } from "@/types/vip-guest";
 import { Phone, User, Info, FileText, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { VIP_ROLE_COLORS } from "@/lib/role-colors";
 
 interface ViewVipGuestSheetProps {
   guest: VipGuest | null;
@@ -55,8 +56,10 @@ export const ViewVipGuestSheet = ({ guest, open, onOpenChange, onEdit }: ViewVip
 
   const title = guest.name;
   const descriptionComponent = (
-    <div className="flex items-center text-sm bg-primary/10 px-2 py-1 rounded-md w-fit mt-1">
-      <span className="text-primary font-medium">{guest.role}</span>
+    <div className="flex items-center mt-1">
+      <span className={`px-2 py-1 rounded-md text-sm font-medium ${VIP_ROLE_COLORS[guest.role]}`}>
+        {guest.role}
+      </span>
       <span className="text-slate-500 ml-1.5">({guest.id})</span>
     </div>
   );

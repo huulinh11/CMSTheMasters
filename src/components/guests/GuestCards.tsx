@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Trash2, Edit, Phone, User, FileText } from "lucide-react";
 import { Guest } from "@/types/guest";
+import { GUEST_ROLE_COLORS } from "@/lib/role-colors";
 
 interface GuestCardsProps {
   guests: Guest[];
@@ -62,8 +63,10 @@ export const GuestCards = ({
               </div>
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
-              <div className="flex items-center text-sm bg-primary/10 px-2 py-1 rounded-md w-fit">
-                <span className="text-primary font-medium">{guest.role}</span>
+              <div className="flex items-center text-sm">
+                <span className={`px-2 py-1 rounded-md font-medium ${GUEST_ROLE_COLORS[guest.role]}`}>
+                  {guest.role}
+                </span>
                 <span className="text-slate-500 ml-1.5">({guest.id})</span>
               </div>
               <div className="border-t border-slate-100 pt-3 space-y-2 text-slate-600">

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { VipGuest } from "@/types/vip-guest";
+import { VIP_ROLE_COLORS } from "@/lib/role-colors";
 
 interface VipGuestTableProps {
   guests: VipGuest[];
@@ -78,7 +79,11 @@ export const VipGuestTable = ({
                     {guest.name}
                   </button>
                 </TableCell>
-                <TableCell>{guest.role}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-md text-xs font-medium ${VIP_ROLE_COLORS[guest.role]}`}>
+                    {guest.role}
+                  </span>
+                </TableCell>
                 <TableCell>{guest.secondaryInfo}</TableCell>
                 <TableCell>{guest.phone}</TableCell>
                 <TableCell>{guest.referrer}</TableCell>
