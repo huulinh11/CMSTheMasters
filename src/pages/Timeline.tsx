@@ -50,9 +50,30 @@ const Timeline = () => {
     },
   });
 
-  const { data: roles = [] } = useQuery<RoleConfiguration[]>({ queryKey: ['role_configurations'] });
-  const { data: vipGuests = [] } = useQuery<VipGuest[]>({ queryKey: ['vip_guests'] });
-  const { data: regularGuests = [] } = useQuery<Guest[]>({ queryKey: ['guests'] });
+  const { data: roles = [] } = useQuery<RoleConfiguration[]>({
+    queryKey: ['role_configurations'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('role_configurations').select('*');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+  const { data: vipGuests = [] } = useQuery<VipGuest[]>({
+    queryKey: ['vip_guests'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('vip_guests').select('id, name');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+  const { data: regularGuests = [] } = useQuery<Guest[]>({
+    queryKey: ['guests'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('guests').select('id, name');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
 
   useEffect(() => {
     const startTimes = calculateTimeline(dbItems, baseTime);
@@ -147,19 +168,20 @@ const Timeline = () => {
       <div className="p-4 md:p-6 space-y-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h1 className="text-2xl font-bold text-slate-800">Timeline sự kiện</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
             <div className="flex items-center gap-2">
-              <Label htmlFor="baseTime">Giờ bắt đầu</Label>
+              <Label htmlFor="baseTime" className="flex-shrink-0">Giờ bắt đầu</Label>
               <Input
                 id="baseTime"
                 type="time"
                 value={baseTime}
                 onChange={(e) => setBaseTime(e.target.value)}
-                className="w-32"
+                className="w-full"
               />
             </div>
             <Button onClick={handleOpenAddDialog}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Thêm mốc thời gian
+              <PlusCircle className="mr-2 h-4 w-4" />
+              {isMobile ? 'Thêm' : 'Thêm mốc thời gian'}
             </Button>
           </div>
         </div>
