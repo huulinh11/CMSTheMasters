@@ -1,14 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatCurrencyShort } from "@/lib/utils";
 import { VipGuestRevenue } from "@/types/vip-guest-revenue";
 import { DollarSign, CheckCircle, AlertCircle } from "lucide-react";
 import { useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface VipRevenueStatsProps {
   guests: VipGuestRevenue[];
 }
 
 const VipRevenueStats = ({ guests }: VipRevenueStatsProps) => {
+  const isMobile = useIsMobile();
+
   const stats = useMemo(() => {
     return guests.reduce(
       (acc, guest) => {
@@ -21,22 +24,24 @@ const VipRevenueStats = ({ guests }: VipRevenueStatsProps) => {
     );
   }, [guests]);
 
+  const formatValue = isMobile ? formatCurrencyShort : formatCurrency;
+
   return (
     <div className="grid grid-cols-3 gap-2 md:gap-4">
       <StatCard
         title="Tổng tài trợ"
-        value={formatCurrency(stats.totalSponsorship)}
+        value={formatValue(stats.totalSponsorship)}
         icon={DollarSign}
       />
       <StatCard
         title="Tổng đã thanh toán"
-        value={formatCurrency(stats.totalPaid)}
+        value={formatValue(stats.totalPaid)}
         icon={CheckCircle}
         className="text-green-600"
       />
       <StatCard
         title="Tổng chưa thanh toán"
-        value={formatCurrency(stats.totalUnpaid)}
+        value={formatValue(stats.totalUnpaid)}
         icon={AlertCircle}
         className="text-red-600"
       />
@@ -51,7 +56,7 @@ const StatCard = ({ title, value, icon: Icon, className }: { title: string; valu
       <Icon className={`h-4 w-4 text-muted-foreground ${className}`} />
     </CardHeader>
     <CardContent className="p-3 pt-0">
-      <div className={`text-xl md:text-2xl font-bold ${className}`}>{value}</div>
+      <div className={`text-lg md:text-2xl font-bold ${className}`}>{value}</div>
     </CardContent>
   </Card>
 );
