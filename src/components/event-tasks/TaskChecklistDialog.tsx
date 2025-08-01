@@ -33,7 +33,7 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
           <span className="flex items-center"><Phone className="w-4 h-4 mr-2" /> {guest.phone}</span>
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-4">
+      <div className="grid grid-cols-1 gap-y-2 mt-4">
         {tasksForRole.map((taskName) => (
           <div
             key={taskName}
@@ -116,7 +116,7 @@ export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialog
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>{triggerButton}</DialogTrigger>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{guest.name}</DialogTitle>
           </DialogHeader>
