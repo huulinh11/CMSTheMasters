@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { GuestRevenue } from "@/types/guest-revenue";
 import { GUEST_ROLES } from "@/types/guest";
@@ -18,17 +18,18 @@ import { RegularRevenueCards } from "@/components/Revenue/RegularRevenueCards";
 import RegularRevenueStats from "@/components/Revenue/RegularRevenueStats";
 import GuestPaymentDialog from "@/components/Revenue/GuestPaymentDialog";
 import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
+import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ViewGuestSheet } from "@/components/guests/ViewGuestSheet";
 import { Guest } from "@/types/guest";
-import { showError, showSuccess } from "@/utils/toast";
 
 const RegularGuestRevenueTab = () => {
-  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [payingGuest, setPayingGuest] = useState<GuestRevenue | null>(null);
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
+  const [editingGuest, setEditingGuest] = useState<GuestRevenue | null>(null);
+  const [editMode, setEditMode] = useState<'edit' | 'upsale'>('edit');
   const [viewingGuest, setViewingGuest] = useState<GuestRevenue | null>(null);
   const isMobile = useIsMobile();
 
@@ -37,14 +38,19 @@ const RegularGuestRevenueTab = () => {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_guest_revenue_details');
       if (error) throw new Error(error.message);
-      return (data || []).map(g => ({
-        ...g,
-        sponsorship: g.sponsorship || 0,
-        paid: g.paid_amount || 0,
-        unpaid: (g.sponsorship || 0) - (g.paid_amount || 0),
-        is_upsaled: g.is_upsaled || false,
-        commission: 0, // Placeholder
-      }));
+      return (data || []).map(g => {
+        const originalSponsorship = g.sponsorship || 0;
+        const effectiveSponsorship = g.payment_source === 'Chỉ tiêu' ? 0 : originalSponsorship;
+        return {
+          ...g,
+          original_sponsorship: originalSponsorship,
+          sponsorship: effectiveSponsorship,
+          paid: g.paid_amount || 0,
+          unpaid: effectiveSponsorship - (g.paid_amount || 0),
+          is_upsaled: g.is_upsaled || false,
+          commission: 0, // Placeholder
+        };
+      });
     }
   });
 
@@ -58,14 +64,14 @@ const RegularGuestRevenueTab = () => {
     });
   }, [guests, searchTerm, roleFilters]);
 
-  const handleUpsale = (guest: GuestRevenue) => {
-    // Placeholder for upsale functionality
-    showSuccess(`Chức năng Upsale cho ${guest.name} sẽ được phát triển sau.`);
+  const handleOpenEditDialog = (guest: GuestRevenue) => {
+    setEditMode('edit');
+    setEditingGuest(guest);
   };
 
-  const handleEdit = (guest: GuestRevenue) => {
-    // Placeholder for edit functionality
-    showSuccess(`Chức năng sửa tài trợ cho ${guest.name} sẽ được phát triển sau.`);
+  const handleOpenUpsaleDialog = (guest: GuestRevenue) => {
+    setEditMode('upsale');
+    setEditingGuest(guest);
   };
 
   return (
@@ -110,8 +116,8 @@ const RegularGuestRevenueTab = () => {
           guests={filteredGuests}
           onPay={setPayingGuest}
           onHistory={setHistoryGuest}
-          onEdit={handleEdit}
-          onUpsale={handleUpsale}
+          onEdit={handleOpenEditDialog}
+          onUpsale={handleOpenUpsaleDialog}
           onView={setViewingGuest}
         />
       ) : (
@@ -119,8 +125,8 @@ const RegularGuestRevenueTab = () => {
           guests={filteredGuests}
           onPay={setPayingGuest}
           onHistory={setHistoryGuest}
-          onEdit={handleEdit}
-          onUpsale={handleUpsale}
+          onEdit={handleOpenEditDialog}
+          onUpsale={handleOpenUpsaleDialog}
           onView={setViewingGuest}
         />
       )}
@@ -134,6 +140,12 @@ const RegularGuestRevenueTab = () => {
         guest={historyGuest}
         open={!!historyGuest}
         onOpenChange={(open) => !open && setHistoryGuest(null)}
+      />
+      <EditGuestRevenueDialog
+        guest={editingGuest}
+        open={!!editingGuest}
+        onOpenChange={(open) => !open && setEditingGuest(null)}
+        mode={editMode}
       />
        <ViewGuestSheet
         guest={viewingGuest as Guest | null}
