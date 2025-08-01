@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VipGuestRevenue } from "@/types/vip-guest-revenue";
+import { VipGuest } from "@/types/vip-guest";
 import { ROLES } from "@/types/vip-guest";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { VipRevenueCards } from "@/components/Revenue/VipRevenueCards";
 import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
 import PaymentDialog from "@/components/Revenue/PaymentDialog";
 import HistoryDialog from "@/components/Revenue/HistoryDialog";
+import { ViewVipGuestSheet } from "@/components/vip-guests/ViewVipGuestSheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const VipGuestRevenueTab = () => {
@@ -27,6 +29,7 @@ const VipGuestRevenueTab = () => {
   const [editingGuest, setEditingGuest] = useState<VipGuestRevenue | null>(null);
   const [payingGuest, setPayingGuest] = useState<VipGuestRevenue | null>(null);
   const [historyGuest, setHistoryGuest] = useState<VipGuestRevenue | null>(null);
+  const [viewingGuest, setViewingGuest] = useState<VipGuestRevenue | null>(null);
   const isMobile = useIsMobile();
 
   const { data: guests = [], isLoading } = useQuery<VipGuestRevenue[]>({
@@ -98,7 +101,7 @@ const VipGuestRevenueTab = () => {
           onPay={setPayingGuest}
           onHistory={setHistoryGuest}
           onEdit={setEditingGuest}
-          onView={() => { /* Placeholder for view details */ }}
+          onView={setViewingGuest}
         />
       ) : (
         <VipRevenueTable
@@ -106,7 +109,7 @@ const VipGuestRevenueTab = () => {
           onPay={setPayingGuest}
           onHistory={setHistoryGuest}
           onEdit={setEditingGuest}
-          onView={() => { /* Placeholder for view details */ }}
+          onView={setViewingGuest}
         />
       )}
 
@@ -124,6 +127,11 @@ const VipGuestRevenueTab = () => {
         guest={historyGuest}
         open={!!historyGuest}
         onOpenChange={(open) => !open && setHistoryGuest(null)}
+      />
+      <ViewVipGuestSheet
+        guest={viewingGuest as VipGuest | null}
+        open={!!viewingGuest}
+        onOpenChange={(open) => !open && setViewingGuest(null)}
       />
     </div>
   );

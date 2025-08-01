@@ -24,7 +24,7 @@ interface ViewVipGuestSheetProps {
   guest: VipGuest | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (guest: VipGuest) => void;
+  onEdit?: (guest: VipGuest) => void;
 }
 
 const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value?: string }) => {
@@ -76,9 +76,11 @@ export const ViewVipGuestSheet = ({ guest, open, onOpenChange, onEdit }: ViewVip
             <GuestDetails guest={guest} />
           </div>
           <DrawerFooter>
-            <Button onClick={() => onEdit(guest)}>
-              <Edit className="mr-2 h-4 w-4" /> Sửa
-            </Button>
+            {onEdit && (
+              <Button onClick={() => onEdit(guest!)}>
+                <Edit className="mr-2 h-4 w-4" /> Sửa
+              </Button>
+            )}
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
@@ -96,9 +98,11 @@ export const ViewVipGuestSheet = ({ guest, open, onOpenChange, onEdit }: ViewVip
           <GuestDetails guest={guest} />
         </div>
         <DialogFooter>
-          <Button onClick={() => onEdit(guest)}>
-            <Edit className="mr-2 h-4 w-4" /> Sửa
-          </Button>
+          {onEdit && (
+            <Button onClick={() => onEdit(guest!)}>
+              <Edit className="mr-2 h-4 w-4" /> Sửa
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -56,7 +56,7 @@ const VipRevenueTable = ({ guests, onPay, onHistory, onEdit, onView }: VipRevenu
                 <TableCell>{formatCurrency(guest.sponsorship)}</TableCell>
                 <TableCell className="text-green-600">{formatCurrency(guest.paid)}</TableCell>
                 <TableCell className="text-red-600">{formatCurrency(guest.unpaid)}</TableCell>
-                <TableCell>{guest.referrer || "N/A"}</TableCell>
+                <TableCell>{guest.referrer || ""}</TableCell>
                 <TableCell>{formatCurrency(guest.commission)}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="outline" size="sm" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}>

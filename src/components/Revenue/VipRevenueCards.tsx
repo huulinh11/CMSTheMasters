@@ -62,7 +62,7 @@ export const VipRevenueCards = ({
                 <InfoRow label="Tài trợ" value={formatCurrency(guest.sponsorship)} />
                 <InfoRow label="Đã thanh toán" value={formatCurrency(guest.paid)} valueClass="text-green-600" />
                 <InfoRow label="Chưa thanh toán" value={formatCurrency(guest.unpaid)} valueClass="text-red-600" />
-                <InfoRow label="Người giới thiệu" value={guest.referrer || "N/A"} />
+                {guest.referrer && <InfoRow label="Người giới thiệu" value={guest.referrer} />}
               </div>
               <Button className="w-full" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}>
                 Thanh toán

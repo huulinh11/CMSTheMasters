@@ -51,7 +51,7 @@ const StatCard = ({ title, value, icon: Icon, className }: { title: string; valu
       <Icon className={`h-4 w-4 text-muted-foreground ${className}`} />
     </CardHeader>
     <CardContent className="p-3 pt-0">
-      <div className={`text-lg md:text-2xl font-bold ${className}`}>{value}</div>
+      <div className={`text-xl md:text-2xl font-bold ${className}`}>{value}</div>
     </CardContent>
   </Card>
 );
