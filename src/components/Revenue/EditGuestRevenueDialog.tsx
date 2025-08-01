@@ -17,13 +17,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 import { GuestRevenue, PAYMENT_SOURCES, PaymentSource } from "@/types/guest-revenue";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { VipGuest } from "@/types/vip-guest";
 import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { formatCurrency } from "@/lib/utils";
+import { ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface EditGuestRevenueDialogProps {
   guest: GuestRevenue | null;
@@ -31,15 +46,17 @@ interface EditGuestRevenueDialogProps {
   onOpenChange: (open: boolean) => void;
   mode?: "edit" | "upsale";
   roleConfigs: RoleConfiguration[];
+  vipGuests: VipGuest[];
 }
 
-const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", roleConfigs }: EditGuestRevenueDialogProps) => {
+const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", roleConfigs, vipGuests }: EditGuestRevenueDialogProps) => {
   const queryClient = useQueryClient();
   const [sponsorship, setSponsorship] = useState(0);
   const [formattedSponsorship, setFormattedSponsorship] = useState("0");
   const [paymentSource, setPaymentSource] = useState<PaymentSource | "">("");
   const [isUpsaled, setIsUpsaled] = useState(false);
   const [newRole, setNewRole] = useState("");
+  const [upsaledBy, setUpsaledBy] = useState("");
 
   const upsaleRoleOptions = useMemo(() => {
     if (!guest) return [];
@@ -56,6 +73,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
       setPaymentSource(guest.payment_source || "");
       setIsUpsaled(mode === 'upsale' || guest.is_upsaled);
       setNewRole(mode === 'upsale' ? "" : guest.role);
+      setUpsaledBy("");
     }
   }, [guest, open, mode]);
 
@@ -84,7 +102,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["guest_revenue"] });
+      queryClient.invalidateQueries({ queryKey: ["guest_revenue_details"] });
       showSuccess("Cập nhật thông tin thành công!");
       onOpenChange(false);
     },
@@ -92,13 +110,14 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
   });
 
   const upsaleMutation = useMutation({
-    mutationFn: async (values: { newRole: string; sponsorship: number; paymentSource: string }) => {
+    mutationFn: async (values: { newRole: string; sponsorship: number; paymentSource: string; upsaledBy: string }) => {
       if (!guest) throw new Error("Không có khách nào được chọn");
       const { error } = await supabase.rpc('upsale_guest', {
         guest_id_in: guest.id,
         new_role_in: values.newRole,
         new_sponsorship_in: values.sponsorship,
         new_payment_source_in: values.paymentSource,
+        upsaled_by_in: values.upsaledBy,
       });
       if (error) throw error;
     },
@@ -125,7 +144,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
         showError("Vui lòng chọn vai trò mới để upsale.");
         return;
       }
-      upsaleMutation.mutate({ newRole, sponsorship, paymentSource: paymentSource || "Trống" });
+      upsaleMutation.mutate({ newRole, sponsorship, paymentSource: paymentSource || "Trống", upsaledBy });
     } else {
       editMutation.mutate({ sponsorship, payment_source: paymentSource, is_upsaled: isUpsaled });
     }
@@ -144,19 +163,54 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
         </DialogHeader>
         <div className="py-4 space-y-4">
           {mode === 'upsale' && (
-            <div>
-              <Label htmlFor="new-role">Vai trò mới</Label>
-              <Select value={newRole} onValueChange={setNewRole}>
-                <SelectTrigger id="new-role">
-                  <SelectValue placeholder="Chọn vai trò để upsale" />
-                </SelectTrigger>
-                <SelectContent>
-                  {upsaleRoleOptions.map(role => (
-                    <SelectItem key={role.id} value={role.name}>{role.name} ({formatCurrency(role.sponsorship_amount)})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div>
+                <Label htmlFor="new-role">Vai trò mới</Label>
+                <Select value={newRole} onValueChange={setNewRole}>
+                  <SelectTrigger id="new-role">
+                    <SelectValue placeholder="Chọn vai trò để upsale" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {upsaleRoleOptions.map(role => (
+                      <SelectItem key={role.id} value={role.name}>{role.name} ({formatCurrency(role.sponsorship_amount)})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Người upsale</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn("w-full justify-between", !upsaledBy && "text-muted-foreground")}
+                    >
+                      {upsaledBy ? vipGuests.find(g => g.name === upsaledBy)?.name : "Chọn người upsale"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                    <Command>
+                      <CommandInput placeholder="Tìm kiếm..." />
+                      <CommandEmpty>Không tìm thấy.</CommandEmpty>
+                      <CommandGroup>
+                        {vipGuests.map((vip) => (
+                          <CommandItem
+                            value={vip.name}
+                            key={vip.id}
+                            onSelect={() => setUpsaledBy(vip.name)}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", vip.name === upsaledBy ? "opacity-100" : "opacity-0")} />
+                            {vip.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </>
           )}
           <div>
             <Label htmlFor="sponsorship">Số tiền tài trợ (đ)</Label>

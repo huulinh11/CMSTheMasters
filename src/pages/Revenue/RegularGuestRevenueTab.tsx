@@ -22,6 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ViewGuestSheet } from "@/components/guests/ViewGuestSheet";
 import { Guest } from "@/types/guest";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { VipGuest } from "@/types/vip-guest";
 
 type UpsaleHistory = {
   guest_id: string;
@@ -62,6 +63,15 @@ const RegularGuestRevenueTab = () => {
     queryKey: ['role_configurations', 'Khách mời'],
     queryFn: async () => {
       const { data, error } = await supabase.from('role_configurations').select('*').eq('type', 'Khách mời');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const { data: vipGuests = [] } = useQuery<VipGuest[]>({
+    queryKey: ['vip_guests_for_upsale'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('vip_guests').select('id, name');
       if (error) throw new Error(error.message);
       return data || [];
     }
@@ -202,6 +212,7 @@ const RegularGuestRevenueTab = () => {
         onOpenChange={(open) => !open && setEditingGuest(null)}
         mode={editMode}
         roleConfigs={roleConfigs}
+        vipGuests={vipGuests}
       />
        <ViewGuestSheet
         guest={viewingGuest as Guest | null}
