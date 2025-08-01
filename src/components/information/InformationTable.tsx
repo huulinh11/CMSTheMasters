@@ -17,10 +17,10 @@ interface InformationTableProps {
   onEdit: (guest: VipGuest) => void;
 }
 
-const handleCopy = (textToCopy: string | undefined) => {
+const handleCopy = (textToCopy: string | undefined, label: string) => {
   if (!textToCopy) return;
   navigator.clipboard.writeText(textToCopy);
-  showSuccess("Đã sao chép link!");
+  showSuccess(`Đã sao chép ${label}!`);
 };
 
 export const InformationTable = ({ guests, onEdit }: InformationTableProps) => {
@@ -32,6 +32,7 @@ export const InformationTable = ({ guests, onEdit }: InformationTableProps) => {
             <TableHead>ID</TableHead>
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
+            <TableHead>SĐT</TableHead>
             <TableHead>Thông tin phụ</TableHead>
             <TableHead>Tư liệu</TableHead>
             <TableHead>Link Facebook</TableHead>
@@ -48,14 +49,19 @@ export const InformationTable = ({ guests, onEdit }: InformationTableProps) => {
                 <TableCell className="font-semibold">{guest.name}</TableCell>
                 <TableCell>{guest.role}</TableCell>
                 <TableCell>
-                  <button onClick={() => onEdit(guest)} className="text-left hover:underline w-full max-w-[150px]">
+                  <button onClick={() => handleCopy(guest.phone, 'SĐT')} className="text-left hover:underline w-full">
+                    {guest.phone || "N/A"}
+                  </button>
+                </TableCell>
+                <TableCell>
+                  <button onClick={() => handleCopy(guest.secondaryInfo, 'Thông tin phụ')} className="text-left hover:underline w-full max-w-[150px]">
                     <p className="truncate" title={guest.secondaryInfo}>
                       {guest.secondaryInfo || "N/A"}
                     </p>
                   </button>
                 </TableCell>
                 <TableCell>
-                  <button onClick={() => onEdit(guest)} className="text-left hover:underline w-full max-w-[150px]">
+                  <button onClick={() => handleCopy(guest.materials, 'Tư liệu')} className="text-left hover:underline w-full max-w-[150px]">
                     <p className="truncate" title={guest.materials}>
                       {guest.materials || "N/A"}
                     </p>
@@ -67,7 +73,7 @@ export const InformationTable = ({ guests, onEdit }: InformationTableProps) => {
                       <a href={guest.facebook_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                         Link
                       </a>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(guest.facebook_link)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(guest.facebook_link, 'Link Facebook')}>
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
@@ -95,7 +101,7 @@ export const InformationTable = ({ guests, onEdit }: InformationTableProps) => {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={9} className="h-24 text-center">
+              <TableCell colSpan={10} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>
