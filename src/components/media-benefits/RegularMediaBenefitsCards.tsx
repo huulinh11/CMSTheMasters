@@ -48,7 +48,7 @@ export const RegularMediaBenefitsCards = ({ guests, onUpdateBenefit, onEditLink,
               {(guest.role === 'VIP' || guest.role === 'V-Vip') && (
                 <>
                   <InfoRow label="Báo sau sự kiện">
-                    <MediaBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} label="Chi tiết" />
+                    <MediaBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
                   </InfoRow>
                   <InfoRow label="Bộ ảnh Beauty AI">
                     <LinkDisplay link={guest.media_benefit?.beauty_ai_photos_link} onClick={() => onEditLink(guest, 'beauty_ai_photos_link')} />

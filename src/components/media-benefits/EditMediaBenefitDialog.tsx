@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { MediaVipGuest, NewsItem, NewsVideo, AnyMediaGuest } from "@/types/media-benefit";
+import { AnyMediaGuest, NewsItem, NewsVideo } from "@/types/media-benefit";
 import { useState, useEffect } from "react";
 import { PlusCircle, Trash2, Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
@@ -26,18 +25,12 @@ interface EditMediaBenefitDialogProps {
   benefitType: BenefitType | null;
 }
 
-const handleCopy = (textToCopy: string | undefined) => {
-  if (!textToCopy) return;
-  navigator.clipboard.writeText(textToCopy);
-  showSuccess(`Đã sao chép!`);
-};
-
 const NewsEditor = ({ items, setItems }: { items: NewsItem[], setItems: (items: NewsItem[]) => void }) => {
   const addNewsItem = () => {
     setItems([...items, { id: crypto.randomUUID(), article_link: "", post_link: "" }]);
   };
 
-  const updateNewsItem = (id: string, field: keyof NewsItem, value: string) => {
+  const updateNewsItem = (id: string, field: keyof Omit<NewsItem, 'id'>, value: string) => {
     setItems(items.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
@@ -139,7 +132,7 @@ export const EditMediaBenefitDialog = ({ open, onOpenChange, onSave, guest, bene
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 max-h-[70vh] overflow-y-auto">
           <div className="space-y-3">
             <h4 className="font-semibold">Thông tin khách mời</h4>
-            <InfoRow label="Tư liệu" value={guest.materials} isCopyable />
+            <InfoRow label="Tư liệu" value={guest.materials} isTextarea />
             <InfoRow label="Link Facebook" value={'facebook_link' in guest ? guest.facebook_link : undefined} isLink />
             <InfoRow label="Thông tin phụ" value={'secondaryInfo' in guest ? guest.secondaryInfo : undefined} isCopyable />
           </div>
@@ -161,8 +154,33 @@ export const EditMediaBenefitDialog = ({ open, onOpenChange, onSave, guest, bene
   );
 };
 
-const InfoRow = ({ label, value, isLink = false, isCopyable = false }: { label: string, value?: string | null, isLink?: boolean, isCopyable?: boolean }) => {
+const InfoRow = ({ label, value, isLink = false, isCopyable = false, isTextarea = false }: { label: string, value?: string | null, isLink?: boolean, isCopyable?: boolean, isTextarea?: boolean }) => {
   if (!value) return <p className="text-sm text-slate-500">{label}: (trống)</p>;
+
+  const handleCopy = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy);
+    showSuccess(`Đã sao chép ${label}!`);
+  };
+
+  if (isTextarea) {
+    return (
+      <div>
+        <Label>{label}</Label>
+        <div className="relative mt-1">
+          <Textarea
+            readOnly
+            value={value}
+            rows={4}
+            className="bg-slate-50 pr-10"
+          />
+          <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => handleCopy(value)}>
+            <Copy className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <Label>{label}</Label>
