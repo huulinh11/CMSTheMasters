@@ -23,6 +23,7 @@ import { Filter, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import React from "react";
+import { cn } from "@/lib/utils";
 
 interface TaskFilterSheetProps {
   filters: Record<string, string>;
@@ -34,19 +35,27 @@ interface TaskFilterSheetProps {
 const filterOptions = [
   { value: 'all', label: 'Tất cả' },
   { value: 'completed', label: 'Hoàn thành' },
-  { value: 'not_completed', label: 'Chưa hoàn thành' },
+  { value: 'not_completed', label: 'Chưa' },
 ];
 
 const FilterGrid = ({ filters, onFilterChange, allTasks }: Omit<TaskFilterSheetProps, 'onClearFilters'>) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
     {allTasks.map((taskName) => (
-      <div key={taskName} className="space-y-2">
-        <Label>{taskName}</Label>
+      <div key={taskName} className="flex items-center justify-between">
+        <Label
+          htmlFor={`select-${taskName}`}
+          className={cn(
+            "text-sm font-medium truncate pr-4",
+            filters[taskName] && filters[taskName] !== 'all' && "text-green-600"
+          )}
+        >
+          {taskName}
+        </Label>
         <Select
           value={filters[taskName] || 'all'}
           onValueChange={(value) => onFilterChange(taskName, value)}
         >
-          <SelectTrigger>
+          <SelectTrigger id={`select-${taskName}`} className="w-[150px] flex-shrink-0">
             <SelectValue placeholder="Chọn trạng thái" />
           </SelectTrigger>
           <SelectContent>
@@ -75,7 +84,7 @@ export const TaskFilterSheet = (props: TaskFilterSheetProps) => {
     return (
       <Sheet>
         <SheetTrigger asChild>{triggerButton}</SheetTrigger>
-        <SheetContent className="p-0 flex flex-col">
+        <SheetContent className="p-0 flex flex-col w-5/6">
           <SheetHeader className="p-4 border-b">
             <div className="flex justify-between items-center">
               <SheetTitle>Bộ lọc tác vụ</SheetTitle>
@@ -98,7 +107,7 @@ export const TaskFilterSheet = (props: TaskFilterSheetProps) => {
   return (
     <Popover>
       <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
-      <PopoverContent className="w-[700px] p-0">
+      <PopoverContent className="w-[800px] p-0">
         <div className="p-4 border-b flex justify-between items-center">
           <h4 className="font-medium leading-none">Bộ lọc tác vụ</h4>
           <Button variant="ghost" size="sm" onClick={props.onClearFilters}>
