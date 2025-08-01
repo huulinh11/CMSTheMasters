@@ -22,7 +22,10 @@ export default function VipMediaBenefitsTab() {
     queryFn: async () => {
       const { data, error } = await supabase.from('vip_guests').select('*').order('created_at', { ascending: false });
       if (error) throw new Error(error.message);
-      return data || [];
+      return (data || []).map((item: any) => ({
+        ...item,
+        secondaryInfo: item.secondary_info,
+      }));
     }
   });
 
