@@ -82,7 +82,9 @@ export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEditLink,
                 {showPostEventNews && (
                   <TableCell>
                     {(guest.role === 'VIP' || guest.role === 'V-Vip') && (
-                      <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
+                      <button onClick={() => onEditComplexBenefit(guest, 'post_event_news')} className="w-full h-full">
+                        <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} benefitType="post_event_news" />
+                      </button>
                     )}
                   </TableCell>
                 )}

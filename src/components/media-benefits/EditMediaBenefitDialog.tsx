@@ -70,14 +70,14 @@ const NewsEditor = ({ items, setItems }: { items: NewsItem[], setItems: (items: 
     <div className="space-y-4">
       {items.map((item, index) => (
         <div key={item.id} className="space-y-2 p-3 border rounded-md relative">
-          <Label>Bài báo {index + 1}</Label>
+          <Label>Bài {index + 1}</Label>
           <InputWithCopy
-            placeholder="Link bài viết"
+            placeholder="Link nháp"
             value={item.article_link}
             onChange={(e) => updateNewsItem(item.id, 'article_link', e.target.value)}
           />
           <InputWithCopy
-            placeholder="Link bài đăng"
+            placeholder="Link final"
             value={item.post_link}
             onChange={(e) => updateNewsItem(item.id, 'post_link', e.target.value)}
           />
@@ -87,7 +87,7 @@ const NewsEditor = ({ items, setItems }: { items: NewsItem[], setItems: (items: 
         </div>
       ))}
       <Button variant="outline" onClick={addNewsItem}>
-        <PlusCircle className="mr-2 h-4 w-4" /> Thêm bài báo
+        <PlusCircle className="mr-2 h-4 w-4" /> Thêm bài
       </Button>
     </div>
   );
@@ -97,17 +97,17 @@ const VideoEditor = ({ video, setVideo }: { video: NewsVideo, setVideo: (video: 
   return (
     <div className="space-y-4">
       <div>
-        <Label>Link kịch bản</Label>
+        <Label>Link nháp</Label>
         <InputWithCopy
-          placeholder="Link kịch bản"
+          placeholder="Link nháp"
           value={video.script_link}
           onChange={(e) => setVideo({ ...video, script_link: e.target.value })}
         />
       </div>
       <div>
-        <Label>Link video</Label>
+        <Label>Link final</Label>
         <InputWithCopy
-          placeholder="Link video"
+          placeholder="Link final"
           value={video.video_link}
           onChange={(e) => setVideo({ ...video, video_link: e.target.value })}
         />

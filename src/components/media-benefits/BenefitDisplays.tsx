@@ -33,7 +33,7 @@ export const LinkDisplay = ({ link, onClick }: { link?: string | null, onClick: 
   );
 };
 
-const LinkItem = ({ link }: { link: string }) => (
+const FinalLinkItem = ({ link }: { link: string }) => (
   <div className="flex items-center gap-1">
     <a href={link} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-blue-600 hover:underline text-sm font-medium">
       Link
@@ -57,48 +57,37 @@ const LinkItem = ({ link }: { link: string }) => (
 interface ComplexBenefitDisplayProps {
   data: NewsItem[] | NewsVideo | null | undefined;
   benefitType: 'pre_event_news' | 'post_event_news' | 'news_video';
-  onClick: () => void;
 }
 
-export const ComplexBenefitDisplay = ({ data, benefitType, onClick }: ComplexBenefitDisplayProps) => {
-  const renderContent = () => {
-    if (!data) {
-      return <PlusCircle className="h-4 w-4 text-slate-500" />;
-    }
+export const ComplexBenefitDisplay = ({ data, benefitType }: ComplexBenefitDisplayProps) => {
+  let hasDraftLink = false;
+  let finalLinks: string[] = [];
 
-    if (benefitType === 'news_video') {
-      const videoData = data as NewsVideo;
-      if (!videoData.script_link && !videoData.video_link) {
-        return <PlusCircle className="h-4 w-4 text-slate-500" />;
-      }
-      return (
-        <div className="flex flex-col gap-1 items-start">
-          {videoData.script_link && <LinkItem link={videoData.script_link} />}
-          {videoData.video_link && <LinkItem link={videoData.video_link} />}
-        </div>
-      );
-    }
-
+  if (benefitType === 'news_video') {
+    const videoData = data as NewsVideo;
+    if (videoData?.script_link) hasDraftLink = true;
+    if (videoData?.video_link) finalLinks.push(videoData.video_link);
+  } else {
     const newsData = data as NewsItem[];
-    if (newsData.length === 0 || newsData.every(item => !item.article_link && !item.post_link)) {
-      return <PlusCircle className="h-4 w-4 text-slate-500" />;
+    if (newsData?.length > 0) {
+      if (newsData.some(item => item.article_link)) hasDraftLink = true;
+      newsData.forEach(item => {
+        if (item.post_link) finalLinks.push(item.post_link);
+      });
     }
-
-    return (
-      <div className="flex flex-col gap-1 items-start">
-        {newsData.map((item, index) => (
-          <React.Fragment key={item.id || index}>
-            {item.article_link && <LinkItem link={item.article_link} />}
-            {item.post_link && <LinkItem link={item.post_link} />}
-          </React.Fragment>
-        ))}
-      </div>
-    );
-  };
+  }
 
   return (
-    <button onClick={onClick} className="w-full h-full flex items-start p-2 -m-2">
-      {renderContent()}
-    </button>
+    <div className="flex flex-col items-start gap-1">
+      {hasDraftLink && (
+        <span className="bg-slate-100 text-slate-800 text-xs font-medium px-2 py-1 rounded-md">
+          Bài
+        </span>
+      )}
+      
+      {finalLinks.map((link, index) => (
+        <FinalLinkItem key={index} link={link} />
+      ))}
+    </div>
   );
 };
