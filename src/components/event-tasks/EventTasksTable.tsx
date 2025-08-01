@@ -13,7 +13,7 @@ import { TaskChecklistPopover } from "./TaskChecklistPopover";
 
 interface EventTasksTableProps {
   guests: TaskGuest[];
-  onTaskChange: (guestId: string, taskName: string, isCompleted: boolean) => void;
+  onTaskChange: (payload: { guestId: string; taskName: string; isCompleted: boolean; }) => void;
   onViewDetails: (guest: TaskGuest) => void;
 }
 

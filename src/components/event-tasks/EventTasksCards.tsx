@@ -1,13 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { TaskGuest } from "@/types/event-task";
 import { TaskChecklistPopover } from "./TaskChecklistPopover";
-import { Phone } from "lucide-react";
+import { Phone, Camera } from "lucide-react";
 
 interface EventTasksCardsProps {
   guests: TaskGuest[];
-  onTaskChange: (guestId: string, taskName: string, isCompleted: boolean) => void;
+  onTaskChange: (payload: { guestId: string; taskName: string; isCompleted: boolean; }) => void;
   onViewDetails: (guest: TaskGuest) => void;
 }
 
@@ -16,29 +15,34 @@ export const EventTasksCards = ({ guests, onTaskChange, onViewDetails }: EventTa
     <div className="space-y-4">
       {guests.length > 0 ? (
         guests.map((guest) => (
-          <Card key={guest.id} className="bg-white shadow-sm">
-            <CardHeader className="flex flex-row items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={guest.image_url} alt={guest.name} />
-                <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <CardTitle>{guest.name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{guest.role}</p>
-                <p className="text-sm text-muted-foreground">{guest.id}</p>
+          <Card key={guest.id} className="bg-white shadow-sm overflow-hidden">
+            <div className="flex">
+              <div className="w-1/3 flex-shrink-0">
+                <button className="w-full h-full aspect-[3/4] bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center">
+                  {guest.image_url ? (
+                    <img src={guest.image_url} alt={guest.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Camera className="h-8 w-8 text-slate-400" />
+                  )}
+                </button>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {guest.secondaryInfo && <p className="text-sm">{guest.secondaryInfo}</p>}
-              <div className="flex items-center text-sm">
-                <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>{guest.phone}</span>
+              <div className="w-2/3 p-3 flex flex-col justify-between">
+                <div>
+                  <CardTitle className="text-base font-bold leading-tight">{guest.name}</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">{guest.role}</p>
+                  <p className="text-xs text-muted-foreground">{guest.id}</p>
+                  {guest.secondaryInfo && <p className="text-xs mt-1 text-slate-600">{guest.secondaryInfo}</p>}
+                  <div className="flex items-center text-xs mt-1">
+                    <Phone className="mr-1.5 h-3 w-3 text-muted-foreground" />
+                    <span>{guest.phone}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <TaskChecklistPopover guest={guest} onTaskChange={onTaskChange} />
+                  <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => onViewDetails(guest)}>Xem chi tiết</Button>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <TaskChecklistPopover guest={guest} onTaskChange={onTaskChange} />
-                <Button variant="link" onClick={() => onViewDetails(guest)}>Xem chi tiết</Button>
-              </div>
-            </CardContent>
+            </div>
           </Card>
         ))
       ) : (
