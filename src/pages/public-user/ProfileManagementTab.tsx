@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VipGuest } from "@/types/vip-guest";
 import { Guest } from "@/types/guest";
@@ -8,15 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Copy, Edit } from "lucide-react";
-import { showSuccess } from "@/utils/toast";
+import { showSuccess, showError } from "@/utils/toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ProfileManagementCards } from "@/components/public-user/ProfileManagementCards";
+import { generateGuestSlug } from "@/lib/slug";
 
 type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời' };
 
 const ProfileManagementTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
@@ -35,6 +37,43 @@ const ProfileManagementTab = () => {
       return data || [];
     }
   });
+
+  const backfillSlugsMutation = useMutation({
+    mutationFn: async ({ vipUpdates, regularUpdates }: { vipUpdates: { id: string, slug: string }[], regularUpdates: { id: string, slug: string }[] }) => {
+      if (vipUpdates.length > 0) {
+        const { error } = await supabase.from('vip_guests').upsert(vipUpdates);
+        if (error) throw new Error(`Lỗi cập nhật khách chức vụ: ${error.message}`);
+      }
+      if (regularUpdates.length > 0) {
+        const { error } = await supabase.from('guests').upsert(regularUpdates);
+        if (error) throw new Error(`Lỗi cập nhật khách mời: ${error.message}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      showSuccess("Đã tạo link public cho các khách mời!");
+    },
+    onError: (error: Error) => {
+      showError(error.message);
+    }
+  });
+
+  useEffect(() => {
+    if (!isLoadingVip && !isLoadingRegular && !backfillSlugsMutation.isPending) {
+      const vipGuestsToUpdate = vipGuests
+        .filter(g => !g.slug)
+        .map(g => ({ id: g.id, slug: generateGuestSlug(g.name) }));
+
+      const regularGuestsToUpdate = regularGuests
+        .filter(g => !g.slug)
+        .map(g => ({ id: g.id, slug: generateGuestSlug(g.name) }));
+
+      if (vipGuestsToUpdate.length > 0 || regularGuestsToUpdate.length > 0) {
+        backfillSlugsMutation.mutate({ vipUpdates: vipGuestsToUpdate, regularUpdates: regularGuestsToUpdate });
+      }
+    }
+  }, [vipGuests, regularGuests, isLoadingVip, isLoadingRegular, backfillSlugsMutation]);
 
   const allGuests = useMemo((): CombinedGuest[] => {
     const combined = [
@@ -64,10 +103,6 @@ const ProfileManagementTab = () => {
 
   const isLoading = isLoadingVip || isLoadingRegular;
 
-  if (isLoading) {
-    return <Skeleton className="h-96 w-full" />;
-  }
-
   return (
     <div className="space-y-4">
       <Input
@@ -76,7 +111,9 @@ const ProfileManagementTab = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="max-w-sm"
       />
-      {isMobile ? (
+      {isLoading || backfillSlugsMutation.isPending ? (
+        <Skeleton className="h-96 w-full" />
+      ) : isMobile ? (
         <ProfileManagementCards 
           guests={filteredGuests}
           onCopyLink={handleCopyLink}
@@ -100,7 +137,7 @@ const ProfileManagementTab = () => {
                     <TableCell className="font-medium">{guest.name}</TableCell>
                     <TableCell>{guest.role}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {guest.slug ? `/profile/${guest.slug}` : "Chưa có"}
+                      {guest.slug ? `/profile/${guest.slug}` : "Đang tạo..."}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       {guest.slug && (

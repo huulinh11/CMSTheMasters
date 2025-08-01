@@ -7,8 +7,14 @@ import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { useMemo } from "react";
 
+// Define explicit types for content blocks
+type ImageBlock = { type: 'image'; imageUrl: string; linkUrl?: string };
+type VideoBlock = { type: 'video'; videoUrl: string };
+type TextBlock = { type: 'text'; text: string; backgroundImageUrl: string; isGuestName?: boolean };
+type ContentBlock = ImageBlock | VideoBlock | TextBlock;
+
 // Mock data for a content block
-const mockContentBlocks = [
+const mockContentBlocks: ContentBlock[] = [
   { type: 'image', imageUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=2787&auto=format&fit=crop', linkUrl: 'https://example.com' },
   { type: 'video', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
   { type: 'text', text: 'Welcome to my public profile!', backgroundImageUrl: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2929&auto=format&fit=crop' },
@@ -40,12 +46,13 @@ const PublicProfile = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   }
 
-  const contentBlocks = useMemo(() => {
+  const contentBlocks: ContentBlock[] = useMemo(() => {
     if (!guest) return mockContentBlocks;
     // Insert guest name as the first text block
+    const guestNameBlock: TextBlock = { type: 'text', text: guest.name, backgroundImageUrl: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2929&auto=format&fit=crop', isGuestName: true };
     return [
       ...mockContentBlocks.slice(0, 2),
-      { type: 'text', text: guest.name, backgroundImageUrl: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2929&auto=format&fit=crop', isGuestName: true },
+      guestNameBlock,
       ...mockContentBlocks.slice(2)
     ];
   }, [guest]);

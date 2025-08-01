@@ -27,7 +27,7 @@ export const ProfileManagementCards = ({ guests, onCopyLink, onEdit }: ProfileMa
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500">Link Public</span>
                   <span className="font-medium text-slate-800 truncate max-w-[150px]">
-                    {guest.slug ? `/profile/...` : "Chưa có"}
+                    {guest.slug ? `/profile/${guest.slug.substring(0, 15)}...` : "Chưa có"}
                   </span>
                 </div>
               </div>
