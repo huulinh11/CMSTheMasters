@@ -13,6 +13,7 @@ import {
   Settings,
   ChevronRight,
   Megaphone,
+  Globe,
 } from "lucide-react";
 import {
   Sheet,
@@ -33,6 +34,7 @@ const moreLinks = [
   { to: "/information", icon: Info, label: "Thông tin" },
   { to: "/revenue", icon: CircleDollarSign, label: "Doanh thu" },
   { to: "/timeline", icon: CalendarClock, label: "Timeline" },
+  { to: "/public-user", icon: Globe, label: "Public User" },
   { to: "/account", icon: UserCircle, label: "Tài khoản" },
   { to: "/settings", icon: Settings, label: "Cấu hình" },
 ];
@@ -47,7 +49,7 @@ const BottomNav = () => {
     }
   }, [location.pathname]);
 
-  const isMorePageActive = moreLinks.some(link => location.pathname === link.to);
+  const isMorePageActive = moreLinks.some(link => location.pathname.startsWith(link.to));
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:hidden">

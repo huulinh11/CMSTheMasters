@@ -8,6 +8,7 @@ import {
   ChevronRight,
   LucideIcon,
   Megaphone,
+  Globe,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -16,6 +17,7 @@ const moreLinks = [
   { to: "/information", icon: Info, label: "Thông tin" },
   { to: "/revenue", icon: CircleDollarSign, label: "Doanh thu" },
   { to: "/timeline", icon: CalendarClock, label: "Timeline" },
+  { to: "/public-user", icon: Globe, label: "Public User" },
   { to: "/account", icon: UserCircle, label: "Tài khoản" },
   { to: "/settings", icon: Settings, label: "Cấu hình" },
 ];
