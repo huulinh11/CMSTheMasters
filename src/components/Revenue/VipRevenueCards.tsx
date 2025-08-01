@@ -9,7 +9,7 @@ import {
 import { MoreVertical, Edit, History } from "lucide-react";
 import { VipGuestRevenue } from "@/types/vip-guest-revenue";
 import { formatCurrency } from "@/lib/utils";
-import { VIP_ROLE_COLORS } from "@/lib/role-colors";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 interface VipRevenueCardsProps {
   guests: VipGuestRevenue[];
@@ -17,6 +17,7 @@ interface VipRevenueCardsProps {
   onHistory: (guest: VipGuestRevenue) => void;
   onEdit: (guest: VipGuestRevenue) => void;
   onView: (guest: VipGuestRevenue) => void;
+  roleConfigs: RoleConfiguration[];
 }
 
 export const VipRevenueCards = ({
@@ -25,7 +26,17 @@ export const VipRevenueCards = ({
   onHistory,
   onEdit,
   onView,
+  roleConfigs,
 }: VipRevenueCardsProps) => {
+
+  const getRoleColors = (roleName: string) => {
+    const config = roleConfigs.find(rc => rc.name === roleName);
+    return {
+      backgroundColor: config?.bg_color || '#EFF6FF',
+      color: config?.text_color || '#1E40AF',
+    };
+  };
+
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
@@ -53,7 +64,10 @@ export const VipRevenueCards = ({
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="flex items-center text-sm">
-                <span className={`px-2 py-1 rounded-md font-medium ${VIP_ROLE_COLORS[guest.role as keyof typeof VIP_ROLE_COLORS]}`}>
+                <span 
+                  className="px-2 py-1 rounded-md font-medium"
+                  style={getRoleColors(guest.role)}
+                >
                   {guest.role}
                 </span>
                 <span className="text-slate-500 ml-1.5">({guest.id})</span>

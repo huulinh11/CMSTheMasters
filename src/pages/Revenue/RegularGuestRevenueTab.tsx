@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { GuestRevenue } from "@/types/guest-revenue";
-import { GUEST_ROLES } from "@/types/guest";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +21,7 @@ import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog"
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ViewGuestSheet } from "@/components/guests/ViewGuestSheet";
 import { Guest } from "@/types/guest";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 const RegularGuestRevenueTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,7 +33,7 @@ const RegularGuestRevenueTab = () => {
   const [viewingGuest, setViewingGuest] = useState<GuestRevenue | null>(null);
   const isMobile = useIsMobile();
 
-  const { data: guests = [], isLoading } = useQuery<GuestRevenue[]>({
+  const { data: guests = [], isLoading: isLoadingGuests } = useQuery<GuestRevenue[]>({
     queryKey: ['guest_revenue'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_guest_revenue_details');
@@ -51,6 +51,15 @@ const RegularGuestRevenueTab = () => {
           commission: 0, // Placeholder
         };
       });
+    }
+  });
+
+  const { data: roleConfigs = [], isLoading: isLoadingRoles } = useQuery<RoleConfiguration[]>({
+    queryKey: ['role_configurations', 'Khách mời'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('role_configurations').select('*').eq('type', 'Khách mời');
+      if (error) throw new Error(error.message);
+      return data || [];
     }
   });
 
@@ -74,6 +83,8 @@ const RegularGuestRevenueTab = () => {
     setEditingGuest(guest);
   };
 
+  const isLoading = isLoadingGuests || isLoadingRoles;
+
   return (
     <div className="space-y-4">
       <RegularRevenueStats guests={filteredGuests} />
@@ -92,17 +103,17 @@ const RegularGuestRevenueTab = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {GUEST_ROLES.map((role) => (
+            {roleConfigs.map((role) => (
               <DropdownMenuCheckboxItem
-                key={role}
-                checked={roleFilters.includes(role)}
+                key={role.id}
+                checked={roleFilters.includes(role.name)}
                 onCheckedChange={(checked) => {
                   setRoleFilters(
-                    checked ? [...roleFilters, role] : roleFilters.filter((r) => r !== role)
+                    checked ? [...roleFilters, role.name] : roleFilters.filter((r) => r !== role.name)
                   );
                 }}
               >
-                {role}
+                {role.name}
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
@@ -119,6 +130,7 @@ const RegularGuestRevenueTab = () => {
           onEdit={handleOpenEditDialog}
           onUpsale={handleOpenUpsaleDialog}
           onView={setViewingGuest}
+          roleConfigs={roleConfigs}
         />
       ) : (
         <RegularRevenueTable
@@ -128,6 +140,7 @@ const RegularGuestRevenueTab = () => {
           onEdit={handleOpenEditDialog}
           onUpsale={handleOpenUpsaleDialog}
           onView={setViewingGuest}
+          roleConfigs={roleConfigs}
         />
       )}
 
@@ -152,6 +165,7 @@ const RegularGuestRevenueTab = () => {
         open={!!viewingGuest}
         onOpenChange={(open) => !open && setViewingGuest(null)}
         onEdit={() => { /* No edit from this view */}}
+        roleConfigs={roleConfigs}
       />
     </div>
   );

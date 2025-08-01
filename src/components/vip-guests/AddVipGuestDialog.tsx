@@ -47,11 +47,12 @@ import {
 } from "@/components/ui/command";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { VipGuest, VipGuestFormValues, vipGuestFormSchema, ROLES } from "@/types/vip-guest";
-import { useEffect, useState } from "react";
+import { VipGuest, VipGuestFormValues, vipGuestFormSchema } from "@/types/vip-guest";
+import { useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 interface AddVipGuestDialogProps {
   open: boolean;
@@ -59,9 +60,10 @@ interface AddVipGuestDialogProps {
   onSubmit: (values: VipGuestFormValues) => void;
   defaultValues?: VipGuest | null;
   allGuests: VipGuest[];
+  roleConfigs: RoleConfiguration[];
 }
 
-const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests }: { className?: string, onSubmit: (values: VipGuestFormValues) => void, defaultValues?: VipGuest | null, allGuests: VipGuest[] }) => {
+const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfigs }: { className?: string, onSubmit: (values: VipGuestFormValues) => void, defaultValues?: VipGuest | null, allGuests: VipGuest[], roleConfigs: RoleConfiguration[] }) => {
   const form = useForm<VipGuestFormValues>({
     resolver: zodResolver(vipGuestFormSchema),
     defaultValues: defaultValues || {},
@@ -113,9 +115,9 @@ const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests }: { class
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {ROLES.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role}
+                  {roleConfigs.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -247,6 +249,7 @@ export const AddVipGuestDialog = ({
   onSubmit,
   defaultValues,
   allGuests,
+  roleConfigs,
 }: AddVipGuestDialogProps) => {
   const isMobile = useIsMobile();
   
@@ -266,7 +269,7 @@ export const AddVipGuestDialog = ({
             <DrawerTitle>{title}</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
           </DrawerHeader>
-          <VipGuestForm className="px-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} />
+          <VipGuestForm className="px-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
           <DrawerFooter className="pt-2">
             <DrawerClose asChild>
               <Button variant="outline">Hủy</Button>
@@ -284,7 +287,7 @@ export const AddVipGuestDialog = ({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <VipGuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} />
+        <VipGuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
       </DialogContent>
     </Dialog>
   );

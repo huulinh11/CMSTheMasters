@@ -26,7 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { GuestFormValues, guestFormSchema, GUEST_ROLES } from "@/types/guest";
+import { GuestFormValues, guestFormSchema } from "@/types/guest";
 import { useEffect } from "react";
 import {
   Popover,
@@ -43,6 +43,7 @@ import {
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VipGuest } from "@/types/vip-guest";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 interface AddGuestDialogProps {
   open: boolean;
@@ -50,6 +51,7 @@ interface AddGuestDialogProps {
   onSubmit: (values: GuestFormValues) => void;
   defaultValues?: GuestFormValues | null;
   allVipGuests: VipGuest[];
+  roleConfigs: RoleConfiguration[];
 }
 
 export const AddGuestDialog = ({
@@ -58,6 +60,7 @@ export const AddGuestDialog = ({
   onSubmit,
   defaultValues,
   allVipGuests,
+  roleConfigs,
 }: AddGuestDialogProps) => {
   const form = useForm<GuestFormValues>({
     resolver: zodResolver(guestFormSchema),
@@ -121,9 +124,9 @@ export const AddGuestDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {GUEST_ROLES.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role}
+                      {roleConfigs.map((role) => (
+                        <SelectItem key={role.id} value={role.name}>
+                          {role.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

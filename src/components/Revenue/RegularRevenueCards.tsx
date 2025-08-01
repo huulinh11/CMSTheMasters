@@ -9,8 +9,8 @@ import {
 import { MoreVertical, Edit, History, TrendingUp } from "lucide-react";
 import { GuestRevenue } from "@/types/guest-revenue";
 import { formatCurrency } from "@/lib/utils";
-import { GUEST_ROLE_COLORS } from "@/lib/role-colors";
 import { cn } from "@/lib/utils";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 interface RegularRevenueCardsProps {
   guests: GuestRevenue[];
@@ -19,6 +19,7 @@ interface RegularRevenueCardsProps {
   onEdit: (guest: GuestRevenue) => void;
   onUpsale: (guest: GuestRevenue) => void;
   onView: (guest: GuestRevenue) => void;
+  roleConfigs: RoleConfiguration[];
 }
 
 export const RegularRevenueCards = ({
@@ -28,7 +29,17 @@ export const RegularRevenueCards = ({
   onEdit,
   onUpsale,
   onView,
+  roleConfigs,
 }: RegularRevenueCardsProps) => {
+
+  const getRoleColors = (roleName: string) => {
+    const config = roleConfigs.find(rc => rc.name === roleName);
+    return {
+      backgroundColor: config?.bg_color || '#EFF6FF',
+      color: config?.text_color || '#1E40AF',
+    };
+  };
+
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
@@ -56,7 +67,10 @@ export const RegularRevenueCards = ({
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="flex items-center text-sm">
-                <span className={`px-2 py-1 rounded-md font-medium ${GUEST_ROLE_COLORS[guest.role as keyof typeof GUEST_ROLE_COLORS]}`}>
+                <span 
+                  className="px-2 py-1 rounded-md font-medium"
+                  style={getRoleColors(guest.role)}
+                >
                   {guest.role}
                 </span>
                 <span className="text-slate-500 ml-1.5">({guest.id})</span>

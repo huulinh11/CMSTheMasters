@@ -32,6 +32,7 @@ export const RoleConfigTable = ({ roles, onEdit, onDelete }: RoleConfigTableProp
             <TableHead>Tên vai trò</TableHead>
             <TableHead>Loại vai trò</TableHead>
             <TableHead>Số tiền tài trợ</TableHead>
+            <TableHead>Màu sắc</TableHead>
             <TableHead className="text-right">Tác vụ</TableHead>
           </TableRow>
         </TableHeader>
@@ -42,6 +43,14 @@ export const RoleConfigTable = ({ roles, onEdit, onDelete }: RoleConfigTableProp
                 <TableCell className="font-semibold text-slate-800">{role.name}</TableCell>
                 <TableCell>{role.type}</TableCell>
                 <TableCell>{formatCurrency(role.sponsorship_amount)}</TableCell>
+                <TableCell>
+                  <span
+                    className="px-2 py-1 rounded-md text-xs font-medium"
+                    style={{ backgroundColor: role.bg_color, color: role.text_color }}
+                  >
+                    Xem trước
+                  </span>
+                </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -66,7 +75,7 @@ export const RoleConfigTable = ({ roles, onEdit, onDelete }: RoleConfigTableProp
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={4} className="h-24 text-center">
+              <TableCell colSpan={5} className="h-24 text-center">
                 Chưa có vai trò nào được cấu hình.
               </TableCell>
             </TableRow>

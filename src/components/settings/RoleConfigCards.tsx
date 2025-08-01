@@ -45,6 +45,15 @@ export const RoleConfigCards = ({ roles, onEdit, onDelete }: RoleConfigCardsProp
             <CardContent className="space-y-3 pt-2">
               <InfoRow label="Loại vai trò" value={role.type} />
               <InfoRow label="Tiền tài trợ" value={formatCurrency(role.sponsorship_amount)} />
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500">Màu sắc</span>
+                <span
+                  className="px-2 py-1 rounded-md text-xs font-medium"
+                  style={{ backgroundColor: role.bg_color, color: role.text_color }}
+                >
+                  Xem trước
+                </span>
+              </div>
             </CardContent>
           </Card>
         ))

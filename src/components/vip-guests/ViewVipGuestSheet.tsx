@@ -18,13 +18,14 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { VipGuest } from "@/types/vip-guest";
 import { Phone, User, Info, FileText, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { VIP_ROLE_COLORS } from "@/lib/role-colors";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 interface ViewVipGuestSheetProps {
   guest: VipGuest | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit?: (guest: VipGuest) => void;
+  roleConfigs: RoleConfiguration[];
 }
 
 const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value?: string }) => {
@@ -49,15 +50,26 @@ const GuestDetails = ({ guest }: { guest: VipGuest }) => (
   </div>
 );
 
-export const ViewVipGuestSheet = ({ guest, open, onOpenChange, onEdit }: ViewVipGuestSheetProps) => {
+export const ViewVipGuestSheet = ({ guest, open, onOpenChange, onEdit, roleConfigs }: ViewVipGuestSheetProps) => {
   const isMobile = useIsMobile();
 
   if (!guest) return null;
 
+  const getRoleColors = (roleName: string) => {
+    const config = roleConfigs.find(rc => rc.name === roleName);
+    return {
+      backgroundColor: config?.bg_color || '#EFF6FF',
+      color: config?.text_color || '#1E40AF',
+    };
+  };
+
   const title = guest.name;
   const descriptionComponent = (
     <div className="flex items-center mt-1">
-      <span className={`px-2 py-1 rounded-md text-sm font-medium ${VIP_ROLE_COLORS[guest.role]}`}>
+      <span 
+        className="px-2 py-1 rounded-md text-sm font-medium"
+        style={getRoleColors(guest.role)}
+      >
         {guest.role}
       </span>
       <span className="text-slate-500 ml-1.5">({guest.id})</span>

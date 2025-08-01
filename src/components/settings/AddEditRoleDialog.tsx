@@ -38,17 +38,23 @@ interface AddEditRoleDialogProps {
 export const AddEditRoleDialog = ({ open, onOpenChange, onSubmit, defaultValues }: AddEditRoleDialogProps) => {
   const form = useForm<RoleConfigFormValues>({
     resolver: zodResolver(roleConfigSchema),
+    defaultValues: {
+      bg_color: "#EFF6FF",
+      text_color: "#1E40AF",
+    }
   });
 
   const [formattedAmount, setFormattedAmount] = useState("0");
 
   useEffect(() => {
-    if (defaultValues) {
-      form.reset(defaultValues);
-      setFormattedAmount(new Intl.NumberFormat('vi-VN').format(defaultValues.sponsorship_amount));
-    } else {
-      form.reset({ name: "", type: undefined, sponsorship_amount: 0 });
-      setFormattedAmount("0");
+    if (open) {
+      if (defaultValues) {
+        form.reset(defaultValues);
+        setFormattedAmount(new Intl.NumberFormat('vi-VN').format(defaultValues.sponsorship_amount));
+      } else {
+        form.reset({ name: "", type: undefined, sponsorship_amount: 0, bg_color: "#EFF6FF", text_color: "#1E40AF" });
+        setFormattedAmount("0");
+      }
     }
   }, [defaultValues, form, open]);
 
@@ -129,6 +135,34 @@ export const AddEditRoleDialog = ({ open, onOpenChange, onSubmit, defaultValues 
                 </FormItem>
               )}
             />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="bg_color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Màu nền</FormLabel>
+                    <FormControl>
+                      <Input type="color" {...field} className="p-1 h-10 w-full" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="text_color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Màu chữ</FormLabel>
+                    <FormControl>
+                      <Input type="color" {...field} className="p-1 h-10 w-full" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Hủy

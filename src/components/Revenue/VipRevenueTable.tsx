@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 interface VipRevenueTableProps {
   guests: VipGuestRevenue[];
@@ -23,9 +24,19 @@ interface VipRevenueTableProps {
   onHistory: (guest: VipGuestRevenue) => void;
   onEdit: (guest: VipGuestRevenue) => void;
   onView: (guest: VipGuestRevenue) => void;
+  roleConfigs: RoleConfiguration[];
 }
 
-const VipRevenueTable = ({ guests, onPay, onHistory, onEdit, onView }: VipRevenueTableProps) => {
+const VipRevenueTable = ({ guests, onPay, onHistory, onEdit, onView, roleConfigs }: VipRevenueTableProps) => {
+
+  const getRoleColors = (roleName: string) => {
+    const config = roleConfigs.find(rc => rc.name === roleName);
+    return {
+      backgroundColor: config?.bg_color || '#EFF6FF',
+      color: config?.text_color || '#1E40AF',
+    };
+  };
+
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -52,7 +63,14 @@ const VipRevenueTable = ({ guests, onPay, onHistory, onEdit, onView }: VipRevenu
                     {guest.name}
                   </button>
                 </TableCell>
-                <TableCell>{guest.role}</TableCell>
+                <TableCell>
+                  <span 
+                    className="px-2 py-1 rounded-md text-xs font-medium"
+                    style={getRoleColors(guest.role)}
+                  >
+                    {guest.role}
+                  </span>
+                </TableCell>
                 <TableCell>{formatCurrency(guest.sponsorship)}</TableCell>
                 <TableCell className="text-green-600">{formatCurrency(guest.paid)}</TableCell>
                 <TableCell className="text-red-600">{formatCurrency(guest.unpaid)}</TableCell>

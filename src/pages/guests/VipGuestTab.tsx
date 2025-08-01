@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { VipGuest, VipGuestFormValues, ROLES, Role } from "@/types/vip-guest";
+import { VipGuest, VipGuestFormValues } from "@/types/vip-guest";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,7 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleConfiguration } from "@/types/role-configuration";
 
-const generateId = (role: Role, existingGuests: VipGuest[]): string => {
+const generateId = (role: string, existingGuests: VipGuest[]): string => {
     const prefixMap: Record<string, string> = {
         "Prime Speaker": "PS", "Guest Speaker": "GS", "Mentor kiến tạo": "ME", "Phó BTC": "PB",
         "Đại sứ": "DS", "Cố vấn": "CV", "Giám đốc": "GD", "Nhà tài trợ": "NT"
@@ -42,7 +42,7 @@ const VipGuestTab = () => {
   const [viewingGuest, setViewingGuest] = useState<VipGuest | null>(null);
   const isMobile = useIsMobile();
 
-  const { data: guests = [], isLoading } = useQuery<VipGuest[]>({
+  const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
     queryFn: async () => {
       const { data, error } = await supabase.from('vip_guests').select('*').order('created_at', { ascending: false });
@@ -54,7 +54,7 @@ const VipGuestTab = () => {
     }
   });
 
-  const { data: roleConfigs = [] } = useQuery<RoleConfiguration[]>({
+  const { data: roleConfigs = [], isLoading: isLoadingRoles } = useQuery<RoleConfiguration[]>({
     queryKey: ['role_configurations', 'Chức vụ'],
     queryFn: async () => {
       const { data, error } = await supabase.from('role_configurations').select('*').eq('type', 'Chức vụ');
@@ -173,6 +173,8 @@ const VipGuestTab = () => {
     deleteMutation.mutate(selectedGuests);
   };
 
+  const isLoading = isLoadingGuests || isLoadingRoles;
+
   return (
     <div className="space-y-4">
       {isMobile ? (
@@ -214,17 +216,17 @@ const VipGuestTab = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                {ROLES.map((role) => (
+                {roleConfigs.map((role) => (
                   <DropdownMenuCheckboxItem
-                    key={role}
-                    checked={roleFilters.includes(role)}
+                    key={role.id}
+                    checked={roleFilters.includes(role.name)}
                     onCheckedChange={(checked) => {
                       setRoleFilters(
-                        checked ? [...roleFilters, role] : roleFilters.filter((r) => r !== role)
+                        checked ? [...roleFilters, role.name] : roleFilters.filter((r) => r !== role.name)
                       );
                     }}
                   >
-                    {role}
+                    {role.name}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
@@ -263,17 +265,17 @@ const VipGuestTab = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  {ROLES.map((role) => (
+                  {roleConfigs.map((role) => (
                     <DropdownMenuCheckboxItem
-                      key={role}
-                      checked={roleFilters.includes(role)}
+                      key={role.id}
+                      checked={roleFilters.includes(role.name)}
                       onCheckedChange={(checked) => {
                         setRoleFilters(
-                          checked ? [...roleFilters, role] : roleFilters.filter((r) => r !== role)
+                          checked ? [...roleFilters, role.name] : roleFilters.filter((r) => r !== role.name)
                         );
                       }}
                     >
-                      {role}
+                      {role.name}
                     </DropdownMenuCheckboxItem>
                   ))}
                 </DropdownMenuContent>
@@ -304,6 +306,7 @@ const VipGuestTab = () => {
           onEdit={handleOpenEditDialog}
           onDelete={handleDeleteGuest}
           onView={handleViewGuest}
+          roleConfigs={roleConfigs}
         />
       ) : (
         <VipGuestTable
@@ -314,6 +317,7 @@ const VipGuestTab = () => {
           onEdit={handleOpenEditDialog}
           onDelete={handleDeleteGuest}
           onView={handleViewGuest}
+          roleConfigs={roleConfigs}
         />
       )}
 
@@ -323,6 +327,7 @@ const VipGuestTab = () => {
         onSubmit={handleAddOrEditGuest}
         defaultValues={editingGuest}
         allGuests={guests}
+        roleConfigs={roleConfigs}
       />
       
       <ViewVipGuestSheet
@@ -330,6 +335,7 @@ const VipGuestTab = () => {
         open={!!viewingGuest}
         onOpenChange={(open) => !open && setViewingGuest(null)}
         onEdit={handleEditFromView}
+        roleConfigs={roleConfigs}
       />
     </div>
   );

@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 interface RegularRevenueTableProps {
   guests: GuestRevenue[];
@@ -25,9 +26,19 @@ interface RegularRevenueTableProps {
   onEdit: (guest: GuestRevenue) => void;
   onUpsale: (guest: GuestRevenue) => void;
   onView: (guest: GuestRevenue) => void;
+  roleConfigs: RoleConfiguration[];
 }
 
-const RegularRevenueTable = ({ guests, onPay, onHistory, onEdit, onUpsale, onView }: RegularRevenueTableProps) => {
+const RegularRevenueTable = ({ guests, onPay, onHistory, onEdit, onUpsale, onView, roleConfigs }: RegularRevenueTableProps) => {
+  
+  const getRoleColors = (roleName: string) => {
+    const config = roleConfigs.find(rc => rc.name === roleName);
+    return {
+      backgroundColor: config?.bg_color || '#EFF6FF',
+      color: config?.text_color || '#1E40AF',
+    };
+  };
+
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -53,7 +64,14 @@ const RegularRevenueTable = ({ guests, onPay, onHistory, onEdit, onUpsale, onVie
                     {guest.name}
                   </button>
                 </TableCell>
-                <TableCell>{guest.role}</TableCell>
+                <TableCell>
+                  <span 
+                    className="px-2 py-1 rounded-md text-xs font-medium"
+                    style={getRoleColors(guest.role)}
+                  >
+                    {guest.role}
+                  </span>
+                </TableCell>
                 <TableCell className={cn(guest.is_upsaled && "text-red-600 font-bold")}>
                   {formatCurrency(guest.sponsorship)}
                 </TableCell>

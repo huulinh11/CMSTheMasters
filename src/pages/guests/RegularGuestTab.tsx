@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Guest, GuestFormValues, GUEST_ROLES, GuestRole } from "@/types/guest";
+import { Guest, GuestFormValues } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleConfiguration } from "@/types/role-configuration";
 
-const generateId = (role: GuestRole, existingGuests: Guest[]): string => {
+const generateId = (role: string, existingGuests: Guest[]): string => {
     const prefixMap: Record<string, string> = {
         "Khách phổ thông": "KPT", "VIP": "VIP", "V-Vip": "VVP", "Super Vip": "SVP", "Vé trải nghiệm": "VTN"
     };
@@ -42,7 +42,7 @@ const RegularGuestTab = () => {
   const [viewingGuest, setViewingGuest] = useState<Guest | null>(null);
   const isMobile = useIsMobile();
 
-  const { data: guests = [], isLoading } = useQuery<Guest[]>({
+  const { data: guests = [], isLoading: isLoadingGuests } = useQuery<Guest[]>({
     queryKey: ['guests'],
     queryFn: async () => {
       const { data, error } = await supabase.from('guests').select('*').order('created_at', { ascending: false });
@@ -60,7 +60,7 @@ const RegularGuestTab = () => {
     }
   });
 
-  const { data: roleConfigs = [] } = useQuery<RoleConfiguration[]>({
+  const { data: roleConfigs = [], isLoading: isLoadingRoles } = useQuery<RoleConfiguration[]>({
     queryKey: ['role_configurations', 'Khách mời'],
     queryFn: async () => {
       const { data, error } = await supabase.from('role_configurations').select('*').eq('type', 'Khách mời');
@@ -171,6 +171,8 @@ const RegularGuestTab = () => {
     }, 150);
   };
 
+  const isLoading = isLoadingGuests || isLoadingRoles;
+
   return (
     <div className="space-y-4">
       {isMobile ? (
@@ -212,17 +214,17 @@ const RegularGuestTab = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                {GUEST_ROLES.map((role) => (
+                {roleConfigs.map((role) => (
                   <DropdownMenuCheckboxItem
-                    key={role}
-                    checked={roleFilters.includes(role)}
+                    key={role.id}
+                    checked={roleFilters.includes(role.name)}
                     onCheckedChange={(checked) => {
                       setRoleFilters(
-                        checked ? [...roleFilters, role] : roleFilters.filter((r) => r !== role)
+                        checked ? [...roleFilters, role.name] : roleFilters.filter((r) => r !== role.name)
                       );
                     }}
                   >
-                    {role}
+                    {role.name}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
@@ -261,17 +263,17 @@ const RegularGuestTab = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  {GUEST_ROLES.map((role) => (
+                  {roleConfigs.map((role) => (
                     <DropdownMenuCheckboxItem
-                      key={role}
-                      checked={roleFilters.includes(role)}
+                      key={role.id}
+                      checked={roleFilters.includes(role.name)}
                       onCheckedChange={(checked) => {
                         setRoleFilters(
-                          checked ? [...roleFilters, role] : roleFilters.filter((r) => r !== role)
+                          checked ? [...roleFilters, role.name] : roleFilters.filter((r) => r !== role.name)
                         );
                       }}
                     >
-                      {role}
+                      {role.name}
                     </DropdownMenuCheckboxItem>
                   ))}
                 </DropdownMenuContent>
@@ -302,6 +304,7 @@ const RegularGuestTab = () => {
           onEdit={handleOpenEditDialog}
           onDelete={handleDeleteGuest}
           onView={handleViewGuest}
+          roleConfigs={roleConfigs}
         />
       ) : (
         <GuestTable
@@ -312,6 +315,7 @@ const RegularGuestTab = () => {
           onEdit={handleOpenEditDialog}
           onDelete={handleDeleteGuest}
           onView={handleViewGuest}
+          roleConfigs={roleConfigs}
         />
       )}
 
@@ -321,6 +325,7 @@ const RegularGuestTab = () => {
         onSubmit={handleAddOrEditGuest}
         defaultValues={editingGuest}
         allVipGuests={vipGuests}
+        roleConfigs={roleConfigs}
       />
 
       <ViewGuestSheet
@@ -328,6 +333,7 @@ const RegularGuestTab = () => {
         open={!!viewingGuest}
         onOpenChange={(open) => !open && setViewingGuest(null)}
         onEdit={handleEditFromView}
+        roleConfigs={roleConfigs}
       />
     </div>
   );

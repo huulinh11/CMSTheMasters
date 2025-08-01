@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VipGuestRevenue } from "@/types/vip-guest-revenue";
 import { VipGuest } from "@/types/vip-guest";
-import { ROLES } from "@/types/vip-guest";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +21,7 @@ import PaymentDialog from "@/components/Revenue/PaymentDialog";
 import HistoryDialog from "@/components/Revenue/HistoryDialog";
 import { ViewVipGuestSheet } from "@/components/vip-guests/ViewVipGuestSheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 const VipGuestRevenueTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,7 +32,7 @@ const VipGuestRevenueTab = () => {
   const [viewingGuest, setViewingGuest] = useState<VipGuestRevenue | null>(null);
   const isMobile = useIsMobile();
 
-  const { data: guests = [], isLoading } = useQuery<VipGuestRevenue[]>({
+  const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuestRevenue[]>({
     queryKey: ['vip_revenue'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_vip_guest_revenue_details');
@@ -48,6 +48,15 @@ const VipGuestRevenueTab = () => {
     }
   });
 
+  const { data: roleConfigs = [], isLoading: isLoadingRoles } = useQuery<RoleConfiguration[]>({
+    queryKey: ['role_configurations', 'Chức vụ'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('role_configurations').select('*').eq('type', 'Chức vụ');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
   const filteredGuests = useMemo(() => {
     return guests.filter((guest) => {
       const searchMatch =
@@ -57,6 +66,8 @@ const VipGuestRevenueTab = () => {
       return searchMatch && roleMatch;
     });
   }, [guests, searchTerm, roleFilters]);
+
+  const isLoading = isLoadingGuests || isLoadingRoles;
 
   return (
     <div className="space-y-4">
@@ -76,17 +87,17 @@ const VipGuestRevenueTab = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {ROLES.map((role) => (
+            {roleConfigs.map((role) => (
               <DropdownMenuCheckboxItem
-                key={role}
-                checked={roleFilters.includes(role)}
+                key={role.id}
+                checked={roleFilters.includes(role.name)}
                 onCheckedChange={(checked) => {
                   setRoleFilters(
-                    checked ? [...roleFilters, role] : roleFilters.filter((r) => r !== role)
+                    checked ? [...roleFilters, role.name] : roleFilters.filter((r) => r !== role.name)
                   );
                 }}
               >
-                {role}
+                {role.name}
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
@@ -102,6 +113,7 @@ const VipGuestRevenueTab = () => {
           onHistory={setHistoryGuest}
           onEdit={setEditingGuest}
           onView={setViewingGuest}
+          roleConfigs={roleConfigs}
         />
       ) : (
         <VipRevenueTable
@@ -110,6 +122,7 @@ const VipGuestRevenueTab = () => {
           onHistory={setHistoryGuest}
           onEdit={setEditingGuest}
           onView={setViewingGuest}
+          roleConfigs={roleConfigs}
         />
       )}
 
@@ -132,6 +145,7 @@ const VipGuestRevenueTab = () => {
         guest={viewingGuest as VipGuest | null}
         open={!!viewingGuest}
         onOpenChange={(open) => !open && setViewingGuest(null)}
+        roleConfigs={roleConfigs}
       />
     </div>
   );

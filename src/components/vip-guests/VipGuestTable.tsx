@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { VipGuest } from "@/types/vip-guest";
-import { VIP_ROLE_COLORS } from "@/lib/role-colors";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 interface VipGuestTableProps {
   guests: VipGuest[];
@@ -26,6 +26,7 @@ interface VipGuestTableProps {
   onEdit: (guest: VipGuest) => void;
   onDelete: (id: string) => void;
   onView: (guest: VipGuest) => void;
+  roleConfigs: RoleConfiguration[];
 }
 
 export const VipGuestTable = ({
@@ -36,9 +37,18 @@ export const VipGuestTable = ({
   onEdit,
   onDelete,
   onView,
+  roleConfigs,
 }: VipGuestTableProps) => {
   const allSelected = guests.length > 0 && selectedGuests.length === guests.length;
   const isIndeterminate = selectedGuests.length > 0 && selectedGuests.length < guests.length;
+
+  const getRoleColors = (roleName: string) => {
+    const config = roleConfigs.find(rc => rc.name === roleName);
+    return {
+      backgroundColor: config?.bg_color || '#EFF6FF',
+      color: config?.text_color || '#1E40AF',
+    };
+  };
 
   return (
     <div className="rounded-lg border bg-white">
@@ -80,7 +90,10 @@ export const VipGuestTable = ({
                   </button>
                 </TableCell>
                 <TableCell>
-                  <span className={`px-2 py-1 rounded-md text-xs font-medium ${VIP_ROLE_COLORS[guest.role]}`}>
+                  <span 
+                    className="px-2 py-1 rounded-md text-xs font-medium"
+                    style={getRoleColors(guest.role)}
+                  >
                     {guest.role}
                   </span>
                 </TableCell>

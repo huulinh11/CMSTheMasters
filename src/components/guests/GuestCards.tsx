@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Trash2, Edit, Phone, User, FileText } from "lucide-react";
 import { Guest } from "@/types/guest";
-import { GUEST_ROLE_COLORS } from "@/lib/role-colors";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 interface GuestCardsProps {
   guests: Guest[];
@@ -18,6 +18,7 @@ interface GuestCardsProps {
   onEdit: (guest: Guest) => void;
   onDelete: (id: string) => void;
   onView: (guest: Guest) => void;
+  roleConfigs: RoleConfiguration[];
 }
 
 export const GuestCards = ({
@@ -27,7 +28,17 @@ export const GuestCards = ({
   onEdit,
   onDelete,
   onView,
+  roleConfigs,
 }: GuestCardsProps) => {
+
+  const getRoleColors = (roleName: string) => {
+    const config = roleConfigs.find(rc => rc.name === roleName);
+    return {
+      backgroundColor: config?.bg_color || '#EFF6FF',
+      color: config?.text_color || '#1E40AF',
+    };
+  };
+
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
@@ -64,7 +75,10 @@ export const GuestCards = ({
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="flex items-center text-sm">
-                <span className={`px-2 py-1 rounded-md font-medium ${GUEST_ROLE_COLORS[guest.role]}`}>
+                <span 
+                  className="px-2 py-1 rounded-md font-medium"
+                  style={getRoleColors(guest.role)}
+                >
                   {guest.role}
                 </span>
                 <span className="text-slate-500 ml-1.5">({guest.id})</span>

@@ -1,18 +1,8 @@
 import { z } from "zod";
 
-export const GUEST_ROLES = [
-  "Khách phổ thông",
-  "VIP",
-  "V-Vip",
-  "Super Vip",
-  "Vé trải nghiệm",
-] as const;
-
-export type GuestRole = (typeof GUEST_ROLES)[number];
-
 export const guestFormSchema = z.object({
   name: z.string().min(1, { message: "Tên không được để trống." }),
-  role: z.enum(GUEST_ROLES, {
+  role: z.string({
     required_error: "Vui lòng chọn một vai trò.",
   }),
   phone: z.string().refine(val => val.length === 0 || val.length >= 10, { message: "Số điện thoại phải có ít nhất 10 ký tự hoặc để trống." }),
