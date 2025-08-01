@@ -9,14 +9,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { AnyMediaGuest, NewsItem, NewsVideo, InvitationStatus, MediaBenefit } from "@/types/media-benefit";
+import { AnyMediaGuest, NewsItem, NewsVideo, MediaBenefit } from "@/types/media-benefit";
 import { useState, useEffect } from "react";
 import { PlusCircle, Trash2, Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 import { StatusSelect } from "./StatusSelect";
-
-type BenefitType = 'pre_event_news' | 'post_event_news' | 'news_video';
 
 interface EditAllMediaBenefitsDialogProps {
   open: boolean;
@@ -145,7 +142,8 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest }
         <DialogHeader>
           <DialogTitle>Chỉnh sửa quyền lợi cho {guest.name}</DialogTitle>
           <DialogDescription>
-            {guest.role}
+            ID: {guest.id} | Vai trò: {guest.role}
+            {'secondaryInfo' in guest && guest.secondaryInfo && ` | ${guest.secondaryInfo}`}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
