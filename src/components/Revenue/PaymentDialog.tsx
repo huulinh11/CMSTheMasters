@@ -25,10 +25,12 @@ interface PaymentDialogProps {
 const PaymentDialog = ({ guest, open, onOpenChange }: PaymentDialogProps) => {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState(0);
+  const [formattedAmount, setFormattedAmount] = useState("0");
 
   useEffect(() => {
     if (guest) {
       setAmount(guest.unpaid);
+      setFormattedAmount(new Intl.NumberFormat('vi-VN').format(guest.unpaid));
     }
   }, [guest]);
 
@@ -53,6 +55,13 @@ const PaymentDialog = ({ guest, open, onOpenChange }: PaymentDialogProps) => {
     },
   });
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const numericValue = parseInt(rawValue.replace(/[^0-9]/g, ''), 10) || 0;
+    setAmount(numericValue);
+    setFormattedAmount(new Intl.NumberFormat('vi-VN').format(numericValue));
+  };
+
   const handleSubmit = () => {
     mutation.mutate(amount);
   };
@@ -72,12 +81,15 @@ const PaymentDialog = ({ guest, open, onOpenChange }: PaymentDialogProps) => {
           <Label htmlFor="payment">Số tiền thanh toán (đ)</Label>
           <Input
             id="payment"
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
+            type="text"
+            value={formattedAmount}
+            onChange={handleAmountChange}
             max={guest.unpaid}
           />
-           <Button size="sm" variant="link" className="p-0 h-auto mt-2" onClick={() => setAmount(guest.unpaid)}>
+           <Button size="sm" variant="link" className="p-0 h-auto mt-2" onClick={() => {
+             setAmount(guest.unpaid);
+             setFormattedAmount(new Intl.NumberFormat('vi-VN').format(guest.unpaid));
+           }}>
             Thanh toán hết
           </Button>
         </div>

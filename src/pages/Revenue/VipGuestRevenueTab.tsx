@@ -15,9 +15,11 @@ import { ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import VipRevenueStats from "@/components/Revenue/VipRevenueStats";
 import VipRevenueTable from "@/components/Revenue/VipRevenueTable";
+import { VipRevenueCards } from "@/components/Revenue/VipRevenueCards";
 import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
 import PaymentDialog from "@/components/Revenue/PaymentDialog";
 import HistoryDialog from "@/components/Revenue/HistoryDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const VipGuestRevenueTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,6 +27,7 @@ const VipGuestRevenueTab = () => {
   const [editingGuest, setEditingGuest] = useState<VipGuestRevenue | null>(null);
   const [payingGuest, setPayingGuest] = useState<VipGuestRevenue | null>(null);
   const [historyGuest, setHistoryGuest] = useState<VipGuestRevenue | null>(null);
+  const isMobile = useIsMobile();
 
   const { data: guests = [], isLoading } = useQuery<VipGuestRevenue[]>({
     queryKey: ['vip_revenue'],
@@ -56,7 +59,7 @@ const VipGuestRevenueTab = () => {
     <div className="space-y-4">
       <VipRevenueStats guests={filteredGuests} />
       
-      <div className="flex flex-col md:flex-row items-center gap-2">
+      <div className="flex items-center gap-2">
         <Input
           placeholder="Tìm kiếm theo tên, ID..."
           value={searchTerm}
@@ -65,8 +68,8 @@ const VipGuestRevenueTab = () => {
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full md:w-auto justify-between bg-white/80">
-              Lọc theo vai trò <ChevronDown className="ml-2 h-4 w-4" />
+            <Button variant="outline" className="w-auto justify-between bg-white/80 flex-shrink-0">
+              Lọc <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -89,6 +92,14 @@ const VipGuestRevenueTab = () => {
 
       {isLoading ? (
         <Skeleton className="h-96 w-full rounded-lg" />
+      ) : isMobile ? (
+        <VipRevenueCards
+          guests={filteredGuests}
+          onPay={setPayingGuest}
+          onHistory={setHistoryGuest}
+          onEdit={setEditingGuest}
+          onView={() => { /* Placeholder for view details */ }}
+        />
       ) : (
         <VipRevenueTable
           guests={filteredGuests}

@@ -25,10 +25,12 @@ interface EditSponsorshipDialogProps {
 const EditSponsorshipDialog = ({ guest, open, onOpenChange }: EditSponsorshipDialogProps) => {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState(0);
+  const [formattedAmount, setFormattedAmount] = useState("0");
 
   useEffect(() => {
     if (guest) {
       setAmount(guest.sponsorship);
+      setFormattedAmount(new Intl.NumberFormat('vi-VN').format(guest.sponsorship));
     }
   }, [guest]);
 
@@ -50,6 +52,13 @@ const EditSponsorshipDialog = ({ guest, open, onOpenChange }: EditSponsorshipDia
     },
   });
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const numericValue = parseInt(rawValue.replace(/[^0-9]/g, ''), 10) || 0;
+    setAmount(numericValue);
+    setFormattedAmount(new Intl.NumberFormat('vi-VN').format(numericValue));
+  };
+
   const handleSubmit = () => {
     mutation.mutate(amount);
   };
@@ -69,9 +78,9 @@ const EditSponsorshipDialog = ({ guest, open, onOpenChange }: EditSponsorshipDia
           <Label htmlFor="sponsorship">Số tiền tài trợ (đ)</Label>
           <Input
             id="sponsorship"
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
+            type="text"
+            value={formattedAmount}
+            onChange={handleAmountChange}
             placeholder="Nhập số tiền"
           />
         </div>
