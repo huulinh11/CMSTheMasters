@@ -15,8 +15,9 @@ export type VipGuestFormValues = z.infer<typeof vipGuestFormSchema>;
 
 export type VipGuest = VipGuestFormValues & {
   id: string;
+  slug?: string;
   materials?: string;
   facebook_link?: string;
-  profile_content?: string;
+  profile_content?: any;
   image_url?: string;
 };

@@ -14,5 +14,7 @@ export type GuestFormValues = z.infer<typeof guestFormSchema>;
 
 export type Guest = GuestFormValues & {
   id: string;
+  slug?: string;
+  profile_content?: any;
   materials?: string;
 };

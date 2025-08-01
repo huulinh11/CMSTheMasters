@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ProfileTemplatesTab from "./public-user/ProfileTemplatesTab";
+import ProfileManagementTab from "./public-user/ProfileManagementTab";
 import ChecklistTab from "./public-user/ChecklistTab";
 
 const PublicUserPage = () => {
@@ -12,7 +12,7 @@ const PublicUserPage = () => {
           <TabsTrigger value="checklist" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Checklist</TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="mt-4">
-          <ProfileTemplatesTab />
+          <ProfileManagementTab />
         </TabsContent>
         <TabsContent value="checklist" className="mt-4">
           <ChecklistTab />

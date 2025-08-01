@@ -20,6 +20,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { generateGuestSlug } from "@/lib/slug";
 
 const generateId = (role: string, existingGuests: VipGuest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -128,8 +129,9 @@ const VipGuestTab = () => {
   };
 
   const handleAddOrEditGuest = (values: VipGuestFormValues) => {
-    const guestToUpsert = {
+    const guestToUpsert: VipGuest = {
       id: editingGuest ? editingGuest.id : generateId(values.role, guests),
+      slug: editingGuest?.slug || generateGuestSlug(values.name),
       ...values,
     };
     addOrEditMutation.mutate(guestToUpsert);
