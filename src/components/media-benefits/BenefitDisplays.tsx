@@ -7,28 +7,29 @@ import React from "react";
 // For simple link fields
 export const LinkDisplay = ({ link, onClick }: { link?: string | null, onClick: () => void }) => {
   return (
-    <button onClick={onClick} className="w-full h-full flex items-center justify-start p-2 -m-2">
-      {link ? (
-        <div className="flex items-center gap-1">
-          <a href={link} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-blue-600 hover:underline text-sm font-medium">
-            Link
-          </a>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigator.clipboard.writeText(link);
-              showSuccess("Đã sao chép link!");
-            }}
-          >
-            <Copy className="h-3 w-3" />
-          </Button>
-        </div>
-      ) : (
-        <PlusCircle className="h-4 w-4 text-slate-500" />
-      )}
+    <button onClick={onClick} className="w-full h-full flex items-center justify-between p-2 -m-2 min-h-[40px]">
+      <div className="flex items-center gap-1">
+        {link && (
+          <>
+            <a href={link} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-blue-600 hover:underline text-sm font-medium">
+              Link
+            </a>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(link);
+                showSuccess("Đã sao chép link!");
+              }}
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+          </>
+        )}
+      </div>
+      <PlusCircle className="h-4 w-4 text-slate-500 flex-shrink-0" />
     </button>
   );
 };
@@ -57,9 +58,10 @@ const FinalLinkItem = ({ link }: { link: string }) => (
 interface ComplexBenefitDisplayProps {
   data: NewsItem[] | NewsVideo | null | undefined;
   benefitType: 'pre_event_news' | 'post_event_news' | 'news_video';
+  onClick: () => void;
 }
 
-export const ComplexBenefitDisplay = ({ data, benefitType }: ComplexBenefitDisplayProps) => {
+export const ComplexBenefitDisplay = ({ data, benefitType, onClick }: ComplexBenefitDisplayProps) => {
   let hasDraftLink = false;
   let finalLinks: string[] = [];
 
@@ -78,16 +80,19 @@ export const ComplexBenefitDisplay = ({ data, benefitType }: ComplexBenefitDispl
   }
 
   return (
-    <div className="flex flex-col items-start gap-1">
-      {hasDraftLink && (
-        <span className="bg-slate-100 text-slate-800 text-xs font-medium px-2 py-1 rounded-md">
-          Bài
-        </span>
-      )}
-      
-      {finalLinks.map((link, index) => (
-        <FinalLinkItem key={index} link={link} />
-      ))}
-    </div>
+    <button onClick={onClick} className="w-full h-full flex items-center justify-between p-2 -m-2 min-h-[40px]">
+      <div className="flex flex-col items-start gap-1">
+        {hasDraftLink && (
+          <span className="bg-slate-100 text-slate-800 text-xs font-medium px-2 py-1 rounded-md">
+            Bài
+          </span>
+        )}
+        
+        {finalLinks.map((link, index) => (
+          <FinalLinkItem key={index} link={link} />
+        ))}
+      </div>
+      <PlusCircle className="h-4 w-4 text-slate-500 flex-shrink-0" />
+    </button>
   );
 };
