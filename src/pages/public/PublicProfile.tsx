@@ -93,9 +93,11 @@ const PublicProfile = () => {
                   case 'video':
                     const embedUrl = getVideoEmbedUrl(block.videoUrl);
                     if (!embedUrl) return null;
+                    const isShort = block.videoUrl.includes('/shorts/');
+                    const aspectRatioClass = isShort ? 'aspect-w-9 aspect-h-16' : 'aspect-w-16 aspect-h-9';
                     return (
                       <div key={block.id} className="w-full">
-                        <div className="aspect-w-16 aspect-h-9">
+                        <div className={aspectRatioClass}>
                           <iframe
                             src={embedUrl}
                             title="YouTube video player"
