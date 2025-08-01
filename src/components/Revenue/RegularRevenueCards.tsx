@@ -9,7 +9,6 @@ import {
 import { MoreVertical, Edit, History, TrendingUp } from "lucide-react";
 import { GuestRevenue } from "@/types/guest-revenue";
 import { formatCurrency } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 import { RoleConfiguration } from "@/types/role-configuration";
 
 interface RegularRevenueCardsProps {
@@ -76,7 +75,11 @@ export const RegularRevenueCards = ({
                 <span className="text-slate-500 ml-1.5">({guest.id})</span>
               </div>
               <div className="border-t border-slate-100 pt-3 space-y-2 text-slate-600">
-                <InfoRow label="Tài trợ" value={formatCurrency(guest.sponsorship)} valueClass={cn(guest.is_upsaled && "text-red-600 font-bold")} />
+                <InfoRow 
+                  label="Tài trợ" 
+                  value={formatCurrency(guest.sponsorship)} 
+                  isUpsaled={guest.is_upsaled} 
+                />
                 <InfoRow label="Đã thanh toán" value={formatCurrency(guest.paid)} valueClass="text-green-600" />
                 <InfoRow label="Chưa thanh toán" value={formatCurrency(guest.unpaid)} valueClass="text-red-600" />
                 <InfoRow label="Nguồn thanh toán" value={guest.payment_source || "Trống"} />
@@ -102,9 +105,15 @@ export const RegularRevenueCards = ({
   );
 };
 
-const InfoRow = ({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) => (
+const InfoRow = ({ label, value, valueClass, isUpsaled }: { label: string; value: string; valueClass?: string; isUpsaled?: boolean }) => (
   <div className="flex justify-between items-center text-sm">
     <span className="text-slate-500">{label}</span>
-    <span className={`font-medium text-slate-800 ${valueClass}`}>{value}</span>
+    {isUpsaled ? (
+      <span className="bg-red-600 text-white font-semibold px-2 py-1 rounded-md text-xs">
+        {value}
+      </span>
+    ) : (
+      <span className={`font-medium text-slate-800 ${valueClass}`}>{value}</span>
+    )}
   </div>
 );

@@ -16,7 +16,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
 import { RoleConfiguration } from "@/types/role-configuration";
 
 interface RegularRevenueTableProps {
@@ -72,8 +71,14 @@ const RegularRevenueTable = ({ guests, onPay, onHistory, onEdit, onUpsale, onVie
                     {guest.role}
                   </span>
                 </TableCell>
-                <TableCell className={cn(guest.is_upsaled && "text-red-600 font-bold")}>
-                  {formatCurrency(guest.sponsorship)}
+                <TableCell>
+                  {guest.is_upsaled ? (
+                    <span className="bg-red-600 text-white font-semibold px-2 py-1 rounded-md text-xs">
+                      {formatCurrency(guest.sponsorship)}
+                    </span>
+                  ) : (
+                    formatCurrency(guest.sponsorship)
+                  )}
                 </TableCell>
                 <TableCell className="text-green-600">{formatCurrency(guest.paid)}</TableCell>
                 <TableCell className="text-red-600">{formatCurrency(guest.unpaid)}</TableCell>

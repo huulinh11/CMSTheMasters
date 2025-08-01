@@ -103,8 +103,9 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["guest_revenue"] });
+      queryClient.invalidateQueries({ queryKey: ["guest_revenue_details"] });
       queryClient.invalidateQueries({ queryKey: ["guests"] });
+      queryClient.invalidateQueries({ queryKey: ["guest_upsale_history"] });
       showSuccess("Upsale thành công!");
       onOpenChange(false);
     },
