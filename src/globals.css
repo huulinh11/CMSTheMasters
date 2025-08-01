@@ -28,8 +28,8 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 25.17 42.19% 72.58%;
+    --input: 25.17 42.19% 72.58%;
     --ring: 25 95% 45%;
 
     --radius: 0.75rem;
@@ -52,8 +52,8 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 25.17 42.19% 72.58%;
+    --input: 25.17 42.19% 72.58%;
     --ring: 25 95% 50%;
   }
 }
@@ -64,6 +64,6 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-orange-100 to-rose-100 text-foreground;
+    @apply bg-gradient-to-br from-[#fff5ea] to-[#e5b899] text-foreground;
   }
 }

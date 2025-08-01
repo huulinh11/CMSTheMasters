@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, Cloud, Users, UserCheck, CircleDollarSign, ClipboardList } from "lucide-react";
+import { Bell, Users, UserCheck, CircleDollarSign, ClipboardList } from "lucide-react";
 
 const Dashboard = () => {
   return (
@@ -22,22 +22,6 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <Card className="mb-6 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg rounded-2xl">
-        <CardContent className="p-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <Cloud className="w-10 h-10 md:w-12 md:w-12 mr-4" />
-            <div>
-              <p className="text-sm font-light">Partly Cloudy</p>
-              <p className="text-2xl md:text-3xl font-bold">27°</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-light">Humidity</p>
-            <p className="text-lg md:text-xl font-bold">62%</p>
-          </div>
-        </CardContent>
-      </Card>
-
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <InfoCard title="Khách chức vụ" value="15" icon={UserCheck} />
         <InfoCard title="Khách mời" value="128" icon={Users} />
@@ -49,7 +33,7 @@ const Dashboard = () => {
 };
 
 const InfoCard = ({ title, value, icon: Icon }: { title: string; value: string, icon: React.ElementType }) => (
-  <Card className="bg-white shadow-md hover:shadow-lg transition-shadow rounded-2xl">
+  <Card className="bg-white rounded-2xl border">
     <CardContent className="p-4">
       <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 mb-3">
         <Icon className="h-5 w-5 text-primary" />
