@@ -9,15 +9,16 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { TaskGuest } from "@/types/event-task";
-import { TaskChecklistPopover } from "./TaskChecklistPopover";
+import { TaskChecklistDialog } from "./TaskChecklistDialog";
 
 interface EventTasksTableProps {
   guests: TaskGuest[];
   onTaskChange: (payload: { guestId: string; taskName: string; isCompleted: boolean; }) => void;
   onViewDetails: (guest: TaskGuest) => void;
+  onImageClick: (guest: TaskGuest) => void;
 }
 
-export const EventTasksTable = ({ guests, onTaskChange, onViewDetails }: EventTasksTableProps) => {
+export const EventTasksTable = ({ guests, onTaskChange, onViewDetails, onImageClick }: EventTasksTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -38,10 +39,12 @@ export const EventTasksTable = ({ guests, onTaskChange, onViewDetails }: EventTa
             guests.map((guest) => (
               <TableRow key={guest.id}>
                 <TableCell>
-                  <Avatar>
-                    <AvatarImage src={guest.image_url} alt={guest.name} />
-                    <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
+                  <button onClick={() => onImageClick(guest)}>
+                    <Avatar>
+                      <AvatarImage src={guest.image_url} alt={guest.name} />
+                      <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </button>
                 </TableCell>
                 <TableCell>{guest.id}</TableCell>
                 <TableCell className="font-medium">{guest.name}</TableCell>
@@ -49,7 +52,7 @@ export const EventTasksTable = ({ guests, onTaskChange, onViewDetails }: EventTa
                 <TableCell>{guest.secondaryInfo || 'N/A'}</TableCell>
                 <TableCell>{guest.phone}</TableCell>
                 <TableCell>
-                  <TaskChecklistPopover guest={guest} onTaskChange={onTaskChange} />
+                  <TaskChecklistDialog guest={guest} onTaskChange={onTaskChange} />
                 </TableCell>
                 <TableCell className="text-right">
                   <Button variant="link" onClick={() => onViewDetails(guest)}>Xem</Button>

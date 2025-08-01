@@ -11,12 +11,14 @@ import { EventTasksCards } from "@/components/event-tasks/EventTasksCards";
 import { ViewVipGuestSheet } from "@/components/vip-guests/ViewVipGuestSheet";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { showSuccess, showError } from "@/utils/toast";
+import { ImagePreviewDialog } from "@/components/event-tasks/ImagePreviewDialog";
 
 export const VipTasksTab = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewingGuest, setViewingGuest] = useState<TaskGuest | null>(null);
+  const [imagePreviewGuest, setImagePreviewGuest] = useState<TaskGuest | null>(null);
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
@@ -104,12 +106,14 @@ export const VipTasksTab = () => {
           guests={filteredGuests}
           onTaskChange={taskMutation.mutate}
           onViewDetails={setViewingGuest}
+          onImageClick={setImagePreviewGuest}
         />
       ) : (
         <EventTasksTable
           guests={filteredGuests}
           onTaskChange={taskMutation.mutate}
           onViewDetails={setViewingGuest}
+          onImageClick={setImagePreviewGuest}
         />
       )}
       <ViewVipGuestSheet
@@ -117,6 +121,12 @@ export const VipTasksTab = () => {
         open={!!viewingGuest}
         onOpenChange={() => setViewingGuest(null)}
         roleConfigs={roleConfigs}
+      />
+      <ImagePreviewDialog
+        guest={imagePreviewGuest}
+        open={!!imagePreviewGuest}
+        onOpenChange={() => setImagePreviewGuest(null)}
+        guestType="vip"
       />
     </div>
   );

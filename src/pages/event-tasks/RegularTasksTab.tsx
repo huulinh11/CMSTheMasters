@@ -11,12 +11,14 @@ import { EventTasksCards } from "@/components/event-tasks/EventTasksCards";
 import { ViewGuestSheet } from "@/components/guests/ViewGuestSheet";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { showSuccess, showError } from "@/utils/toast";
+import { ImagePreviewDialog } from "@/components/event-tasks/ImagePreviewDialog";
 
 export const RegularTasksTab = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewingGuest, setViewingGuest] = useState<TaskGuest | null>(null);
+  const [imagePreviewGuest, setImagePreviewGuest] = useState<TaskGuest | null>(null);
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<Guest[]>({
     queryKey: ['guests'],
@@ -104,12 +106,14 @@ export const RegularTasksTab = () => {
           guests={filteredGuests}
           onTaskChange={taskMutation.mutate}
           onViewDetails={setViewingGuest}
+          onImageClick={setImagePreviewGuest}
         />
       ) : (
         <EventTasksTable
           guests={filteredGuests}
           onTaskChange={taskMutation.mutate}
           onViewDetails={setViewingGuest}
+          onImageClick={setImagePreviewGuest}
         />
       )}
       <ViewGuestSheet
@@ -118,6 +122,12 @@ export const RegularTasksTab = () => {
         onOpenChange={() => setViewingGuest(null)}
         onEdit={() => {}}
         roleConfigs={roleConfigs}
+      />
+      <ImagePreviewDialog
+        guest={imagePreviewGuest}
+        open={!!imagePreviewGuest}
+        onOpenChange={() => setImagePreviewGuest(null)}
+        guestType="regular"
       />
     </div>
   );
