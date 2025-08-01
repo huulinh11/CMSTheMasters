@@ -84,22 +84,28 @@ export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit }: R
                 )}
                 {showPostEventNews && (
                   <TableCell>
-                    {(guest.role === 'VIP' || guest.role === 'V-Vip') && (
+                    {(guest.role === 'VIP' || guest.role === 'V-Vip') ? (
                       <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} benefitType="post_event_news" />
+                    ) : (
+                      <span className="text-slate-500 text-sm">Không</span>
                     )}
                   </TableCell>
                 )}
                 {showBeautyAI && (
                   <TableCell>
-                    {(guest.role === 'VIP' || guest.role === 'V-Vip') && (
+                    {(guest.role === 'VIP' || guest.role === 'V-Vip') ? (
                       <SimpleLinkDisplay link={guest.media_benefit?.beauty_ai_photos_link} />
+                    ) : (
+                      <span className="text-slate-500 text-sm">Không</span>
                     )}
                   </TableCell>
                 )}
                 {showRedCarpet && (
                   <TableCell>
-                    {guest.role === 'V-Vip' && (
+                    {guest.role === 'V-Vip' ? (
                       <SimpleLinkDisplay link={guest.media_benefit?.red_carpet_video_link} />
+                    ) : (
+                      <span className="text-slate-500 text-sm">Không</span>
                     )}
                   </TableCell>
                 )}
