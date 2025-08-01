@@ -96,7 +96,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
     if (type === 'image') {
       newBlock = { ...base, type: 'image', imageUrl: '', linkUrl: '' };
     } else if (type === 'video') {
-      newBlock = { ...base, type: 'video', videoUrl: '', isVertical: false };
+      newBlock = { ...base, type: 'video', videoUrl: '' };
     } else {
       newBlock = { ...base, type: 'text', text: '', backgroundImageUrl: '', isGuestName: false };
     }
@@ -156,12 +156,18 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                         {block.type === 'video' && (
                           <div className="space-y-2">
                             <Input placeholder="Link Youtube hoặc Facebook" value={block.videoUrl} onChange={e => handleUpdateBlock(block.id, 'videoUrl', e.target.value)} />
-                            <div className="flex items-center space-x-2">
-                              <Switch id={`isVertical-${block.id}`} checked={block.isVertical} onCheckedChange={checked => handleUpdateBlock(block.id, 'isVertical', checked)} />
-                              <Label htmlFor={`isVertical-${block.id}`}>Video dọc (9:16)</Label>
+                            <div className="flex items-center gap-4">
+                                <div className="flex-1 space-y-1">
+                                    <Label htmlFor={`aspectWidth-${block.id}`}>Tỷ lệ rộng</Label>
+                                    <Input id={`aspectWidth-${block.id}`} type="number" placeholder="16" value={block.aspectWidth || ''} onChange={e => handleUpdateBlock(block.id, 'aspectWidth', e.target.value ? Number(e.target.value) : undefined)} />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                    <Label htmlFor={`aspectHeight-${block.id}`}>Tỷ lệ cao</Label>
+                                    <Input id={`aspectHeight-${block.id}`} type="number" placeholder="9" value={block.aspectHeight || ''} onChange={e => handleUpdateBlock(block.id, 'aspectHeight', e.target.value ? Number(e.target.value) : undefined)} />
+                                </div>
                             </div>
                             {getVideoEmbedUrl(block.videoUrl) && (
-                              <div className={block.isVertical ? 'aspect-w-9 aspect-h-16' : 'aspect-w-16 aspect-h-9'}>
+                              <div className="w-full bg-black rounded-md" style={{ aspectRatio: block.aspectWidth && block.aspectHeight ? `${block.aspectWidth} / ${block.aspectHeight}` : '16 / 9' }}>
                                 <iframe src={getVideoEmbedUrl(block.videoUrl)!} title="Video Preview" className="w-full h-full rounded-md border" allowFullScreen />
                               </div>
                             )}

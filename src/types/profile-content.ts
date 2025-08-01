@@ -11,7 +11,8 @@ export const videoBlockSchema = z.object({
   id: z.string().uuid(),
   type: z.literal("video"),
   videoUrl: z.string(), // Lenient validation, will be processed into an embed URL
-  isVertical: z.boolean().optional(),
+  aspectWidth: z.coerce.number().optional(),
+  aspectHeight: z.coerce.number().optional(),
 });
 
 export const textBlockSchema = z.object({

@@ -93,19 +93,17 @@ const PublicProfile = () => {
                   case 'video':
                     const embedUrl = getVideoEmbedUrl(block.videoUrl);
                     if (!embedUrl) return null;
-                    const aspectRatioClass = block.isVertical ? 'aspect-w-9 aspect-h-16' : 'aspect-w-16 aspect-h-9';
+                    const aspectRatio = block.aspectWidth && block.aspectHeight ? `${block.aspectWidth} / ${block.aspectHeight}` : '16 / 9';
                     return (
-                      <div key={block.id} className="w-full">
-                        <div className={aspectRatioClass}>
-                          <iframe
-                            src={embedUrl}
-                            title="YouTube video player"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="w-full h-full"
-                          ></iframe>
-                        </div>
+                      <div key={block.id} className="w-full bg-black" style={{ aspectRatio }}>
+                        <iframe
+                          src={embedUrl}
+                          title="Video player"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="w-full h-full"
+                        ></iframe>
                       </div>
                     );
                   case 'text':
