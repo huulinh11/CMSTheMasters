@@ -37,7 +37,7 @@ export const ProfileManagementCards = ({ guests, onCopyLink, onEdit }: ProfileMa
                     <Copy className="mr-2 h-4 w-4" /> Sao chép
                   </Button>
                 )}
-                <Button className="flex-1" onClick={() => onEdit(guest)} disabled>
+                <Button className="flex-1" onClick={() => onEdit(guest)}>
                   <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
                 </Button>
               </div>

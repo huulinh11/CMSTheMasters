@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, Trash2, GripVertical, Image as ImageIcon, Video, Type } from "lucide-react";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
-import { ContentBlock, ImageBlock, VideoBlock, TextBlock } from "@/types/profile-content";
+import { ContentBlock } from "@/types/profile-content";
 import {
   DndContext,
   closestCenter,
