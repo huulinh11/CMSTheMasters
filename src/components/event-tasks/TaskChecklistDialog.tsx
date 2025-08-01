@@ -95,11 +95,11 @@ export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialog
                 <Button variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
               </DrawerClose>
             </DrawerHeader>
-            <ScrollArea className="flex-grow">
+            <div className="flex-1 overflow-y-auto">
               <div className="p-4">
                 <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
               </div>
-            </ScrollArea>
+            </div>
           </DrawerContent>
         </Drawer>
         <TaskHistoryDialog
@@ -116,13 +116,15 @@ export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialog
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>{triggerButton}</DialogTrigger>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-md flex flex-col max-h-[80vh]">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>{guest.name}</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
-          </div>
+          <ScrollArea className="flex-grow">
+            <div className="py-4 pr-6">
+              <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
       <TaskHistoryDialog
