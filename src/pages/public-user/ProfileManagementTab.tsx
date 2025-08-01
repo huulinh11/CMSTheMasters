@@ -12,11 +12,14 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ProfileManagementCards } from "@/components/public-user/ProfileManagementCards";
 import { generateGuestSlug } from "@/lib/slug";
+import { EditProfileDialog } from "@/components/public-user/EditProfileDialog";
+import { ContentBlock } from "@/types/profile-content";
 
 type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời' };
 
 const ProfileManagementTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingGuest, setEditingGuest] = useState<CombinedGuest | null>(null);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
@@ -68,6 +71,27 @@ const ProfileManagementTab = () => {
     }
   });
 
+  const profileUpdateMutation = useMutation({
+    mutationFn: async ({ guest, content }: { guest: CombinedGuest, content: ContentBlock[] }) => {
+      const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
+      const { error } = await supabase
+        .from(tableName)
+        .update({ profile_content: content })
+        .eq('id', guest.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      queryClient.invalidateQueries({ queryKey: ['public_profile'] });
+      showSuccess("Cập nhật profile thành công!");
+      setEditingGuest(null);
+    },
+    onError: (error: Error) => {
+      showError(`Lỗi: ${error.message}`);
+    }
+  });
+
   useEffect(() => {
     if (!isLoadingVip && !isLoadingRegular && !backfillSlugsMutation.isPending) {
       const vipGuestsToUpdate = vipGuests
@@ -106,8 +130,12 @@ const ProfileManagementTab = () => {
   };
 
   const handleEditProfile = (guest: CombinedGuest) => {
-    // Placeholder for future implementation
-    console.log("Editing guest:", guest.id);
+    setEditingGuest(guest);
+  };
+
+  const handleSaveProfile = (content: ContentBlock[]) => {
+    if (!editingGuest) return;
+    profileUpdateMutation.mutate({ guest: editingGuest, content });
   };
 
   const isLoading = isLoadingVip || isLoadingRegular;
@@ -154,7 +182,7 @@ const ProfileManagementTab = () => {
                           <Copy className="mr-2 h-4 w-4" /> Sao chép
                         </Button>
                       )}
-                      <Button variant="default" size="sm" disabled>
+                      <Button variant="default" size="sm" onClick={() => handleEditProfile(guest)}>
                         <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
                       </Button>
                     </TableCell>
@@ -171,6 +199,13 @@ const ProfileManagementTab = () => {
           </Table>
         </div>
       )}
+      <EditProfileDialog
+        open={!!editingGuest}
+        onOpenChange={(isOpen) => !isOpen && setEditingGuest(null)}
+        guest={editingGuest}
+        onSave={handleSaveProfile}
+        isSaving={profileUpdateMutation.isPending}
+      />
     </div>
   );
 };

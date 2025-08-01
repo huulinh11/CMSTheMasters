@@ -6,22 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { useMemo } from "react";
+import { ContentBlock } from "@/types/profile-content";
 
-// Define explicit types for content blocks
-type ImageBlock = { type: 'image'; imageUrl: string; linkUrl?: string };
-type VideoBlock = { type: 'video'; videoUrl: string };
-type TextBlock = { type: 'text'; text: string; backgroundImageUrl: string; isGuestName?: boolean };
-type ContentBlock = ImageBlock | VideoBlock | TextBlock;
-
-// Mock data for a content block
-const mockContentBlocks: ContentBlock[] = [
-  { type: 'image', imageUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=2787&auto=format&fit=crop', linkUrl: 'https://example.com' },
-  { type: 'video', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-  { type: 'text', text: 'Welcome to my public profile!', backgroundImageUrl: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2929&auto=format&fit=crop' },
-  { type: 'image', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2787&auto=format&fit=crop' },
-];
-
-type CombinedGuest = (Guest | VipGuest) & { image_url?: string };
+type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: any };
 
 const PublicProfile = () => {
   const { slug } = useParams();
@@ -47,14 +34,10 @@ const PublicProfile = () => {
   }
 
   const contentBlocks: ContentBlock[] = useMemo(() => {
-    if (!guest) return mockContentBlocks;
-    // Insert guest name as the first text block
-    const guestNameBlock: TextBlock = { type: 'text', text: guest.name, backgroundImageUrl: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2929&auto=format&fit=crop', isGuestName: true };
-    return [
-      ...mockContentBlocks.slice(0, 2),
-      guestNameBlock,
-      ...mockContentBlocks.slice(2)
-    ];
+    if (!guest || !guest.profile_content || !Array.isArray(guest.profile_content)) {
+      return [];
+    }
+    return guest.profile_content;
   }, [guest]);
 
   return (
@@ -89,12 +72,14 @@ const PublicProfile = () => {
         
         {guest && (
           <div className="flex flex-col">
-            {contentBlocks.map((block, index) => {
+            {contentBlocks.length > 0 ? (
+              contentBlocks.map((block) => {
+                const textContent = block.type === 'text' && block.isGuestName ? guest.name : (block.type === 'text' ? block.text : '');
                 switch (block.type) {
                   case 'image':
-                    const imageElement = <img src={block.imageUrl} alt={`Content ${index + 1}`} className="w-full h-auto object-cover" />;
+                    const imageElement = <img src={block.imageUrl} alt="Profile content" className="w-full h-auto object-cover" />;
                     return (
-                      <div key={index} className="w-full">
+                      <div key={block.id} className="w-full">
                         {block.linkUrl ? (
                           <a href={block.linkUrl} target="_blank" rel="noopener noreferrer">
                             {imageElement}
@@ -106,7 +91,7 @@ const PublicProfile = () => {
                     );
                   case 'video':
                     return (
-                      <div key={index} className="w-full">
+                      <div key={block.id} className="w-full">
                         <div className="aspect-w-16 aspect-h-9">
                           <iframe
                             src={block.videoUrl}
@@ -121,13 +106,13 @@ const PublicProfile = () => {
                     );
                   case 'text':
                     return (
-                      <div key={index} className="w-full">
+                      <div key={block.id} className="w-full">
                         <div
                           className="w-full h-64 flex items-center justify-center p-4 bg-cover bg-center"
                           style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}
                         >
                           <h2 className={`text-4xl font-bold text-white text-center drop-shadow-lg ${block.isGuestName ? 'italic' : ''}`}>
-                            {block.text}
+                            {textContent}
                           </h2>
                         </div>
                       </div>
@@ -135,7 +120,12 @@ const PublicProfile = () => {
                   default:
                     return null;
                 }
-              })}
+              })
+            ) : (
+              <div className="p-8 text-center text-slate-500">
+                <p>Chưa có nội dung cho profile này.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
