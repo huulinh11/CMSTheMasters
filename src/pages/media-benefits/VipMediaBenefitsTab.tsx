@@ -21,58 +21,27 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { RoleConfiguration } from "@/types/role-configuration";
 
-const vipBenefitFields = [
-  { name: 'invitation_status', label: 'Thư mời', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'Đã gửi', label: 'Đã gửi' },
-    { value: 'Đã có', label: 'Đã có' },
-    { value: 'Trống', label: 'Trống' },
-  ]},
-  { name: 'page_post_link', label: 'Post bài page', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'btc_post_link', label: 'Post bài BTC', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'pre_event_news_draft', label: 'Báo trước SK (Nháp)', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'pre_event_news_final', label: 'Báo trước SK (Final)', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'post_event_news_draft', label: 'Báo sau SK (Nháp)', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'post_event_news_final', label: 'Báo sau SK (Final)', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'red_carpet_video_link', label: 'Video thảm đỏ', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'news_video_draft', label: 'Video đưa tin (Nháp)', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'news_video_final', label: 'Video đưa tin (Final)', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
+const vipBenefitFieldGroups = [
+  [
+    { name: 'invitation_status', label: 'Thư mời', options: [ { value: 'all', label: 'Tất cả' }, { value: 'Đã gửi', label: 'Đã gửi' }, { value: 'Đã có', label: 'Đã có' }, { value: 'Trống', label: 'Trống' } ]},
+    { name: 'page_post_link', label: 'Post bài page', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+    { name: 'btc_post_link', label: 'Post bài BTC', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+  ],
+  [
+    { name: 'pre_event_news_draft', label: 'Báo trước SK (Nháp)', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+    { name: 'pre_event_news_final', label: 'Báo trước SK (Final)', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+  ],
+  [
+    { name: 'post_event_news_draft', label: 'Báo sau SK (Nháp)', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+    { name: 'post_event_news_final', label: 'Báo sau SK (Final)', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+  ],
+  [
+    { name: 'news_video_draft', label: 'Video đưa tin (Nháp)', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+    { name: 'news_video_final', label: 'Video đưa tin (Final)', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+  ],
+  [
+    { name: 'red_carpet_video_link', label: 'Video thảm đỏ', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+  ]
 ];
 
 export default function VipMediaBenefitsTab() {
@@ -216,6 +185,10 @@ export default function VipMediaBenefitsTab() {
   const handleFilterChange = (field: string, value: string) => {
     setAdvancedFilters(prev => ({ ...prev, [field]: value }));
   };
+  
+  const handleClearFilters = () => {
+    setAdvancedFilters({});
+  };
 
   const isLoading = isLoadingGuests || isLoadingBenefits;
 
@@ -254,7 +227,8 @@ export default function VipMediaBenefitsTab() {
           <AdvancedFilterSheet
             filters={advancedFilters}
             onFilterChange={handleFilterChange}
-            benefitFields={vipBenefitFields}
+            onClearFilters={handleClearFilters}
+            benefitFieldGroups={vipBenefitFieldGroups}
           />
         </div>
       </div>

@@ -21,33 +21,18 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { RoleConfiguration } from "@/types/role-configuration";
 
-const regularBenefitFields = [
-  { name: 'invitation_status', label: 'Thư mời', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'Đã gửi', label: 'Đã gửi' },
-    { value: 'Đã có', label: 'Đã có' },
-    { value: 'Trống', label: 'Trống' },
-  ]},
-  { name: 'post_event_news_draft', label: 'Báo sau SK (Nháp)', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'post_event_news_final', label: 'Báo sau SK (Final)', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'beauty_ai_photos_link', label: 'Bộ ảnh Beauty AI', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
-  { name: 'red_carpet_video_link', label: 'Video thảm đỏ', options: [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'has_data', label: 'Đã có' },
-    { value: 'no_data', label: 'Chưa có' },
-  ]},
+const regularBenefitFieldGroups = [
+  [
+    { name: 'invitation_status', label: 'Thư mời', options: [ { value: 'all', label: 'Tất cả' }, { value: 'Đã gửi', label: 'Đã gửi' }, { value: 'Đã có', label: 'Đã có' }, { value: 'Trống', label: 'Trống' } ]},
+  ],
+  [
+    { name: 'post_event_news_draft', label: 'Báo sau SK (Nháp)', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+    { name: 'post_event_news_final', label: 'Báo sau SK (Final)', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+  ],
+  [
+    { name: 'beauty_ai_photos_link', label: 'Bộ ảnh Beauty AI', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+    { name: 'red_carpet_video_link', label: 'Video thảm đỏ', options: [ { value: 'all', label: 'Tất cả' }, { value: 'has_data', label: 'Đã có' }, { value: 'no_data', label: 'Chưa có' } ]},
+  ]
 ];
 
 export default function RegularMediaBenefitsTab() {
@@ -171,6 +156,10 @@ export default function RegularMediaBenefitsTab() {
     setAdvancedFilters(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleClearFilters = () => {
+    setAdvancedFilters({});
+  };
+
   const isLoading = isLoadingGuests || isLoadingBenefits;
 
   return (
@@ -208,7 +197,8 @@ export default function RegularMediaBenefitsTab() {
           <AdvancedFilterSheet
             filters={advancedFilters}
             onFilterChange={handleFilterChange}
-            benefitFields={regularBenefitFields}
+            onClearFilters={handleClearFilters}
+            benefitFieldGroups={regularBenefitFieldGroups}
           />
         </div>
       </div>
