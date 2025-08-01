@@ -1,17 +1,62 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { VipGuest } from "@/types/vip-guest";
-import { Edit, Eye, Link, FileText, Info, Copy } from "lucide-react";
+import { Edit, Eye, Link, FileText, Info, Phone } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { showSuccess } from "@/utils/toast";
-import { cn } from "@/lib/utils";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 interface InformationCardsProps {
   guests: VipGuest[];
   onEdit: (guest: VipGuest) => void;
+  roleConfigs: RoleConfiguration[];
 }
 
-export const InformationCards = ({ guests, onEdit }: InformationCardsProps) => {
+const InfoItem = ({ icon: Icon, label, value, isLink = false, isCopyable = false }: { icon: React.ElementType, label: string, value?: string, isLink?: boolean, isCopyable?: boolean }) => {
+  if (!value) return null;
+
+  const handleCopy = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy);
+    showSuccess(`Đã sao chép ${label}`);
+  };
+
+  const itemContent = (
+    <div className="flex items-start">
+      <Icon className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-[rgb(185,179,176)]" />
+      <p className="text-sm text-left">
+        <span className="text-[rgb(185,179,176)] font-normal">{label}: </span>
+        {isLink ? (
+          <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-normal hover:underline break-all">
+            {value}
+          </a>
+        ) : (
+          <span className="text-black font-normal">{value}</span>
+        )}
+      </p>
+    </div>
+  );
+
+  if (isCopyable) {
+    return (
+      <button onClick={() => handleCopy(value)} className="w-full text-left">
+        {itemContent}
+      </button>
+    );
+  }
+
+  return itemContent;
+};
+
+
+export const InformationCards = ({ guests, onEdit, roleConfigs }: InformationCardsProps) => {
+  const getRoleColors = (roleName: string) => {
+    const config = roleConfigs.find(rc => rc.name === roleName);
+    return {
+      backgroundColor: config?.bg_color || '#EFF6FF',
+      color: config?.text_color || '#1E40AF',
+    };
+  };
+
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
@@ -25,7 +70,6 @@ export const InformationCards = ({ guests, onEdit }: InformationCardsProps) => {
                 </Avatar>
                 <div>
                   <CardTitle className="text-lg font-semibold text-slate-800">{guest.name}</CardTitle>
-                  <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}>
@@ -33,18 +77,30 @@ export const InformationCards = ({ guests, onEdit }: InformationCardsProps) => {
               </Button>
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
-              <div className="border-t border-slate-100 pt-3 space-y-2 text-slate-600">
-                <InfoItem icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} truncate />
-                <InfoItem icon={FileText} label="Tư liệu" value={guest.materials} truncate />
+              <div className="flex items-center text-sm">
+                <span 
+                  className="px-2 py-1 rounded-md font-medium"
+                  style={getRoleColors(guest.role)}
+                >
+                  {guest.role}
+                </span>
+                <span className="text-slate-500 ml-1.5">({guest.id})</span>
+              </div>
+              <div className="border-t border-slate-100 pt-3 space-y-2">
+                <InfoItem icon={Phone} label="SĐT" value={guest.phone} isCopyable />
+                <InfoItem icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} isCopyable />
+                <InfoItem icon={FileText} label="Tư liệu" value={guest.materials} isCopyable />
                 <InfoItem icon={Link} label="Facebook" value={guest.facebook_link} isLink />
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Eye className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-slate-400" />
-                    <p className="text-sm text-slate-500">Profile</p>
+                <div className="flex items-start">
+                  <Eye className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-[rgb(185,179,176)]" />
+                  <div className="flex justify-between items-center w-full">
+                    <p className="text-sm">
+                      <span className="text-[rgb(185,179,176)] font-normal">Profile: </span>
+                    </p>
+                    <Button variant="link" size="sm" className="p-0 h-auto text-sm font-normal" onClick={() => onEdit(guest)}>
+                      {guest.profile_content ? "Xem/Sửa" : "Thêm"}
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => onEdit(guest)}>
-                    {guest.profile_content ? "Xem/Sửa" : "Thêm"}
-                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -55,36 +111,6 @@ export const InformationCards = ({ guests, onEdit }: InformationCardsProps) => {
           <p>Không có dữ liệu.</p>
         </div>
       )}
-    </div>
-  );
-};
-
-const InfoItem = ({ icon: Icon, label, value, isLink = false, truncate = false }: { icon: React.ElementType, label: string, value?: string, isLink?: boolean, truncate?: boolean }) => {
-  if (!value) return null;
-
-  const handleCopy = (textToCopy: string) => {
-    navigator.clipboard.writeText(textToCopy);
-    showSuccess("Đã sao chép link!");
-  };
-
-  return (
-    <div className="flex items-start">
-      <Icon className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-slate-400" />
-      <div className="text-sm flex-1 overflow-hidden">
-        <p className="text-slate-500">{label}</p>
-        {isLink ? (
-          <div className="flex items-center justify-between">
-            <a href={value} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline">
-              Link
-            </a>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(value)}>
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <p className={cn("font-medium text-slate-800", truncate ? "truncate" : "whitespace-pre-wrap")}>{value}</p>
-        )}
-      </div>
     </div>
   );
 };

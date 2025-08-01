@@ -115,7 +115,7 @@ const Information = () => {
       {isLoading ? (
         <Skeleton className="h-96 w-full rounded-lg" />
       ) : isMobile ? (
-        <InformationCards guests={filteredGuests} onEdit={setEditingGuest} />
+        <InformationCards guests={filteredGuests} onEdit={setEditingGuest} roleConfigs={roleConfigs} />
       ) : (
         <InformationTable guests={filteredGuests} onEdit={setEditingGuest} />
       )}
