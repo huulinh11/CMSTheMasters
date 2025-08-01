@@ -19,6 +19,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 const generateId = (role: Role, existingGuests: VipGuest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -53,18 +54,42 @@ const VipGuestTab = () => {
     }
   });
 
-  const addOrEditMutation = useMutation({
-    mutationFn: async (guest: Omit<VipGuest, 'created_at'>) => {
-      const { secondaryInfo, ...rest } = guest;
-      const guestForDb = {
-        ...rest,
-        secondary_info: secondaryInfo,
-      };
-      const { error } = await supabase.from('vip_guests').upsert(guestForDb);
+  const { data: roleConfigs = [] } = useQuery<RoleConfiguration[]>({
+    queryKey: ['role_configurations', 'Chức vụ'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('role_configurations').select('*').eq('type', 'Chức vụ');
       if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const addOrEditMutation = useMutation({
+    mutationFn: async (guest: VipGuest) => {
+      const { secondaryInfo, ...rest } = guest;
+      const guestForDb = { ...rest, secondary_info: secondaryInfo };
+      
+      const guestUpsertPromise = supabase.from('vip_guests').upsert(guestForDb);
+      const promises = [guestUpsertPromise];
+      
+      if (!editingGuest) { // Only set default sponsorship for new guests
+        const roleConfig = roleConfigs.find(rc => rc.name === guest.role);
+        if (roleConfig) {
+          const revenueUpsertPromise = supabase.from('vip_guest_revenue').upsert({
+            guest_id: guest.id,
+            sponsorship: roleConfig.sponsorship_amount
+          }, { onConflict: 'guest_id' });
+          promises.push(revenueUpsertPromise);
+        }
+      }
+
+      const results = await Promise.all(promises);
+      for (const result of results) {
+        if (result.error) throw result.error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
       showSuccess(editingGuest ? "Cập nhật khách thành công!" : "Thêm khách thành công!");
       setIsFormOpen(false);
       setEditingGuest(null);
@@ -79,6 +104,7 @@ const VipGuestTab = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
       showSuccess(`Đã xóa ${variables.length} khách.`);
       setSelectedGuests([]);
     },

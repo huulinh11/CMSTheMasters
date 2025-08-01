@@ -20,6 +20,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 const generateId = (role: GuestRole, existingGuests: Guest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -59,13 +60,39 @@ const RegularGuestTab = () => {
     }
   });
 
-  const addOrEditMutation = useMutation({
-    mutationFn: async (guest: Omit<Guest, 'created_at'>) => {
-      const { error } = await supabase.from('guests').upsert(guest);
+  const { data: roleConfigs = [] } = useQuery<RoleConfiguration[]>({
+    queryKey: ['role_configurations', 'Khách mời'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('role_configurations').select('*').eq('type', 'Khách mời');
       if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const addOrEditMutation = useMutation({
+    mutationFn: async (guest: Guest) => {
+      const guestUpsertPromise = supabase.from('guests').upsert(guest);
+      const promises = [guestUpsertPromise];
+
+      if (!editingGuest) { // Only set default sponsorship for new guests
+        const roleConfig = roleConfigs.find(rc => rc.name === guest.role);
+        if (roleConfig) {
+          const revenueUpsertPromise = supabase.from('guest_revenue').upsert({
+            guest_id: guest.id,
+            sponsorship: roleConfig.sponsorship_amount
+          }, { onConflict: 'guest_id' });
+          promises.push(revenueUpsertPromise);
+        }
+      }
+
+      const results = await Promise.all(promises);
+      for (const result of results) {
+        if (result.error) throw result.error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue'] });
       showSuccess(editingGuest ? "Cập nhật khách mời thành công!" : "Thêm khách mời thành công!");
       setIsDialogOpen(false);
       setEditingGuest(null);
@@ -80,6 +107,7 @@ const RegularGuestTab = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue'] });
       showSuccess(`Đã xóa ${variables.length} khách mời.`);
       setSelectedGuests([]);
     },
