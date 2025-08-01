@@ -90,19 +90,19 @@ export const AdvancedFilterSheet = (props: AdvancedFilterSheetProps) => {
     return (
       <Sheet>
         <SheetTrigger asChild>{triggerButton}</SheetTrigger>
-        <SheetContent className="p-0">
+        <SheetContent className="p-0 flex flex-col">
           <SheetHeader className="p-4 border-b">
-            <SheetTitle>Bộ lọc nâng cao</SheetTitle>
+            <div className="flex justify-between items-center">
+              <SheetTitle>Bộ lọc nâng cao</SheetTitle>
+              <Button variant="ghost" size="sm" onClick={props.onClearFilters}>
+                <X className="mr-2 h-4 w-4" />
+                Xóa
+              </Button>
+            </div>
           </SheetHeader>
-          <ScrollArea className="h-[calc(100vh-80px)]">
+          <ScrollArea className="flex-grow">
             <div className="p-4">
               <FilterGrid {...props} />
-              <div className="mt-6 flex justify-end">
-                <Button variant="ghost" onClick={props.onClearFilters}>
-                  <X className="mr-2 h-4 w-4" />
-                  Xóa bộ lọc
-                </Button>
-              </div>
             </div>
           </ScrollArea>
         </SheetContent>
@@ -121,7 +121,7 @@ export const AdvancedFilterSheet = (props: AdvancedFilterSheetProps) => {
             Xóa bộ lọc
           </Button>
         </div>
-        <ScrollArea className="max-h-[400px]">
+        <ScrollArea className="max-h-[60vh]">
           <div className="p-4">
             <FilterGrid {...props} />
           </div>
