@@ -1,10 +1,9 @@
 export function getVideoEmbedUrl(url: string): string | null {
   if (!url) return null;
 
-  let videoId: string | null = null;
-
   // YouTube
   if (url.includes("youtube.com") || url.includes("youtu.be")) {
+    let videoId: string | null = null;
     if (url.includes("embed")) {
       return url; // Already an embed link
     }
@@ -30,7 +29,11 @@ export function getVideoEmbedUrl(url: string): string | null {
     }
   }
   
-  // Note: Facebook video embedding is more complex and will be added later.
+  // Facebook
+  if (url.includes("facebook.com")) {
+    // Use Facebook's oEmbed plugin endpoint
+    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false`;
+  }
 
   return null;
 }

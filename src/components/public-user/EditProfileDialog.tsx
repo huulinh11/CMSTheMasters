@@ -155,7 +155,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                         )}
                         {block.type === 'video' && (
                           <div className="space-y-2">
-                            <Input placeholder="Link Youtube" value={block.videoUrl} onChange={e => handleUpdateBlock(block.id, 'videoUrl', e.target.value)} />
+                            <Input placeholder="Link Youtube hoặc Facebook" value={block.videoUrl} onChange={e => handleUpdateBlock(block.id, 'videoUrl', e.target.value)} />
                             <div className="flex items-center space-x-2">
                               <Switch id={`isVertical-${block.id}`} checked={block.isVertical} onCheckedChange={checked => handleUpdateBlock(block.id, 'isVertical', checked)} />
                               <Label htmlFor={`isVertical-${block.id}`}>Video dọc (9:16)</Label>
