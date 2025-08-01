@@ -71,23 +71,18 @@ const RegularGuestTab = () => {
 
   const addOrEditMutation = useMutation({
     mutationFn: async (guest: Guest) => {
-      const guestUpsertPromise = supabase.from('guests').upsert(guest);
-      const promises = [guestUpsertPromise];
+      const { error: guestError } = await supabase.from('guests').upsert(guest);
+      if (guestError) throw guestError;
 
-      if (!editingGuest) { // Only set default sponsorship for new guests
+      if (!editingGuest) {
         const roleConfig = roleConfigs.find(rc => rc.name === guest.role);
         if (roleConfig) {
-          const revenueUpsertPromise = supabase.from('guest_revenue').upsert({
+          const { error: revenueError } = await supabase.from('guest_revenue').upsert({
             guest_id: guest.id,
             sponsorship: roleConfig.sponsorship_amount
           }, { onConflict: 'guest_id' });
-          promises.push(revenueUpsertPromise);
+          if (revenueError) throw revenueError;
         }
-      }
-
-      const results = await Promise.all(promises);
-      for (const result of results) {
-        if (result.error) throw result.error;
       }
     },
     onSuccess: () => {
