@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { VipGuest } from "@/types/vip-guest";
-import { Edit, Eye, Link, FileText, Info } from "lucide-react";
+import { Edit, Eye, Link, FileText, Info, Copy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { showSuccess } from "@/utils/toast";
+import { cn } from "@/lib/utils";
 
 interface InformationCardsProps {
   guests: VipGuest[];
@@ -32,8 +34,8 @@ export const InformationCards = ({ guests, onEdit }: InformationCardsProps) => {
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="border-t border-slate-100 pt-3 space-y-2 text-slate-600">
-                <InfoItem icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} />
-                <InfoItem icon={FileText} label="Tư liệu" value={guest.materials} />
+                <InfoItem icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} truncate />
+                <InfoItem icon={FileText} label="Tư liệu" value={guest.materials} truncate />
                 <InfoItem icon={Link} label="Facebook" value={guest.facebook_link} isLink />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
@@ -57,19 +59,30 @@ export const InformationCards = ({ guests, onEdit }: InformationCardsProps) => {
   );
 };
 
-const InfoItem = ({ icon: Icon, label, value, isLink = false }: { icon: React.ElementType, label: string, value?: string, isLink?: boolean }) => {
+const InfoItem = ({ icon: Icon, label, value, isLink = false, truncate = false }: { icon: React.ElementType, label: string, value?: string, isLink?: boolean, truncate?: boolean }) => {
   if (!value) return null;
+
+  const handleCopy = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy);
+    showSuccess("Đã sao chép link!");
+  };
+
   return (
     <div className="flex items-start">
       <Icon className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-slate-400" />
       <div className="text-sm flex-1 overflow-hidden">
         <p className="text-slate-500">{label}</p>
         {isLink ? (
-          <a href={value} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 break-all hover:underline">
-            {value}
-          </a>
+          <div className="flex items-center justify-between">
+            <a href={value} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline">
+              Link
+            </a>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(value)}>
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
         ) : (
-          <p className="font-medium text-slate-800 whitespace-pre-wrap">{value}</p>
+          <p className={cn("font-medium text-slate-800", truncate ? "truncate" : "whitespace-pre-wrap")}>{value}</p>
         )}
       </div>
     </div>

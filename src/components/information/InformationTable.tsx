@@ -8,18 +8,19 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { VipGuest } from "@/types/vip-guest";
-import { Edit, Eye, PlusCircle } from "lucide-react";
+import { Edit, Eye, PlusCircle, Copy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { showSuccess } from "@/utils/toast";
 
 interface InformationTableProps {
   guests: VipGuest[];
   onEdit: (guest: VipGuest) => void;
 }
 
-const truncateText = (text: string | undefined, length: number) => {
-  if (!text) return "N/A";
-  if (text.length <= length) return text;
-  return text.substring(0, length) + "...";
+const handleCopy = (textToCopy: string | undefined) => {
+  if (!textToCopy) return;
+  navigator.clipboard.writeText(textToCopy);
+  showSuccess("Đã sao chép link!");
 };
 
 export const InformationTable = ({ guests, onEdit }: InformationTableProps) => {
@@ -47,19 +48,32 @@ export const InformationTable = ({ guests, onEdit }: InformationTableProps) => {
                 <TableCell className="font-semibold">{guest.name}</TableCell>
                 <TableCell>{guest.role}</TableCell>
                 <TableCell>
-                  <button onClick={() => onEdit(guest)} className="text-left hover:underline">
-                    {truncateText(guest.secondaryInfo, 20)}
+                  <button onClick={() => onEdit(guest)} className="text-left hover:underline w-full max-w-[150px]">
+                    <p className="truncate" title={guest.secondaryInfo}>
+                      {guest.secondaryInfo || "N/A"}
+                    </p>
                   </button>
                 </TableCell>
                 <TableCell>
-                  <button onClick={() => onEdit(guest)} className="text-left hover:underline">
-                    {truncateText(guest.materials, 20)}
+                  <button onClick={() => onEdit(guest)} className="text-left hover:underline w-full max-w-[150px]">
+                    <p className="truncate" title={guest.materials}>
+                      {guest.materials || "N/A"}
+                    </p>
                   </button>
                 </TableCell>
                 <TableCell>
-                  <a href={guest.facebook_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                    {truncateText(guest.facebook_link, 20)}
-                  </a>
+                  {guest.facebook_link ? (
+                    <div className="flex items-center gap-1">
+                      <a href={guest.facebook_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        Link
+                      </a>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(guest.facebook_link)}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    "N/A"
+                  )}
                 </TableCell>
                 <TableCell>
                   <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}>
