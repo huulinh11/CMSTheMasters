@@ -7,6 +7,7 @@ import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { useMemo } from "react";
 import { ContentBlock } from "@/types/profile-content";
+import { getVideoEmbedUrl } from "@/lib/video";
 
 type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: any };
 
@@ -90,11 +91,13 @@ const PublicProfile = () => {
                       </div>
                     );
                   case 'video':
+                    const embedUrl = getVideoEmbedUrl(block.videoUrl);
+                    if (!embedUrl) return null;
                     return (
                       <div key={block.id} className="w-full">
                         <div className="aspect-w-16 aspect-h-9">
                           <iframe
-                            src={block.videoUrl}
+                            src={embedUrl}
                             title="YouTube video player"
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

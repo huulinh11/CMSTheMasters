@@ -35,6 +35,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from "@dnd-kit/utilities";
 import { v4 as uuidv4 } from 'uuid';
+import { getVideoEmbedUrl } from "@/lib/video";
+import { ImageUploader } from "./ImageUploader";
 
 type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời' };
 
@@ -142,23 +144,40 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                           </Button>
                         </div>
                         {block.type === 'image' && (
-                          <>
-                            <Input placeholder="Link ảnh" value={block.imageUrl} onChange={e => handleUpdateBlock(block.id, 'imageUrl', e.target.value)} />
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Input placeholder="Link ảnh" value={block.imageUrl} onChange={e => handleUpdateBlock(block.id, 'imageUrl', e.target.value)} />
+                              <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'imageUrl', url)} />
+                            </div>
                             <Input placeholder="Link khi click vào ảnh (tùy chọn)" value={block.linkUrl} onChange={e => handleUpdateBlock(block.id, 'linkUrl', e.target.value)} />
-                          </>
+                            {block.imageUrl && <img src={block.imageUrl} alt="Preview" className="rounded-md border max-h-48 object-contain" />}
+                          </div>
                         )}
                         {block.type === 'video' && (
-                          <Input placeholder="Link Youtube Embed" value={block.videoUrl} onChange={e => handleUpdateBlock(block.id, 'videoUrl', e.target.value)} />
+                          <div className="space-y-2">
+                            <Input placeholder="Link Youtube" value={block.videoUrl} onChange={e => handleUpdateBlock(block.id, 'videoUrl', e.target.value)} />
+                            {getVideoEmbedUrl(block.videoUrl) && (
+                              <div className="aspect-video">
+                                <iframe src={getVideoEmbedUrl(block.videoUrl)!} title="Video Preview" className="w-full h-full rounded-md border" allowFullScreen />
+                              </div>
+                            )}
+                          </div>
                         )}
                         {block.type === 'text' && (
-                          <>
+                          <div className="space-y-2">
                             <Textarea placeholder="Nội dung text" value={block.text} onChange={e => handleUpdateBlock(block.id, 'text', e.target.value)} />
-                            <Input placeholder="Link ảnh nền (tùy chọn)" value={block.backgroundImageUrl} onChange={e => handleUpdateBlock(block.id, 'backgroundImageUrl', e.target.value)} />
+                            <div className="flex items-center gap-2">
+                              <Input placeholder="Link ảnh nền (tùy chọn)" value={block.backgroundImageUrl} onChange={e => handleUpdateBlock(block.id, 'backgroundImageUrl', e.target.value)} />
+                              <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'backgroundImageUrl', url)} />
+                            </div>
                             <div className="flex items-center space-x-2">
                               <Switch id={`isGuestName-${block.id}`} checked={block.isGuestName} onCheckedChange={checked => handleUpdateBlock(block.id, 'isGuestName', checked)} />
                               <Label htmlFor={`isGuestName-${block.id}`}>Tự động lấy tên khách mời</Label>
                             </div>
-                          </>
+                            <div className="h-32 rounded-md border bg-cover bg-center flex items-center justify-center p-2" style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}>
+                              <p className="text-xl font-bold text-white text-center drop-shadow-lg">{block.isGuestName ? guest.name : block.text}</p>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </SortableBlock>

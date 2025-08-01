@@ -10,7 +10,7 @@ export const imageBlockSchema = z.object({
 export const videoBlockSchema = z.object({
   id: z.string().uuid(),
   type: z.literal("video"),
-  videoUrl: z.string().refine(val => val.length === 0 || val.includes('youtube.com/embed/') || val.includes('youtu.be/'), { message: "Chỉ hỗ trợ link Youtube embed (ví dụ: youtube.com/embed/VIDEO_ID)" }),
+  videoUrl: z.string(), // Lenient validation, will be processed into an embed URL
 });
 
 export const textBlockSchema = z.object({
