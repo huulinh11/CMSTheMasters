@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { MediaVipGuest } from "@/types/media-benefit";
 import { StatusSelect } from "./StatusSelect";
-import { MediaBenefitDisplay, LinkDisplay } from "./MediaBenefitDisplay";
+import { LinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 
 interface VipMediaBenefitsTableProps {
   guests: MediaVipGuest[];
@@ -55,16 +55,16 @@ export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEditLink, onE
                   <LinkDisplay link={guest.media_benefit?.btc_post_link} onClick={() => onEditLink(guest, 'btc_post_link')} />
                 </TableCell>
                 <TableCell>
-                  <MediaBenefitDisplay data={guest.media_benefit?.pre_event_news} onClick={() => onEditComplexBenefit(guest, 'pre_event_news')} benefitType="pre_event_news" />
+                  <ComplexBenefitDisplay data={guest.media_benefit?.pre_event_news} onClick={() => onEditComplexBenefit(guest, 'pre_event_news')} benefitType="pre_event_news" />
                 </TableCell>
                 <TableCell>
-                  <MediaBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
+                  <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
                 </TableCell>
                 <TableCell>
                   <LinkDisplay link={guest.media_benefit?.red_carpet_video_link} onClick={() => onEditLink(guest, 'red_carpet_video_link')} />
                 </TableCell>
                 <TableCell>
-                  <MediaBenefitDisplay data={guest.media_benefit?.news_video} onClick={() => onEditComplexBenefit(guest, 'news_video')} benefitType="news_video" />
+                  <ComplexBenefitDisplay data={guest.media_benefit?.news_video} onClick={() => onEditComplexBenefit(guest, 'news_video')} benefitType="news_video" />
                 </TableCell>
               </TableRow>
             ))

@@ -25,6 +25,34 @@ interface EditMediaBenefitDialogProps {
   benefitType: BenefitType | null;
 }
 
+const InputWithCopy = ({ value, onChange, placeholder }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, placeholder: string }) => {
+  return (
+    <div className="relative">
+      <Input
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        className="pr-10"
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+        onClick={() => {
+          if(value) {
+            navigator.clipboard.writeText(value);
+            showSuccess("Đã sao chép!");
+          }
+        }}
+        disabled={!value}
+      >
+        <Copy className="h-4 w-4 text-slate-500" />
+      </Button>
+    </div>
+  );
+};
+
 const NewsEditor = ({ items, setItems }: { items: NewsItem[], setItems: (items: NewsItem[]) => void }) => {
   const addNewsItem = () => {
     setItems([...items, { id: crypto.randomUUID(), article_link: "", post_link: "" }]);
@@ -43,12 +71,12 @@ const NewsEditor = ({ items, setItems }: { items: NewsItem[], setItems: (items: 
       {items.map((item, index) => (
         <div key={item.id} className="space-y-2 p-3 border rounded-md relative">
           <Label>Bài báo {index + 1}</Label>
-          <Input
+          <InputWithCopy
             placeholder="Link bài viết"
             value={item.article_link}
             onChange={(e) => updateNewsItem(item.id, 'article_link', e.target.value)}
           />
-          <Input
+          <InputWithCopy
             placeholder="Link bài đăng"
             value={item.post_link}
             onChange={(e) => updateNewsItem(item.id, 'post_link', e.target.value)}
@@ -70,7 +98,7 @@ const VideoEditor = ({ video, setVideo }: { video: NewsVideo, setVideo: (video: 
     <div className="space-y-4">
       <div>
         <Label>Link kịch bản</Label>
-        <Input
+        <InputWithCopy
           placeholder="Link kịch bản"
           value={video.script_link}
           onChange={(e) => setVideo({ ...video, script_link: e.target.value })}
@@ -78,7 +106,7 @@ const VideoEditor = ({ video, setVideo }: { video: NewsVideo, setVideo: (video: 
       </div>
       <div>
         <Label>Link video</Label>
-        <Input
+        <InputWithCopy
           placeholder="Link video"
           value={video.video_link}
           onChange={(e) => setVideo({ ...video, video_link: e.target.value })}
@@ -173,7 +201,7 @@ const InfoRow = ({ label, value, isLink = false, isCopyable = false, isTextarea 
             rows={4}
             className="bg-slate-50 pr-10"
           />
-          <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => handleCopy(value)}>
+          <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => handleCopy(value)}>
             <Copy className="h-4 w-4" />
           </Button>
         </div>
@@ -193,7 +221,7 @@ const InfoRow = ({ label, value, isLink = false, isCopyable = false, isTextarea 
           <p className="text-sm text-slate-800 bg-slate-50 p-2 rounded-md flex-1 break-all">{value}</p>
         )}
         {isCopyable && (
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(value)}>
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(value)}>
             <Copy className="h-4 w-4" />
           </Button>
         )}

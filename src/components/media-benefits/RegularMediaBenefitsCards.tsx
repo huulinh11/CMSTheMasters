@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MediaRegularGuest } from "@/types/media-benefit";
 import { StatusSelect } from "./StatusSelect";
-import { MediaBenefitDisplay, LinkDisplay } from "./MediaBenefitDisplay";
+import { LinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
@@ -48,7 +48,7 @@ export const RegularMediaBenefitsCards = ({ guests, onUpdateBenefit, onEditLink,
               {(guest.role === 'VIP' || guest.role === 'V-Vip') && (
                 <>
                   <InfoRow label="Báo sau sự kiện">
-                    <MediaBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
+                    <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
                   </InfoRow>
                   <InfoRow label="Bộ ảnh Beauty AI">
                     <LinkDisplay link={guest.media_benefit?.beauty_ai_photos_link} onClick={() => onEditLink(guest, 'beauty_ai_photos_link')} />

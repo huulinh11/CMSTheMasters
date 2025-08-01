@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { MediaRegularGuest } from "@/types/media-benefit";
 import { StatusSelect } from "./StatusSelect";
-import { MediaBenefitDisplay, LinkDisplay } from "./MediaBenefitDisplay";
+import { LinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
@@ -82,7 +82,7 @@ export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEditLink,
                 {showPostEventNews && (
                   <TableCell>
                     {(guest.role === 'VIP' || guest.role === 'V-Vip') && (
-                      <MediaBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
+                      <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
                     )}
                   </TableCell>
                 )}
