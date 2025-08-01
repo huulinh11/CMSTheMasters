@@ -28,10 +28,14 @@ const regularBenefitFields = [
     { value: 'Đã có', label: 'Đã có' },
     { value: 'Trống', label: 'Trống' },
   ]},
-  { name: 'post_event_news', label: 'Báo sau sự kiện', options: [
+  { name: 'post_event_news_draft', label: 'Báo sau SK (Nháp)', options: [
     { value: 'all', label: 'Tất cả' },
-    { value: 'has_draft', label: 'Có link nháp' },
-    { value: 'has_final', label: 'Có link final' },
+    { value: 'has_data', label: 'Đã có' },
+    { value: 'no_data', label: 'Chưa có' },
+  ]},
+  { name: 'post_event_news_final', label: 'Báo sau SK (Final)', options: [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'has_data', label: 'Đã có' },
     { value: 'no_data', label: 'Chưa có' },
   ]},
   { name: 'beauty_ai_photos_link', label: 'Bộ ảnh Beauty AI', options: [
@@ -105,18 +109,31 @@ export default function RegularMediaBenefitsTab() {
         if (!value || value === 'all') return true;
         const benefit = guest.media_benefit;
 
+        const checkSimpleLink = (link: string | null | undefined) => {
+          if (value === 'has_data') return !!link;
+          if (value === 'no_data') return !link;
+          return true;
+        };
+
+        const checkNews = (newsData: MediaBenefit['post_event_news'], type: 'draft' | 'final') => {
+          const linkField = type === 'draft' ? 'article_link' : 'post_link';
+          if (value === 'has_data') return newsData?.some(item => !!item[linkField]);
+          if (value === 'no_data') return !newsData || newsData.every(item => !item[linkField]);
+          return true;
+        };
+
         switch (field) {
           case 'invitation_status':
             return (benefit?.invitation_status || 'Trống') === value;
           case 'beauty_ai_photos_link':
           case 'red_carpet_video_link':
-            return value === 'has_data' ? !!benefit?.[field] : !benefit?.[field];
-          case 'post_event_news':
-            const newsData = benefit?.post_event_news as MediaBenefit['post_event_news'];
-            if (value === 'has_draft') return newsData?.some(item => !!item.article_link);
-            if (value === 'has_final') return newsData?.some(item => !!item.post_link);
-            if (value === 'no_data') return !newsData || newsData.length === 0;
-            return true;
+            return checkSimpleLink(benefit?.[field]);
+          
+          case 'post_event_news_draft':
+            return checkNews(benefit?.post_event_news, 'draft');
+          case 'post_event_news_final':
+            return checkNews(benefit?.post_event_news, 'final');
+
           default:
             return true;
         }

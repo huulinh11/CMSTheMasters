@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Filter } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type FilterOption = {
   value: string;
@@ -40,7 +41,7 @@ interface AdvancedFilterSheetProps {
 }
 
 const FilterContent = ({ filters, onFilterChange, benefitFields }: AdvancedFilterSheetProps) => (
-  <div className="space-y-4 p-4">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
     {benefitFields.map((field) => (
       <div key={field.name} className="space-y-2">
         <Label>{field.label}</Label>
@@ -81,7 +82,9 @@ export const AdvancedFilterSheet = (props: AdvancedFilterSheetProps) => {
           <SheetHeader>
             <SheetTitle>Bộ lọc nâng cao</SheetTitle>
           </SheetHeader>
-          <FilterContent {...props} />
+          <ScrollArea className="h-[calc(100%-4rem)]">
+            <FilterContent {...props} />
+          </ScrollArea>
         </SheetContent>
       </Sheet>
     );
@@ -90,7 +93,7 @@ export const AdvancedFilterSheet = (props: AdvancedFilterSheetProps) => {
   return (
     <Popover>
       <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
-      <PopoverContent className="w-80">
+      <PopoverContent className="w-[600px]">
         <FilterContent {...props} />
       </PopoverContent>
     </Popover>

@@ -38,16 +38,24 @@ const vipBenefitFields = [
     { value: 'has_data', label: 'Đã có' },
     { value: 'no_data', label: 'Chưa có' },
   ]},
-  { name: 'pre_event_news', label: 'Báo trước sự kiện', options: [
+  { name: 'pre_event_news_draft', label: 'Báo trước SK (Nháp)', options: [
     { value: 'all', label: 'Tất cả' },
-    { value: 'has_draft', label: 'Có link nháp' },
-    { value: 'has_final', label: 'Có link final' },
+    { value: 'has_data', label: 'Đã có' },
     { value: 'no_data', label: 'Chưa có' },
   ]},
-  { name: 'post_event_news', label: 'Báo sau sự kiện', options: [
+  { name: 'pre_event_news_final', label: 'Báo trước SK (Final)', options: [
     { value: 'all', label: 'Tất cả' },
-    { value: 'has_draft', label: 'Có link nháp' },
-    { value: 'has_final', label: 'Có link final' },
+    { value: 'has_data', label: 'Đã có' },
+    { value: 'no_data', label: 'Chưa có' },
+  ]},
+  { name: 'post_event_news_draft', label: 'Báo sau SK (Nháp)', options: [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'has_data', label: 'Đã có' },
+    { value: 'no_data', label: 'Chưa có' },
+  ]},
+  { name: 'post_event_news_final', label: 'Báo sau SK (Final)', options: [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'has_data', label: 'Đã có' },
     { value: 'no_data', label: 'Chưa có' },
   ]},
   { name: 'red_carpet_video_link', label: 'Video thảm đỏ', options: [
@@ -55,10 +63,14 @@ const vipBenefitFields = [
     { value: 'has_data', label: 'Đã có' },
     { value: 'no_data', label: 'Chưa có' },
   ]},
-  { name: 'news_video', label: 'Video đưa tin', options: [
+  { name: 'news_video_draft', label: 'Video đưa tin (Nháp)', options: [
     { value: 'all', label: 'Tất cả' },
-    { value: 'has_draft', label: 'Có link nháp' },
-    { value: 'has_final', label: 'Có link final' },
+    { value: 'has_data', label: 'Đã có' },
+    { value: 'no_data', label: 'Chưa có' },
+  ]},
+  { name: 'news_video_final', label: 'Video đưa tin (Final)', options: [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'has_data', label: 'Đã có' },
     { value: 'no_data', label: 'Chưa có' },
   ]},
 ];
@@ -125,26 +137,49 @@ export default function VipMediaBenefitsTab() {
         if (!value || value === 'all') return true;
         const benefit = guest.media_benefit;
 
+        const checkSimpleLink = (link: string | null | undefined) => {
+          if (value === 'has_data') return !!link;
+          if (value === 'no_data') return !link;
+          return true;
+        };
+
+        const checkNews = (newsData: MediaBenefit['pre_event_news'], type: 'draft' | 'final') => {
+          const linkField = type === 'draft' ? 'article_link' : 'post_link';
+          if (value === 'has_data') return newsData?.some(item => !!item[linkField]);
+          if (value === 'no_data') return !newsData || newsData.every(item => !item[linkField]);
+          return true;
+        };
+
+        const checkVideo = (videoData: MediaBenefit['news_video'], type: 'draft' | 'final') => {
+          const linkField = type === 'draft' ? 'script_link' : 'video_link';
+          if (value === 'has_data') return !!videoData?.[linkField];
+          if (value === 'no_data') return !videoData?.[linkField];
+          return true;
+        };
+
         switch (field) {
           case 'invitation_status':
             return (benefit?.invitation_status || 'Trống') === value;
           case 'page_post_link':
           case 'btc_post_link':
           case 'red_carpet_video_link':
-            return value === 'has_data' ? !!benefit?.[field] : !benefit?.[field];
-          case 'pre_event_news':
-          case 'post_event_news':
-            const newsData = benefit?.[field] as MediaBenefit['pre_event_news'];
-            if (value === 'has_draft') return newsData?.some(item => !!item.article_link);
-            if (value === 'has_final') return newsData?.some(item => !!item.post_link);
-            if (value === 'no_data') return !newsData || newsData.length === 0;
-            return true;
-          case 'news_video':
-            const videoData = benefit?.news_video;
-            if (value === 'has_draft') return !!videoData?.script_link;
-            if (value === 'has_final') return !!videoData?.video_link;
-            if (value === 'no_data') return !videoData || (!videoData.script_link && !videoData.video_link);
-            return true;
+            return checkSimpleLink(benefit?.[field]);
+          
+          case 'pre_event_news_draft':
+            return checkNews(benefit?.pre_event_news, 'draft');
+          case 'pre_event_news_final':
+            return checkNews(benefit?.pre_event_news, 'final');
+          
+          case 'post_event_news_draft':
+            return checkNews(benefit?.post_event_news, 'draft');
+          case 'post_event_news_final':
+            return checkNews(benefit?.post_event_news, 'final');
+
+          case 'news_video_draft':
+            return checkVideo(benefit?.news_video, 'draft');
+          case 'news_video_final':
+            return checkVideo(benefit?.news_video, 'final');
+
           default:
             return true;
         }
