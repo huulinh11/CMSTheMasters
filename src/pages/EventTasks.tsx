@@ -1,7 +1,25 @@
-import PagePlaceholder from "@/components/PagePlaceholder";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VipTasksTab } from "./event-tasks/VipTasksTab";
+import { RegularTasksTab } from "./event-tasks/RegularTasksTab";
 
-const EventTasks = () => {
-  return <PagePlaceholder title="Tác vụ sự kiện" />;
+const EventTasksPage = () => {
+  return (
+    <div className="p-4 md:p-6">
+      <h1 className="text-2xl font-bold text-slate-800 mb-4">Tác vụ sự kiện</h1>
+      <Tabs defaultValue="vip" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:w-[400px] bg-primary/10 p-1 h-12 rounded-xl">
+          <TabsTrigger value="vip" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Chức vụ</TabsTrigger>
+          <TabsTrigger value="regular" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Khách mời</TabsTrigger>
+        </TabsList>
+        <TabsContent value="vip" className="mt-4">
+          <VipTasksTab />
+        </TabsContent>
+        <TabsContent value="regular" className="mt-4">
+          <RegularTasksTab />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
 };
 
-export default EventTasks;
+export default EventTasksPage;
