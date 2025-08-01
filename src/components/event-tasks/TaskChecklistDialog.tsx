@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, Phone, User } from "lucide-react";
+import { History, Phone, User, X } from "lucide-react";
 import { TaskGuest } from "@/types/event-task";
 import { TASKS_BY_ROLE } from "@/config/event-tasks";
 import { TaskHistoryDialog } from "./TaskHistoryDialog";
@@ -26,55 +26,44 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
   };
 
   return (
-    <div className="grid gap-4 p-4 md:p-6">
-      <div className="space-y-1 border-b pb-3 mb-3">
-        <h4 className="font-medium leading-none">{guest.name}</h4>
-        <p className="text-sm text-muted-foreground flex items-center">
-          <User className="w-4 h-4 mr-2" /> {guest.role}
-        </p>
-        <p className="text-sm text-muted-foreground flex items-center">
-          <Phone className="w-4 h-4 mr-2" /> {guest.phone}
+    <>
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="flex items-center"><User className="w-4 h-4 mr-2" /> {guest.role}</span>
+          <span className="flex items-center"><Phone className="w-4 h-4 mr-2" /> {guest.phone}</span>
         </p>
       </div>
-      <div className="space-y-2">
-        <h4 className="font-medium leading-none">Danh sách tác vụ</h4>
-        <p className="text-sm text-muted-foreground">
-          Check vào các tác vụ đã hoàn thành.
-        </p>
-      </div>
-      <ScrollArea className="h-64">
-        <div className="grid gap-1 pr-4">
-          {tasksForRole.map((taskName) => (
-            <div
-              key={taskName}
-              className={cn(
-                "flex items-center justify-between p-2 rounded-md transition-colors",
-                getTaskStatus(taskName) && "bg-green-100 hover:bg-green-200"
-              )}
-            >
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={`${guest.id}-${taskName}`}
-                  checked={getTaskStatus(taskName)}
-                  onCheckedChange={(checked) => onTaskChange({ guestId: guest.id, taskName, isCompleted: !!checked })}
-                />
-                <Label htmlFor={`${guest.id}-${taskName}`} className="text-sm font-normal">
-                  {taskName}
-                </Label>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setHistoryModalState({ guestId: guest.id, taskName })}
-              >
-                <History className="h-4 w-4" />
-              </Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 mt-4">
+        {tasksForRole.map((taskName) => (
+          <div
+            key={taskName}
+            className={cn(
+              "flex items-center justify-between p-2 rounded-md transition-colors",
+              getTaskStatus(taskName) && "bg-green-100 hover:bg-green-200"
+            )}
+          >
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
+              <Checkbox
+                id={`${guest.id}-${taskName}`}
+                checked={getTaskStatus(taskName)}
+                onCheckedChange={(checked) => onTaskChange({ guestId: guest.id, taskName, isCompleted: !!checked })}
+              />
+              <Label htmlFor={`${guest.id}-${taskName}`} className="text-sm font-normal flex-1 truncate" title={taskName}>
+                {taskName}
+              </Label>
             </div>
-          ))}
-        </div>
-      </ScrollArea>
-    </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 flex-shrink-0"
+              onClick={() => setHistoryModalState({ guestId: guest.id, taskName })}
+            >
+              <History className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </>
   );
 };
 
@@ -88,7 +77,7 @@ export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialog
   const totalCount = tasksForRole.length;
 
   const triggerButton = (
-    <Button variant="outline" size="sm">
+    <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
       {completedCount}/{totalCount} tác vụ
     </Button>
   );
@@ -98,8 +87,16 @@ export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialog
       <>
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
-          <DrawerContent>
-            <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
+          <DrawerContent className="h-[95vh]">
+            <DrawerHeader className="flex justify-between items-center p-4 border-b">
+              <DrawerTitle>{guest.name}</DrawerTitle>
+              <DrawerClose asChild>
+                <Button variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
+              </DrawerClose>
+            </DrawerHeader>
+            <ScrollArea className="flex-1 p-4">
+              <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
+            </ScrollArea>
           </DrawerContent>
         </Drawer>
         <TaskHistoryDialog
@@ -116,8 +113,13 @@ export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialog
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>{triggerButton}</DialogTrigger>
-        <DialogContent className="max-w-md">
-          <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{guest.name}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
+          </div>
         </DialogContent>
       </Dialog>
       <TaskHistoryDialog
