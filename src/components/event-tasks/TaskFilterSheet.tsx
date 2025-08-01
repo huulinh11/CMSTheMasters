@@ -45,7 +45,7 @@ const FilterGrid = ({ filters, onFilterChange, allTasks }: Omit<TaskFilterSheetP
         <Label
           htmlFor={`select-${taskName}`}
           className={cn(
-            "text-sm font-medium truncate pr-4",
+            "text-sm font-medium pr-4",
             filters[taskName] && filters[taskName] !== 'all' && "text-green-600"
           )}
         >
@@ -55,7 +55,7 @@ const FilterGrid = ({ filters, onFilterChange, allTasks }: Omit<TaskFilterSheetP
           value={filters[taskName] || 'all'}
           onValueChange={(value) => onFilterChange(taskName, value)}
         >
-          <SelectTrigger id={`select-${taskName}`} className="w-[150px] flex-shrink-0">
+          <SelectTrigger id={`select-${taskName}`} className="w-[120px] flex-shrink-0">
             <SelectValue placeholder="Chọn trạng thái" />
           </SelectTrigger>
           <SelectContent>
@@ -84,7 +84,7 @@ export const TaskFilterSheet = (props: TaskFilterSheetProps) => {
     return (
       <Sheet>
         <SheetTrigger asChild>{triggerButton}</SheetTrigger>
-        <SheetContent className="p-0 flex flex-col w-5/6">
+        <SheetContent className="p-0 flex flex-col w-[90%]">
           <SheetHeader className="p-4 border-b">
             <div className="flex justify-between items-center">
               <SheetTitle>Bộ lọc tác vụ</SheetTitle>
@@ -107,7 +107,7 @@ export const TaskFilterSheet = (props: TaskFilterSheetProps) => {
   return (
     <Popover>
       <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
-      <PopoverContent className="w-[800px] p-0">
+      <PopoverContent className="w-[900px] p-0">
         <div className="p-4 border-b flex justify-between items-center">
           <h4 className="font-medium leading-none">Bộ lọc tác vụ</h4>
           <Button variant="ghost" size="sm" onClick={props.onClearFilters}>
