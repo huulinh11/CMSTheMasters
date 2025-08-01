@@ -91,9 +91,9 @@ const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label
   if (!value) return null;
   return (
     <div className="flex items-start">
-      <Icon className="h-4 w-4 mr-3 mt-0.5 flex-shrink-0 text-slate-400" />
-      <p>
-        <span className="font-medium text-slate-700">{label}:</span> {value}
+      <Icon className="h-4 w-4 mr-3 mt-0.5 flex-shrink-0 text-[rgb(185,179,176)]" />
+      <p className="text-[rgb(185,179,176)]">
+        <span className="font-normal">{label}:</span> {value}
       </p>
     </div>
   );

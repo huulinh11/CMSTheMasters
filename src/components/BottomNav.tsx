@@ -21,7 +21,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Card, CardContent } from "@/components/ui/card";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Home", end: true },
@@ -48,6 +47,8 @@ const BottomNav = () => {
     }
   }, [location.pathname]);
 
+  const isMorePageActive = moreLinks.some(link => location.pathname === link.to);
+
   return (
     <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:hidden">
       <nav className="flex justify-around items-center h-16">
@@ -63,26 +64,22 @@ const BottomNav = () => {
 
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
-            <button className="flex flex-col items-center justify-center w-full h-full transition-colors text-slate-500">
+            <button className={`flex flex-col items-center justify-center w-full h-full transition-colors ${isMorePageActive ? "text-primary" : "text-slate-500"}`}>
               <MoreHorizontal className="w-6 h-6 mb-1" />
               <span className="text-xs font-medium">Khác</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-3/4 p-4 bg-transparent">
-            <SheetHeader className="mb-6 text-left">
+          <SheetContent side="right" className="w-3/4 p-0 bg-white">
+            <SheetHeader className="p-4 text-left border-b">
               <SheetTitle className="text-2xl font-bold text-slate-800">Khác</SheetTitle>
             </SheetHeader>
-            <Card className="bg-white shadow-sm">
-              <CardContent className="p-0">
-                <ul className="divide-y divide-slate-200">
-                  {moreLinks.map((link) => (
-                    <li key={link.to}>
-                      <MoreLinkItem to={link.to} icon={link.icon} label={link.label} />
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <ul className="divide-y divide-slate-200">
+              {moreLinks.map((link) => (
+                <li key={link.to}>
+                  <MoreLinkItem to={link.to} icon={link.icon} label={link.label} />
+                </li>
+              ))}
+            </ul>
           </SheetContent>
         </Sheet>
       </nav>
