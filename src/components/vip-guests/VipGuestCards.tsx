@@ -94,7 +94,7 @@ const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label
       <Icon className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-[rgb(185,179,176)]" />
       <p className="text-sm">
         <span className="text-[rgb(185,179,176)] font-normal">{label}: </span>
-        <span className="text-black font-bold">{value}</span>
+        <span className="text-black font-normal">{value}</span>
       </p>
     </div>
   );
