@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VipGuestRevenueTab from "./Revenue/VipGuestRevenueTab";
+import RegularGuestRevenueTab from "./Revenue/RegularGuestRevenueTab";
 import PagePlaceholder from "@/components/PagePlaceholder";
 
 const RevenuePage = () => {
@@ -16,7 +17,7 @@ const RevenuePage = () => {
           <VipGuestRevenueTab />
         </TabsContent>
         <TabsContent value="regular" className="mt-4">
-          <PagePlaceholder title="Doanh thu Khách mời" />
+          <RegularGuestRevenueTab />
         </TabsContent>
         <TabsContent value="commission" className="mt-4">
           <PagePlaceholder title="Hoa hồng" />
