@@ -96,7 +96,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
     if (type === 'image') {
       newBlock = { ...base, type: 'image', imageUrl: '', linkUrl: '' };
     } else if (type === 'video') {
-      newBlock = { ...base, type: 'video', videoUrl: '' };
+      newBlock = { ...base, type: 'video', videoUrl: '', isVertical: false };
     } else {
       newBlock = { ...base, type: 'text', text: '', backgroundImageUrl: '', isGuestName: false };
     }
@@ -156,8 +156,12 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                         {block.type === 'video' && (
                           <div className="space-y-2">
                             <Input placeholder="Link Youtube" value={block.videoUrl} onChange={e => handleUpdateBlock(block.id, 'videoUrl', e.target.value)} />
+                            <div className="flex items-center space-x-2">
+                              <Switch id={`isVertical-${block.id}`} checked={block.isVertical} onCheckedChange={checked => handleUpdateBlock(block.id, 'isVertical', checked)} />
+                              <Label htmlFor={`isVertical-${block.id}`}>Video dọc (9:16)</Label>
+                            </div>
                             {getVideoEmbedUrl(block.videoUrl) && (
-                              <div className="aspect-video">
+                              <div className={block.isVertical ? 'aspect-w-9 aspect-h-16' : 'aspect-w-16 aspect-h-9'}>
                                 <iframe src={getVideoEmbedUrl(block.videoUrl)!} title="Video Preview" className="w-full h-full rounded-md border" allowFullScreen />
                               </div>
                             )}
