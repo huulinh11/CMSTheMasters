@@ -4,7 +4,6 @@ import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle, Drawer
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { History, Phone, User, X } from "lucide-react";
 import { TaskGuest } from "@/types/event-task";
 import { TASKS_BY_ROLE } from "@/config/event-tasks";
@@ -120,11 +119,11 @@ export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialog
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>{guest.name}</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="flex-grow">
+          <div className="flex-1 overflow-y-auto">
             <div className="py-4 pr-6">
               <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
       <TaskHistoryDialog
