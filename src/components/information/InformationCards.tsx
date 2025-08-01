@@ -1,10 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { VipGuest } from "@/types/vip-guest";
-import { Edit, Eye, Link, FileText, Info, Phone } from "lucide-react";
+import { Edit, Eye, Link, FileText, Info, Phone, Copy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { showSuccess } from "@/utils/toast";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { cn } from "@/lib/utils";
 
 interface InformationCardsProps {
   guests: VipGuest[];
@@ -12,7 +13,7 @@ interface InformationCardsProps {
   roleConfigs: RoleConfiguration[];
 }
 
-const InfoItem = ({ icon: Icon, label, value, isLink = false, isCopyable = false }: { icon: React.ElementType, label: string, value?: string, isLink?: boolean, isCopyable?: boolean }) => {
+const InfoItem = ({ icon: Icon, label, value, isLink = false, isCopyable = false, truncate = false }: { icon: React.ElementType, label: string, value?: string, isLink?: boolean, isCopyable?: boolean, truncate?: boolean }) => {
   if (!value) return null;
 
   const handleCopy = (textToCopy: string) => {
@@ -20,31 +21,41 @@ const InfoItem = ({ icon: Icon, label, value, isLink = false, isCopyable = false
     showSuccess(`Đã sao chép ${label}`);
   };
 
-  const itemContent = (
+  const content = (
     <div className="flex items-start">
       <Icon className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-[rgb(185,179,176)]" />
-      <p className="text-sm text-left">
-        <span className="text-[rgb(185,179,176)] font-normal">{label}: </span>
+      <div className="text-sm flex-1 overflow-hidden">
         {isLink ? (
-          <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-normal hover:underline break-all">
-            {value}
-          </a>
+          <div className="flex items-center justify-between">
+            <p>
+              <span className="text-[rgb(185,179,176)] font-normal">{label}: </span>
+              <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-normal hover:underline">
+                Link
+              </a>
+            </p>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleCopy(value); }}>
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
         ) : (
-          <span className="text-black font-normal">{value}</span>
+          <p className={cn(truncate ? "truncate" : "")}>
+            <span className="text-[rgb(185,179,176)] font-normal">{label}: </span>
+            <span className="text-black font-normal">{value}</span>
+          </p>
         )}
-      </p>
+      </div>
     </div>
   );
 
   if (isCopyable) {
     return (
       <button onClick={() => handleCopy(value)} className="w-full text-left">
-        {itemContent}
+        {content}
       </button>
     );
   }
 
-  return itemContent;
+  return content;
 };
 
 
@@ -89,7 +100,7 @@ export const InformationCards = ({ guests, onEdit, roleConfigs }: InformationCar
               <div className="border-t border-slate-100 pt-3 space-y-2">
                 <InfoItem icon={Phone} label="SĐT" value={guest.phone} isCopyable />
                 <InfoItem icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} isCopyable />
-                <InfoItem icon={FileText} label="Tư liệu" value={guest.materials} isCopyable />
+                <InfoItem icon={FileText} label="Tư liệu" value={guest.materials} isCopyable truncate />
                 <InfoItem icon={Link} label="Facebook" value={guest.facebook_link} isLink />
                 <div className="flex items-start">
                   <Eye className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-[rgb(185,179,176)]" />
