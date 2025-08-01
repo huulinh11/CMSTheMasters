@@ -8,16 +8,14 @@ import { Guest } from "@/types/guest";
 import { MediaBenefit, MediaRegularGuest } from "@/types/media-benefit";
 import { RegularMediaBenefitsTable } from "../../components/media-benefits/RegularMediaBenefitsTable";
 import { RegularMediaBenefitsCards } from "../../components/media-benefits/RegularMediaBenefitsCards";
-import { EditLinkDialog } from "../../components/media-benefits/EditLinkDialog";
-import { EditMediaBenefitDialog } from "../../components/media-benefits/EditMediaBenefitDialog";
+import { EditAllMediaBenefitsDialog } from "../../components/media-benefits/EditAllMediaBenefitsDialog";
 import { showSuccess, showError } from "@/utils/toast";
 
 export default function RegularMediaBenefitsTab() {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingLink, setEditingLink] = useState<{ guest: MediaRegularGuest, field: string } | null>(null);
-  const [editingComplex, setEditingComplex] = useState<{ guest: MediaRegularGuest, field: string } | null>(null);
+  const [editingGuest, setEditingGuest] = useState<MediaRegularGuest | null>(null);
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<Guest[]>({
     queryKey: ['guests'],
@@ -57,9 +55,9 @@ export default function RegularMediaBenefitsTab() {
   }, [combinedGuests, searchTerm]);
 
   const mutation = useMutation({
-    mutationFn: async ({ guestId, field, value }: { guestId: string, field: string, value: any }) => {
+    mutationFn: async ({ guestId, benefits }: { guestId: string, benefits: Partial<MediaBenefit> }) => {
       const { error } = await supabase.from('media_benefits').upsert(
-        { guest_id: guestId, [field]: value },
+        { guest_id: guestId, ...benefits },
         { onConflict: 'guest_id' }
       );
       if (error) throw error;
@@ -67,26 +65,17 @@ export default function RegularMediaBenefitsTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['media_benefits'] });
       showSuccess("Cập nhật thành công!");
+      setEditingGuest(null);
     },
     onError: (error) => showError(error.message),
   });
 
   const handleUpdateBenefit = useCallback((guestId: string, field: string, value: any) => {
-    mutation.mutate({ guestId, field, value });
+    mutation.mutate({ guestId, benefits: { [field]: value } });
   }, [mutation]);
 
-  const handleSaveLink = (link: string) => {
-    if (editingLink) {
-      handleUpdateBenefit(editingLink.guest.id, editingLink.field, link);
-      setEditingLink(null);
-    }
-  };
-
-  const handleSaveComplexBenefit = (data: any) => {
-    if (editingComplex) {
-      handleUpdateBenefit(editingComplex.guest.id, editingComplex.field, data);
-      setEditingComplex(null);
-    }
+  const handleSaveAllBenefits = (guestId: string, benefits: Partial<MediaBenefit>) => {
+    mutation.mutate({ guestId, benefits });
   };
 
   const isLoading = isLoadingGuests || isLoadingBenefits;
@@ -105,30 +94,20 @@ export default function RegularMediaBenefitsTab() {
         <RegularMediaBenefitsCards
           guests={filteredGuests}
           onUpdateBenefit={handleUpdateBenefit}
-          onEditLink={(guest, field) => setEditingLink({ guest, field })}
-          onEditComplexBenefit={(guest, field) => setEditingComplex({ guest, field })}
+          onEdit={setEditingGuest}
         />
       ) : (
         <RegularMediaBenefitsTable
           guests={filteredGuests}
           onUpdateBenefit={handleUpdateBenefit}
-          onEditLink={(guest, field) => setEditingLink({ guest, field })}
-          onEditComplexBenefit={(guest, field) => setEditingComplex({ guest, field })}
+          onEdit={setEditingGuest}
         />
       )}
-      <EditLinkDialog
-        open={!!editingLink}
-        onOpenChange={() => setEditingLink(null)}
-        onSave={handleSaveLink}
-        title={`Sửa link cho ${editingLink?.guest.name}`}
-        initialValue={editingLink ? editingLink.guest.media_benefit?.[editingLink.field] : ""}
-      />
-      <EditMediaBenefitDialog
-        open={!!editingComplex}
-        onOpenChange={() => setEditingComplex(null)}
-        onSave={handleSaveComplexBenefit}
-        guest={editingComplex?.guest || null}
-        benefitType={editingComplex?.field as any}
+      <EditAllMediaBenefitsDialog
+        guest={editingGuest}
+        open={!!editingGuest}
+        onOpenChange={() => setEditingGuest(null)}
+        onSave={handleSaveAllBenefits}
       />
     </div>
   );

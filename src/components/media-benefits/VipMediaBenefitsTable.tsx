@@ -6,18 +6,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { MediaVipGuest } from "@/types/media-benefit";
 import { StatusSelect } from "./StatusSelect";
-import { LinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
+import { SimpleLinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 
 interface VipMediaBenefitsTableProps {
   guests: MediaVipGuest[];
   onUpdateBenefit: (guestId: string, field: string, value: any) => void;
-  onEditLink: (guest: MediaVipGuest, field: string) => void;
-  onEditComplexBenefit: (guest: MediaVipGuest, field: string) => void;
+  onEdit: (guest: MediaVipGuest) => void;
 }
 
-export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEditLink, onEditComplexBenefit }: VipMediaBenefitsTableProps) => {
+export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit }: VipMediaBenefitsTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -40,7 +40,11 @@ export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEditLink, onE
             guests.map((guest) => (
               <TableRow key={guest.id}>
                 <TableCell>{guest.id}</TableCell>
-                <TableCell className="font-semibold">{guest.name}</TableCell>
+                <TableCell>
+                  <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => onEdit(guest)}>
+                    {guest.name}
+                  </Button>
+                </TableCell>
                 <TableCell>{guest.role}</TableCell>
                 <TableCell>
                   <StatusSelect
@@ -49,22 +53,22 @@ export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEditLink, onE
                   />
                 </TableCell>
                 <TableCell>
-                  <LinkDisplay link={guest.media_benefit?.page_post_link} onClick={() => onEditLink(guest, 'page_post_link')} />
+                  <SimpleLinkDisplay link={guest.media_benefit?.page_post_link} />
                 </TableCell>
                 <TableCell>
-                  <LinkDisplay link={guest.media_benefit?.btc_post_link} onClick={() => onEditLink(guest, 'btc_post_link')} />
+                  <SimpleLinkDisplay link={guest.media_benefit?.btc_post_link} />
                 </TableCell>
                 <TableCell>
-                  <ComplexBenefitDisplay data={guest.media_benefit?.pre_event_news} onClick={() => onEditComplexBenefit(guest, 'pre_event_news')} benefitType="pre_event_news" />
+                  <ComplexBenefitDisplay data={guest.media_benefit?.pre_event_news} benefitType="pre_event_news" />
                 </TableCell>
                 <TableCell>
-                  <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
+                  <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} benefitType="post_event_news" />
                 </TableCell>
                 <TableCell>
-                  <LinkDisplay link={guest.media_benefit?.red_carpet_video_link} onClick={() => onEditLink(guest, 'red_carpet_video_link')} />
+                  <SimpleLinkDisplay link={guest.media_benefit?.red_carpet_video_link} />
                 </TableCell>
                 <TableCell>
-                  <ComplexBenefitDisplay data={guest.media_benefit?.news_video} onClick={() => onEditComplexBenefit(guest, 'news_video')} benefitType="news_video" />
+                  <ComplexBenefitDisplay data={guest.media_benefit?.news_video} benefitType="news_video" />
                 </TableCell>
               </TableRow>
             ))

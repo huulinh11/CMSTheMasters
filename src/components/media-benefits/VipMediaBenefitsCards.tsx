@@ -1,22 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MediaVipGuest } from "@/types/media-benefit";
 import { StatusSelect } from "./StatusSelect";
-import { LinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
+import { SimpleLinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 import { Separator } from "@/components/ui/separator";
 
 interface VipMediaBenefitsCardsProps {
   guests: MediaVipGuest[];
   onUpdateBenefit: (guestId: string, field: string, value: any) => void;
-  onEditLink: (guest: MediaVipGuest, field: string) => void;
-  onEditComplexBenefit: (guest: MediaVipGuest, field: string) => void;
+  onEdit: (guest: MediaVipGuest) => void;
 }
 
-export const VipMediaBenefitsCards = ({ guests, onUpdateBenefit, onEditLink, onEditComplexBenefit }: VipMediaBenefitsCardsProps) => {
+export const VipMediaBenefitsCards = ({ guests, onUpdateBenefit, onEdit }: VipMediaBenefitsCardsProps) => {
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
         guests.map((guest) => (
-          <Card key={guest.id} className="bg-white shadow-sm">
+          <Card key={guest.id} className="bg-white shadow-sm" onClick={() => onEdit(guest)}>
             <CardHeader>
               <CardTitle>{guest.name}</CardTitle>
               <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
@@ -30,22 +29,22 @@ export const VipMediaBenefitsCards = ({ guests, onUpdateBenefit, onEditLink, onE
               </InfoRow>
               <Separator />
               <InfoRow label="Post bài page">
-                <LinkDisplay link={guest.media_benefit?.page_post_link} onClick={() => onEditLink(guest, 'page_post_link')} />
+                <SimpleLinkDisplay link={guest.media_benefit?.page_post_link} />
               </InfoRow>
               <InfoRow label="Post bài BTC">
-                <LinkDisplay link={guest.media_benefit?.btc_post_link} onClick={() => onEditLink(guest, 'btc_post_link')} />
+                <SimpleLinkDisplay link={guest.media_benefit?.btc_post_link} />
               </InfoRow>
               <InfoRow label="Báo trước sự kiện">
-                <ComplexBenefitDisplay data={guest.media_benefit?.pre_event_news} onClick={() => onEditComplexBenefit(guest, 'pre_event_news')} benefitType="pre_event_news" />
+                <ComplexBenefitDisplay data={guest.media_benefit?.pre_event_news} benefitType="pre_event_news" />
               </InfoRow>
               <InfoRow label="Báo sau sự kiện">
-                <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
+                <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} benefitType="post_event_news" />
               </InfoRow>
               <InfoRow label="Video thảm đỏ">
-                <LinkDisplay link={guest.media_benefit?.red_carpet_video_link} onClick={() => onEditLink(guest, 'red_carpet_video_link')} />
+                <SimpleLinkDisplay link={guest.media_benefit?.red_carpet_video_link} />
               </InfoRow>
               <InfoRow label="Video đưa tin">
-                <ComplexBenefitDisplay data={guest.media_benefit?.news_video} onClick={() => onEditComplexBenefit(guest, 'news_video')} benefitType="news_video" />
+                <ComplexBenefitDisplay data={guest.media_benefit?.news_video} benefitType="news_video" />
               </InfoRow>
             </CardContent>
           </Card>

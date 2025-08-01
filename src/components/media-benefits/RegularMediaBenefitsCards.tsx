@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MediaRegularGuest } from "@/types/media-benefit";
 import { StatusSelect } from "./StatusSelect";
-import { LinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
+import { SimpleLinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
@@ -10,8 +10,7 @@ import { showSuccess } from "@/utils/toast";
 interface RegularMediaBenefitsCardsProps {
   guests: MediaRegularGuest[];
   onUpdateBenefit: (guestId: string, field: string, value: any) => void;
-  onEditLink: (guest: MediaRegularGuest, field: string) => void;
-  onEditComplexBenefit: (guest: MediaRegularGuest, field: string) => void;
+  onEdit: (guest: MediaRegularGuest) => void;
 }
 
 const handleCopy = (textToCopy: string | undefined) => {
@@ -20,12 +19,12 @@ const handleCopy = (textToCopy: string | undefined) => {
   showSuccess(`Đã sao chép!`);
 };
 
-export const RegularMediaBenefitsCards = ({ guests, onUpdateBenefit, onEditLink, onEditComplexBenefit }: RegularMediaBenefitsCardsProps) => {
+export const RegularMediaBenefitsCards = ({ guests, onUpdateBenefit, onEdit }: RegularMediaBenefitsCardsProps) => {
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
         guests.map((guest) => (
-          <Card key={guest.id} className="bg-white shadow-sm">
+          <Card key={guest.id} className="bg-white shadow-sm" onClick={() => onEdit(guest)}>
             <CardHeader>
               <CardTitle>{guest.name}</CardTitle>
               <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
@@ -48,16 +47,16 @@ export const RegularMediaBenefitsCards = ({ guests, onUpdateBenefit, onEditLink,
               {(guest.role === 'VIP' || guest.role === 'V-Vip') && (
                 <>
                   <InfoRow label="Báo sau sự kiện">
-                    <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
+                    <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} benefitType="post_event_news" />
                   </InfoRow>
                   <InfoRow label="Bộ ảnh Beauty AI">
-                    <LinkDisplay link={guest.media_benefit?.beauty_ai_photos_link} onClick={() => onEditLink(guest, 'beauty_ai_photos_link')} />
+                    <SimpleLinkDisplay link={guest.media_benefit?.beauty_ai_photos_link} />
                   </InfoRow>
                 </>
               )}
               {guest.role === 'V-Vip' && (
                 <InfoRow label="Video thảm đỏ">
-                  <LinkDisplay link={guest.media_benefit?.red_carpet_video_link} onClick={() => onEditLink(guest, 'red_carpet_video_link')} />
+                  <SimpleLinkDisplay link={guest.media_benefit?.red_carpet_video_link} />
                 </InfoRow>
               )}
             </CardContent>

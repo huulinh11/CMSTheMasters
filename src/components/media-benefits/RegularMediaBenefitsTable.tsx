@@ -6,18 +6,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { MediaRegularGuest } from "@/types/media-benefit";
 import { StatusSelect } from "./StatusSelect";
-import { LinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
-import { Button } from "@/components/ui/button";
+import { SimpleLinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 import { Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 
 interface RegularMediaBenefitsTableProps {
   guests: MediaRegularGuest[];
   onUpdateBenefit: (guestId: string, field: string, value: any) => void;
-  onEditLink: (guest: MediaRegularGuest, field: string) => void;
-  onEditComplexBenefit: (guest: MediaRegularGuest, field: string) => void;
+  onEdit: (guest: MediaRegularGuest) => void;
 }
 
 const handleCopy = (textToCopy: string | undefined) => {
@@ -26,7 +25,7 @@ const handleCopy = (textToCopy: string | undefined) => {
   showSuccess(`Đã sao chép!`);
 };
 
-export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEditLink, onEditComplexBenefit }: RegularMediaBenefitsTableProps) => {
+export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit }: RegularMediaBenefitsTableProps) => {
   const hasColumn = (field: string) => guests.some(g => {
     switch(field) {
       case 'materials': return !!g.materials;
@@ -62,7 +61,11 @@ export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEditLink,
             guests.map((guest) => (
               <TableRow key={guest.id}>
                 <TableCell>{guest.id}</TableCell>
-                <TableCell className="font-semibold">{guest.name}</TableCell>
+                <TableCell>
+                  <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => onEdit(guest)}>
+                    {guest.name}
+                  </Button>
+                </TableCell>
                 <TableCell>{guest.role}</TableCell>
                 <TableCell>
                   <StatusSelect
@@ -82,21 +85,21 @@ export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEditLink,
                 {showPostEventNews && (
                   <TableCell>
                     {(guest.role === 'VIP' || guest.role === 'V-Vip') && (
-                      <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} onClick={() => onEditComplexBenefit(guest, 'post_event_news')} benefitType="post_event_news" />
+                      <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} benefitType="post_event_news" />
                     )}
                   </TableCell>
                 )}
                 {showBeautyAI && (
                   <TableCell>
                     {(guest.role === 'VIP' || guest.role === 'V-Vip') && (
-                      <LinkDisplay link={guest.media_benefit?.beauty_ai_photos_link} onClick={() => onEditLink(guest, 'beauty_ai_photos_link')} />
+                      <SimpleLinkDisplay link={guest.media_benefit?.beauty_ai_photos_link} />
                     )}
                   </TableCell>
                 )}
                 {showRedCarpet && (
                   <TableCell>
                     {guest.role === 'V-Vip' && (
-                      <LinkDisplay link={guest.media_benefit?.red_carpet_video_link} onClick={() => onEditLink(guest, 'red_carpet_video_link')} />
+                      <SimpleLinkDisplay link={guest.media_benefit?.red_carpet_video_link} />
                     )}
                   </TableCell>
                 )}
