@@ -33,7 +33,7 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
           <span className="flex items-center"><Phone className="w-4 h-4 mr-2" /> {guest.phone}</span>
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 mt-4">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4">
         {tasksForRole.map((taskName) => (
           <div
             key={taskName}
@@ -87,15 +87,17 @@ export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialog
       <>
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
-          <DrawerContent className="h-[95vh]">
-            <DrawerHeader className="flex justify-between items-center p-4 border-b">
+          <DrawerContent className="flex flex-col max-h-[95vh]">
+            <DrawerHeader className="flex justify-between items-center p-4 border-b flex-shrink-0">
               <DrawerTitle>{guest.name}</DrawerTitle>
               <DrawerClose asChild>
                 <Button variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
               </DrawerClose>
             </DrawerHeader>
-            <ScrollArea className="flex-1 p-4">
-              <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
+            <ScrollArea className="flex-grow">
+              <div className="p-4">
+                <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
+              </div>
             </ScrollArea>
           </DrawerContent>
         </Drawer>
