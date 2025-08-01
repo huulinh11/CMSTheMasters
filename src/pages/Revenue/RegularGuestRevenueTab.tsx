@@ -14,6 +14,8 @@ import {
 import { ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import RegularRevenueTable from "@/components/Revenue/RegularRevenueTable";
+import { RegularRevenueCards } from "@/components/Revenue/RegularRevenueCards";
+import RegularRevenueStats from "@/components/Revenue/RegularRevenueStats";
 import GuestPaymentDialog from "@/components/Revenue/GuestPaymentDialog";
 import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -68,7 +70,8 @@ const RegularGuestRevenueTab = () => {
 
   return (
     <div className="space-y-4">
-      {/* Placeholder for stats */}
+      <RegularRevenueStats guests={filteredGuests} />
+      
       <div className="flex items-center gap-2">
         <Input
           placeholder="Tìm kiếm theo tên, ID..."
@@ -102,6 +105,15 @@ const RegularGuestRevenueTab = () => {
 
       {isLoading ? (
         <Skeleton className="h-96 w-full rounded-lg" />
+      ) : isMobile ? (
+        <RegularRevenueCards
+          guests={filteredGuests}
+          onPay={setPayingGuest}
+          onHistory={setHistoryGuest}
+          onEdit={handleEdit}
+          onUpsale={handleUpsale}
+          onView={setViewingGuest}
+        />
       ) : (
         <RegularRevenueTable
           guests={filteredGuests}
