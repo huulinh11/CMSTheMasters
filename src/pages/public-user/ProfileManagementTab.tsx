@@ -9,11 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Copy, Edit } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ProfileManagementCards } from "@/components/public-user/ProfileManagementCards";
 
 type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời' };
 
 const ProfileManagementTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const isMobile = useIsMobile();
 
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
@@ -54,6 +57,11 @@ const ProfileManagementTab = () => {
     showSuccess("Đã sao chép link!");
   };
 
+  const handleEditProfile = (guest: CombinedGuest) => {
+    // Placeholder for future implementation
+    console.log("Editing guest:", guest.id);
+  };
+
   const isLoading = isLoadingVip || isLoadingRegular;
 
   if (isLoading) {
@@ -68,47 +76,55 @@ const ProfileManagementTab = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="max-w-sm"
       />
-      <div className="rounded-lg border bg-white">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tên</TableHead>
-              <TableHead>Vai trò</TableHead>
-              <TableHead>Link Public</TableHead>
-              <TableHead className="text-right">Tác vụ</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredGuests.length > 0 ? (
-              filteredGuests.map(guest => (
-                <TableRow key={guest.id}>
-                  <TableCell className="font-medium">{guest.name}</TableCell>
-                  <TableCell>{guest.role}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {guest.slug ? `/profile/${guest.slug}` : "Chưa có"}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    {guest.slug && (
-                      <Button variant="outline" size="sm" onClick={() => handleCopyLink(guest.slug!)}>
-                        <Copy className="mr-2 h-4 w-4" /> Sao chép
+      {isMobile ? (
+        <ProfileManagementCards 
+          guests={filteredGuests}
+          onCopyLink={handleCopyLink}
+          onEdit={handleEditProfile}
+        />
+      ) : (
+        <div className="rounded-lg border bg-white">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tên</TableHead>
+                <TableHead>Vai trò</TableHead>
+                <TableHead>Link Public</TableHead>
+                <TableHead className="text-right">Tác vụ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredGuests.length > 0 ? (
+                filteredGuests.map(guest => (
+                  <TableRow key={guest.id}>
+                    <TableCell className="font-medium">{guest.name}</TableCell>
+                    <TableCell>{guest.role}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {guest.slug ? `/profile/${guest.slug}` : "Chưa có"}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      {guest.slug && (
+                        <Button variant="outline" size="sm" onClick={() => handleCopyLink(guest.slug!)}>
+                          <Copy className="mr-2 h-4 w-4" /> Sao chép
+                        </Button>
+                      )}
+                      <Button variant="default" size="sm" disabled>
+                        <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
                       </Button>
-                    )}
-                    <Button variant="default" size="sm" disabled>
-                      <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
-                    </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    Không tìm thấy khách mời.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  Không tìm thấy khách mời.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 };
