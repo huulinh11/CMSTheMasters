@@ -33,7 +33,7 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
           <span className="flex items-center"><Phone className="w-4 h-4 mr-2" /> {guest.phone}</span>
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-4">
         {tasksForRole.map((taskName) => (
           <div
             key={taskName}
@@ -42,13 +42,14 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
               getTaskStatus(taskName) && "bg-green-100 hover:bg-green-200"
             )}
           >
-            <div className="flex items-center space-x-2 flex-1 min-w-0">
+            <div className="flex items-start space-x-2 flex-1 min-w-0">
               <Checkbox
                 id={`${guest.id}-${taskName}`}
                 checked={getTaskStatus(taskName)}
                 onCheckedChange={(checked) => onTaskChange({ guestId: guest.id, taskName, isCompleted: !!checked })}
+                className="mt-0.5"
               />
-              <Label htmlFor={`${guest.id}-${taskName}`} className="text-sm font-normal flex-1 truncate" title={taskName}>
+              <Label htmlFor={`${guest.id}-${taskName}`} className="text-sm font-normal flex-1">
                 {taskName}
               </Label>
             </div>
@@ -87,7 +88,7 @@ export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialog
       <>
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
-          <DrawerContent className="flex flex-col max-h-[95vh]">
+          <DrawerContent className="flex flex-col max-h-[90vh]">
             <DrawerHeader className="flex justify-between items-center p-4 border-b flex-shrink-0">
               <DrawerTitle>{guest.name}</DrawerTitle>
               <DrawerClose asChild>
