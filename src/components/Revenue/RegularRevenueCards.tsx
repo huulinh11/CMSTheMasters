@@ -79,6 +79,7 @@ export const RegularRevenueCards = ({
                 <InfoRow label="Tài trợ" value={formatCurrency(guest.sponsorship)} valueClass={cn(guest.is_upsaled && "text-red-600 font-bold")} />
                 <InfoRow label="Đã thanh toán" value={formatCurrency(guest.paid)} valueClass="text-green-600" />
                 <InfoRow label="Chưa thanh toán" value={formatCurrency(guest.unpaid)} valueClass="text-red-600" />
+                <InfoRow label="Nguồn thanh toán" value={guest.payment_source || "Trống"} />
                 {guest.referrer && <InfoRow label="Người giới thiệu" value={guest.referrer} />}
               </div>
               <div className="flex gap-2">

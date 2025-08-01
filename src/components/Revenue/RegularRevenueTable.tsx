@@ -50,7 +50,7 @@ const RegularRevenueTable = ({ guests, onPay, onHistory, onEdit, onUpsale, onVie
             <TableHead>Tài trợ</TableHead>
             <TableHead>Đã thanh toán</TableHead>
             <TableHead>Chưa thanh toán</TableHead>
-            <TableHead>Người giới thiệu</TableHead>
+            <TableHead>Nguồn thanh toán</TableHead>
             <TableHead className="text-right">Tác vụ</TableHead>
           </TableRow>
         </TableHeader>
@@ -77,7 +77,7 @@ const RegularRevenueTable = ({ guests, onPay, onHistory, onEdit, onUpsale, onVie
                 </TableCell>
                 <TableCell className="text-green-600">{formatCurrency(guest.paid)}</TableCell>
                 <TableCell className="text-red-600">{formatCurrency(guest.unpaid)}</TableCell>
-                <TableCell>{guest.referrer || ""}</TableCell>
+                <TableCell>{guest.payment_source || "Trống"}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="outline" size="sm" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}>
                     Thanh toán

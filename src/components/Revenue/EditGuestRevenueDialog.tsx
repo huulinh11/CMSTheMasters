@@ -18,36 +18,59 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { GuestRevenue, PAYMENT_SOURCES, PaymentSource } from "@/types/guest-revenue";
-import { useState, useEffect } from "react";
+import { RoleConfiguration } from "@/types/role-configuration";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
+import { formatCurrency } from "@/lib/utils";
 
 interface EditGuestRevenueDialogProps {
   guest: GuestRevenue | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode?: "edit" | "upsale";
+  roleConfigs: RoleConfiguration[];
 }
 
-const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit" }: EditGuestRevenueDialogProps) => {
+const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", roleConfigs }: EditGuestRevenueDialogProps) => {
   const queryClient = useQueryClient();
   const [sponsorship, setSponsorship] = useState(0);
   const [formattedSponsorship, setFormattedSponsorship] = useState("0");
   const [paymentSource, setPaymentSource] = useState<PaymentSource | "">("");
   const [isUpsaled, setIsUpsaled] = useState(false);
+  const [newRole, setNewRole] = useState("");
+
+  const upsaleRoleOptions = useMemo(() => {
+    if (!guest) return [];
+    const currentRoleConfig = roleConfigs.find(rc => rc.name === guest.role);
+    const currentSponsorship = currentRoleConfig?.sponsorship_amount || 0;
+    return roleConfigs.filter(rc => rc.sponsorship_amount > currentSponsorship);
+  }, [guest, roleConfigs]);
 
   useEffect(() => {
-    if (guest) {
-      const initialSponsorship = guest.original_sponsorship || guest.sponsorship;
+    if (guest && open) {
+      const initialSponsorship = guest.original_sponsorship;
       setSponsorship(initialSponsorship);
       setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(initialSponsorship));
       setPaymentSource(guest.payment_source || "");
       setIsUpsaled(mode === 'upsale' || guest.is_upsaled);
+      setNewRole(mode === 'upsale' ? "" : guest.role);
     }
   }, [guest, open, mode]);
 
-  const mutation = useMutation({
+  useEffect(() => {
+    if (mode === 'upsale' && newRole) {
+      const selectedRoleConfig = roleConfigs.find(rc => rc.name === newRole);
+      if (selectedRoleConfig) {
+        const newSponsorship = selectedRoleConfig.sponsorship_amount;
+        setSponsorship(newSponsorship);
+        setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newSponsorship));
+      }
+    }
+  }, [newRole, mode, roleConfigs]);
+
+  const editMutation = useMutation({
     mutationFn: async (values: { sponsorship: number; payment_source: string; is_upsaled: boolean }) => {
       if (!guest) throw new Error("Không có khách nào được chọn");
       const { error } = await supabase
@@ -65,9 +88,27 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit" }: Ed
       showSuccess("Cập nhật thông tin thành công!");
       onOpenChange(false);
     },
-    onError: (error) => {
-      showError(`Lỗi: ${error.message}`);
+    onError: (error) => showError(`Lỗi: ${error.message}`),
+  });
+
+  const upsaleMutation = useMutation({
+    mutationFn: async (values: { newRole: string; sponsorship: number; paymentSource: string }) => {
+      if (!guest) throw new Error("Không có khách nào được chọn");
+      const { error } = await supabase.rpc('upsale_guest', {
+        guest_id_in: guest.id,
+        new_role_in: values.newRole,
+        new_sponsorship_in: values.sponsorship,
+        new_payment_source_in: values.paymentSource,
+      });
+      if (error) throw error;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["guest_revenue"] });
+      queryClient.invalidateQueries({ queryKey: ["guests"] });
+      showSuccess("Upsale thành công!");
+      onOpenChange(false);
+    },
+    onError: (error) => showError(`Lỗi: ${error.message}`),
   });
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +119,15 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit" }: Ed
   };
 
   const handleSubmit = () => {
-    mutation.mutate({ sponsorship, payment_source: paymentSource, is_upsaled: isUpsaled });
+    if (mode === 'upsale') {
+      if (!newRole) {
+        showError("Vui lòng chọn vai trò mới để upsale.");
+        return;
+      }
+      upsaleMutation.mutate({ newRole, sponsorship, paymentSource: paymentSource || "Trống" });
+    } else {
+      editMutation.mutate({ sponsorship, payment_source: paymentSource, is_upsaled: isUpsaled });
+    }
   };
 
   if (!guest) return null;
@@ -93,6 +142,21 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit" }: Ed
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
+          {mode === 'upsale' && (
+            <div>
+              <Label htmlFor="new-role">Vai trò mới</Label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger id="new-role">
+                  <SelectValue placeholder="Chọn vai trò để upsale" />
+                </SelectTrigger>
+                <SelectContent>
+                  {upsaleRoleOptions.map(role => (
+                    <SelectItem key={role.id} value={role.name}>{role.name} ({formatCurrency(role.sponsorship_amount)})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div>
             <Label htmlFor="sponsorship">Số tiền tài trợ (đ)</Label>
             <Input
@@ -117,14 +181,14 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit" }: Ed
             </Select>
           </div>
           <div className="flex items-center space-x-2">
-            <Switch id="is-upsaled" checked={isUpsaled} onCheckedChange={setIsUpsaled} />
+            <Switch id="is-upsaled" checked={isUpsaled} onCheckedChange={setIsUpsaled} disabled={mode === 'upsale'} />
             <Label htmlFor="is-upsaled">Đánh dấu là Upsale</Label>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
-          <Button onClick={handleSubmit} disabled={mutation.isPending}>
-            {mutation.isPending ? "Đang lưu..." : "Lưu"}
+          <Button onClick={handleSubmit} disabled={editMutation.isPending || upsaleMutation.isPending}>
+            {editMutation.isPending || upsaleMutation.isPending ? "Đang lưu..." : "Lưu"}
           </Button>
         </DialogFooter>
       </DialogContent>

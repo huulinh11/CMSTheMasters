@@ -159,6 +159,7 @@ const RegularGuestRevenueTab = () => {
         open={!!editingGuest}
         onOpenChange={(open) => !open && setEditingGuest(null)}
         mode={editMode}
+        roleConfigs={roleConfigs}
       />
        <ViewGuestSheet
         guest={viewingGuest as Guest | null}
