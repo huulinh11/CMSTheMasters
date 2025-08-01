@@ -40,13 +40,22 @@ const ProfileManagementTab = () => {
 
   const backfillSlugsMutation = useMutation({
     mutationFn: async ({ vipUpdates, regularUpdates }: { vipUpdates: { id: string, slug: string }[], regularUpdates: { id: string, slug: string }[] }) => {
+      const promises = [];
       if (vipUpdates.length > 0) {
-        const { error } = await supabase.from('vip_guests').upsert(vipUpdates);
-        if (error) throw new Error(`Lỗi cập nhật khách chức vụ: ${error.message}`);
+        for (const update of vipUpdates) {
+          promises.push(supabase.from('vip_guests').update({ slug: update.slug }).eq('id', update.id));
+        }
       }
       if (regularUpdates.length > 0) {
-        const { error } = await supabase.from('guests').upsert(regularUpdates);
-        if (error) throw new Error(`Lỗi cập nhật khách mời: ${error.message}`);
+        for (const update of regularUpdates) {
+          promises.push(supabase.from('guests').update({ slug: update.slug }).eq('id', update.id));
+        }
+      }
+      
+      const results = await Promise.all(promises);
+      const firstError = results.find(res => res.error);
+      if (firstError) {
+        throw new Error(firstError.error!.message);
       }
     },
     onSuccess: () => {
@@ -55,7 +64,7 @@ const ProfileManagementTab = () => {
       showSuccess("Đã tạo link public cho các khách mời!");
     },
     onError: (error: Error) => {
-      showError(error.message);
+      showError(`Lỗi cập nhật link public: ${error.message}`);
     }
   });
 
