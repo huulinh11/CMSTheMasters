@@ -23,6 +23,13 @@ import { ViewGuestSheet } from "@/components/guests/ViewGuestSheet";
 import { Guest } from "@/types/guest";
 import { RoleConfiguration } from "@/types/role-configuration";
 
+type UpsaleHistory = {
+  guest_id: string;
+  from_sponsorship: number;
+  from_payment_source: string | null;
+  created_at: string;
+};
+
 const RegularGuestRevenueTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
@@ -33,24 +40,21 @@ const RegularGuestRevenueTab = () => {
   const [viewingGuest, setViewingGuest] = useState<GuestRevenue | null>(null);
   const isMobile = useIsMobile();
 
-  const { data: guests = [], isLoading: isLoadingGuests } = useQuery<GuestRevenue[]>({
-    queryKey: ['guest_revenue'],
+  const { data: guestsData = [], isLoading: isLoadingGuests } = useQuery<any[]>({
+    queryKey: ['guest_revenue_details'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_guest_revenue_details');
       if (error) throw new Error(error.message);
-      return (data || []).map(g => {
-        const originalSponsorship = g.sponsorship || 0;
-        const effectiveSponsorship = g.payment_source === 'Chỉ tiêu' ? 0 : originalSponsorship;
-        return {
-          ...g,
-          original_sponsorship: originalSponsorship,
-          sponsorship: effectiveSponsorship,
-          paid: g.paid_amount || 0,
-          unpaid: effectiveSponsorship - (g.paid_amount || 0),
-          is_upsaled: g.is_upsaled || false,
-          commission: 0, // Placeholder
-        };
-      });
+      return data || [];
+    }
+  });
+
+  const { data: upsaleHistory = [], isLoading: isLoadingHistory } = useQuery<UpsaleHistory[]>({
+    queryKey: ['guest_upsale_history'],
+    queryFn: async () => {
+        const { data, error } = await supabase.from('guest_upsale_history').select('guest_id, from_sponsorship, from_payment_source, created_at');
+        if (error) throw error;
+        return data || [];
     }
   });
 
@@ -62,6 +66,44 @@ const RegularGuestRevenueTab = () => {
       return data || [];
     }
   });
+
+  const guests = useMemo((): GuestRevenue[] => {
+    if (isLoadingGuests || isLoadingHistory) return [];
+
+    const historyMap = new Map<string, UpsaleHistory[]>();
+    upsaleHistory.forEach(h => {
+        const history = historyMap.get(h.guest_id) || [];
+        history.push(h);
+        historyMap.set(h.guest_id, history);
+    });
+
+    return guestsData.map(g => {
+      const originalSponsorship = g.sponsorship || 0;
+      let effectiveSponsorship = originalSponsorship;
+
+      if (g.is_upsaled) {
+        const guestHistory = historyMap.get(g.id);
+        if (guestHistory && guestHistory.length > 0) {
+          const firstUpsale = guestHistory.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+          if (firstUpsale.from_payment_source === 'Chỉ tiêu') {
+            effectiveSponsorship = originalSponsorship - firstUpsale.from_sponsorship;
+          }
+        }
+      } else if (g.payment_source === 'Chỉ tiêu') {
+        effectiveSponsorship = 0;
+      }
+
+      return {
+        ...g,
+        original_sponsorship: originalSponsorship,
+        sponsorship: effectiveSponsorship,
+        paid: g.paid_amount || 0,
+        unpaid: effectiveSponsorship - (g.paid_amount || 0),
+        is_upsaled: g.is_upsaled || false,
+        commission: 0, // Placeholder
+      };
+    });
+  }, [guestsData, upsaleHistory, isLoadingGuests, isLoadingHistory]);
 
   const filteredGuests = useMemo(() => {
     return guests.filter((guest) => {
@@ -83,7 +125,7 @@ const RegularGuestRevenueTab = () => {
     setEditingGuest(guest);
   };
 
-  const isLoading = isLoadingGuests || isLoadingRoles;
+  const isLoading = isLoadingGuests || isLoadingRoles || isLoadingHistory;
 
   return (
     <div className="space-y-4">
