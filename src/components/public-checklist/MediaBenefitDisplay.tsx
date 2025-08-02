@@ -91,10 +91,10 @@ export const MediaBenefitDisplay = ({ benefits, mediaBenefitData }: MediaBenefit
         return (
           <Card key={benefitName}>
             <CardContent className="p-3 flex justify-between items-center">
-              <span className={cn("font-medium", isFilled ? "text-primary" : "text-slate-800")}>
+              <span className={cn("font-medium", !isFilled ? "text-primary" : "text-slate-800")}>
                 {benefitName}
               </span>
-              <div className={cn("font-semibold text-right", isFilled ? "text-primary" : "text-slate-500")}>
+              <div className={cn("font-semibold text-right", !isFilled ? "text-primary" : "text-slate-500")}>
                 {content}
               </div>
             </CardContent>
