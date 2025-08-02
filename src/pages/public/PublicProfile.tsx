@@ -112,19 +112,33 @@ const PublicProfile = () => {
                           className="w-full min-h-[16rem] flex flex-col items-center justify-center p-4 bg-cover bg-center"
                           style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}
                         >
-                          {(block as TextBlock).texts.map(textItem => (
-                            <p
-                              key={textItem.id}
-                              className={`text-center drop-shadow-lg ${textItem.isGuestName ? 'italic' : ''}`}
-                              style={{
-                                fontSize: `${textItem.fontSize || 32}px`,
-                                color: textItem.color || '#FFFFFF',
-                                fontWeight: textItem.fontWeight || 'bold',
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              {textItem.isGuestName ? guest.name : textItem.text}
-                            </p>
+                          {(block as TextBlock).items.map(item => (
+                            <div key={item.id} style={{ marginTop: `${item.marginTop || 0}px` }}>
+                              {item.type === 'text' ? (
+                                <p
+                                  className="text-center"
+                                  style={{
+                                    fontSize: `${item.fontSize || 32}px`,
+                                    color: item.color || '#FFFFFF',
+                                    fontWeight: item.fontWeight || 'bold',
+                                    fontStyle: item.fontStyle || 'normal',
+                                    fontFamily: item.fontFamily || 'sans-serif',
+                                    lineHeight: 1.2,
+                                  }}
+                                >
+                                  {item.isGuestName ? guest.name : item.text}
+                                </p>
+                              ) : (
+                                <img 
+                                  src={item.imageUrl} 
+                                  alt="Profile item" 
+                                  style={{ 
+                                    width: `${item.width || 100}%`, 
+                                    margin: '0 auto' 
+                                  }} 
+                                />
+                              )}
+                            </div>
                           ))}
                         </div>
                       </div>

@@ -18,7 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, Trash2, GripVertical, Image as ImageIcon, Video, Type } from "lucide-react";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
-import { ContentBlock, TextBlock, TextItem } from "@/types/profile-content";
+import { ContentBlock, TextBlock, TextItem, ImageItemInTextBlock, TextBlockItem } from "@/types/profile-content";
 import {
   DndContext,
   closestCenter,
@@ -39,6 +39,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { v4 as uuidv4 } from 'uuid';
 import { getVideoEmbedUrl } from "@/lib/video";
 import { ImageUploader } from "./ImageUploader";
+import { Slider } from "@/components/ui/slider";
 
 type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời' };
 
@@ -81,6 +82,14 @@ const SortableItem = ({ id, children, className }: { id: string, children: React
   );
 };
 
+const fontFamilies = [
+  { value: 'sans-serif', label: 'Mặc định (Sans-serif)' },
+  { value: 'serif', label: 'Serif' },
+  { value: 'monospace', label: 'Monospace' },
+  { value: 'cursive', label: 'Cursive' },
+  { value: 'fantasy', label: 'Fantasy' },
+];
+
 export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving }: EditProfileDialogProps) => {
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
@@ -90,33 +99,32 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
       
       const migratedBlocks = rawBlocks.map(block => {
         if (block.type === 'text') {
-          const texts = ('texts' in block && Array.isArray(block.texts)) ? block.texts : [];
-          const migratedTexts = texts.map((textItem: any) => ({
-              id: textItem.id || uuidv4(),
-              text: textItem.text || '',
-              isGuestName: textItem.isGuestName || false,
-              fontSize: textItem.fontSize || 32,
-              color: textItem.color || '#FFFFFF',
-              fontWeight: textItem.fontWeight || 'bold',
-          }));
-
-          if (texts.length === 0 && 'text' in block) {
-              migratedTexts.push({
-                  id: uuidv4(),
-                  text: (block as any).text || '',
-                  isGuestName: (block as any).isGuestName || false,
-                  fontSize: 32,
-                  color: '#FFFFFF',
-                  fontWeight: 'bold',
-              });
+          const textBlock = block as any;
+          let items: TextBlockItem[] = [];
+          if (textBlock.items) {
+            items = textBlock.items;
+          } else if (textBlock.texts) {
+            items = textBlock.texts.map((t: any) => ({ ...t, type: 'text' }));
           }
           
-          return { ...block, texts: migratedTexts };
+          const migratedItems = items.map(item => {
+            if (item.type === 'text') {
+              return {
+                ...item,
+                fontStyle: item.fontStyle || 'normal',
+                fontFamily: item.fontFamily || 'sans-serif',
+                marginTop: item.marginTop ?? 0,
+              };
+            }
+            return item;
+          });
+
+          return { ...textBlock, items: migratedItems, texts: undefined };
         }
         return block;
       });
 
-      setBlocks(migratedBlocks);
+      setBlocks(migratedBlocks as ContentBlock[]);
     }
   }, [guest]);
 
@@ -136,7 +144,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
       newBlock = { 
         ...base, 
         type: 'text', 
-        texts: [{ id: uuidv4(), text: 'Nội dung mới', isGuestName: false, fontSize: 32, color: '#FFFFFF', fontWeight: 'bold' }], 
+        items: [], 
         backgroundImageUrl: '', 
         imageSourceType: 'url' 
       };
@@ -162,17 +170,17 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
         const oldIndex = blocks.findIndex((b) => `block_${b.id}` === activeId);
         const newIndex = blocks.findIndex((b) => `block_${b.id}` === overId);
         setBlocks(arrayMove(blocks, oldIndex, newIndex));
-      } else if (activeId.startsWith('text_') && overId.startsWith('text_')) {
+      } else if (activeId.startsWith('item_') && overId.startsWith('item_')) {
         const [, blockId] = activeId.split('_');
         const blockIndex = blocks.findIndex(b => b.id === blockId);
         if (blockIndex > -1 && blocks[blockIndex].type === 'text') {
           const textBlock = blocks[blockIndex] as TextBlock;
-          const oldTextIndex = textBlock.texts.findIndex(t => `text_${blockId}_${t.id}` === activeId);
-          const newTextIndex = textBlock.texts.findIndex(t => `text_${blockId}_${t.id}` === overId);
+          const oldItemIndex = textBlock.items.findIndex(t => `item_${blockId}_${t.id}` === activeId);
+          const newItemIndex = textBlock.items.findIndex(t => `item_${blockId}_${t.id}` === overId);
           
-          const newTexts = arrayMove(textBlock.texts, oldTextIndex, newTextIndex);
+          const newItems = arrayMove(textBlock.items, oldItemIndex, newItemIndex);
           const newBlocks = [...blocks];
-          newBlocks[blockIndex] = { ...textBlock, texts: newTexts };
+          newBlocks[blockIndex] = { ...textBlock, items: newItems };
           setBlocks(newBlocks);
         }
       }
@@ -183,7 +191,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Chỉnh sửa Profile: {guest.name}</DialogTitle>
           <DialogDescription>Thêm, xóa, và sắp xếp các khối nội dung cho trang public.</DialogDescription>
@@ -217,10 +225,16 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                             )}
                             {block.type === 'text' && (
                               <div className="w-full aspect-video rounded-md border bg-cover bg-center flex flex-col items-center justify-center p-1" style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}>
-                                {block.texts.map(textItem => (
-                                  <p key={textItem.id} className="text-sm font-bold text-center drop-shadow-lg break-words" style={{ color: textItem.color, fontSize: `${textItem.fontSize}px`, fontWeight: textItem.fontWeight }}>
-                                    {textItem.isGuestName ? guest.name : textItem.text}
-                                  </p>
+                                {block.items.map(item => (
+                                  <div key={item.id} style={{ marginTop: `${item.marginTop}px` }}>
+                                    {item.type === 'text' ? (
+                                      <p className="text-sm text-center break-words" style={{ color: item.color, fontSize: `${item.fontSize}px`, fontWeight: item.fontWeight, fontStyle: item.fontStyle, fontFamily: item.fontFamily }}>
+                                        {item.isGuestName ? guest.name : item.text}
+                                      </p>
+                                    ) : (
+                                      <img src={item.imageUrl} alt="item" style={{ width: `${item.width}%`, margin: '0 auto' }} />
+                                    )}
+                                  </div>
                                 ))}
                               </div>
                             )}
@@ -255,27 +269,48 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                                 </RadioGroup>
                                 {(block.imageSourceType === 'url' || !block.imageSourceType) ? <Input placeholder="Link ảnh nền (tùy chọn)" value={block.backgroundImageUrl} onChange={e => handleUpdateBlock(block.id, 'backgroundImageUrl', e.target.value)} className="truncate" /> : <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'backgroundImageUrl', url)} />}
                                 <Separator className="my-3" />
-                                <Label className="font-medium text-sm">Nội dung Text</Label>
-                                <SortableContext items={block.texts.map(t => `text_${block.id}_${t.id}`)} strategy={verticalListSortingStrategy}>
+                                <Label className="font-medium text-sm">Nội dung</Label>
+                                <SortableContext items={block.items.map(t => `item_${block.id}_${t.id}`)} strategy={verticalListSortingStrategy}>
                                   <div className="space-y-3">
-                                    {block.texts.map((textItem) => (
-                                      <SortableItem key={textItem.id} id={`text_${block.id}_${textItem.id}`} className="p-2 border rounded-md bg-white relative">
-                                        <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-7 w-7" onClick={() => handleUpdateBlock(block.id, 'texts', block.texts.filter(t => t.id !== textItem.id))}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                                        <RadioGroup value={textItem.isGuestName ? 'auto' : 'manual'} onValueChange={(value) => handleUpdateBlock(block.id, 'texts', block.texts.map(t => t.id === textItem.id ? {...t, isGuestName: value === 'auto'} : t))} className="flex gap-4 mb-2">
-                                          <div className="flex items-center space-x-2"><RadioGroupItem value="manual" id={`text-manual-${textItem.id}`} /><Label htmlFor={`text-manual-${textItem.id}`}>Text nhập</Label></div>
-                                          <div className="flex items-center space-x-2"><RadioGroupItem value="auto" id={`text-auto-${textItem.id}`} /><Label htmlFor={`text-auto-${textItem.id}`}>Tên khách mời</Label></div>
-                                        </RadioGroup>
-                                        {!textItem.isGuestName && <Textarea placeholder="Nội dung text" value={textItem.text} onChange={e => handleUpdateBlock(block.id, 'texts', block.texts.map(t => t.id === textItem.id ? {...t, text: e.target.value} : t))} rows={2} />}
-                                        <div className="grid grid-cols-3 gap-2 mt-2">
-                                          <div><Label className="text-xs">Cỡ chữ</Label><Input type="number" value={textItem.fontSize} onChange={e => handleUpdateBlock(block.id, 'texts', block.texts.map(t => t.id === textItem.id ? {...t, fontSize: e.target.value} : t))} /></div>
-                                          <div><Label className="text-xs">Màu chữ</Label><Input type="color" value={textItem.color} onChange={e => handleUpdateBlock(block.id, 'texts', block.texts.map(t => t.id === textItem.id ? {...t, color: e.target.value} : t))} className="p-1 h-10" /></div>
-                                          <div><Label className="text-xs">Độ đậm</Label><Select value={textItem.fontWeight} onValueChange={value => handleUpdateBlock(block.id, 'texts', block.texts.map(t => t.id === textItem.id ? {...t, fontWeight: value} : t))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal">Thường</SelectItem><SelectItem value="bold">Đậm</SelectItem></SelectContent></Select></div>
-                                        </div>
+                                    {block.items.map((item) => (
+                                      <SortableItem key={item.id} id={`item_${block.id}_${item.id}`} className="p-2 border rounded-md bg-white relative">
+                                        <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-7 w-7" onClick={() => handleUpdateBlock(block.id, 'items', block.items.filter(i => i.id !== item.id))}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                                        {item.type === 'text' ? (
+                                          <div className="space-y-2">
+                                            <RadioGroup value={item.isGuestName ? 'auto' : 'manual'} onValueChange={(value) => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, isGuestName: value === 'auto'} : i))} className="flex gap-4">
+                                              <div className="flex items-center space-x-2"><RadioGroupItem value="manual" id={`text-manual-${item.id}`} /><Label htmlFor={`text-manual-${item.id}`}>Text nhập</Label></div>
+                                              <div className="flex items-center space-x-2"><RadioGroupItem value="auto" id={`text-auto-${item.id}`} /><Label htmlFor={`text-auto-${item.id}`}>Tên khách mời</Label></div>
+                                            </RadioGroup>
+                                            {!item.isGuestName && <Textarea placeholder="Nội dung text" value={item.text} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, text: e.target.value} : i))} rows={2} />}
+                                            <div className="grid grid-cols-2 gap-2">
+                                              <div><Label className="text-xs">Font</Label><Select value={item.fontFamily} onValueChange={value => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, fontFamily: value} : i))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fontFamilies.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent></Select></div>
+                                              <div><Label className="text-xs">Kiểu</Label><Select value={`${item.fontWeight}-${item.fontStyle}`} onValueChange={value => { const [fontWeight, fontStyle] = value.split('-'); handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, fontWeight, fontStyle} : i))}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal-normal">Thường</SelectItem><SelectItem value="bold-normal">Đậm</SelectItem><SelectItem value="normal-italic">Nghiêng</SelectItem><SelectItem value="bold-italic">Đậm Nghiêng</SelectItem></SelectContent></Select></div>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2">
+                                              <div><Label className="text-xs">Cỡ chữ</Label><Input type="number" value={item.fontSize} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, fontSize: e.target.value} : i))} /></div>
+                                              <div><Label className="text-xs">Màu chữ</Label><Input type="color" value={item.color} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, color: e.target.value} : i))} className="p-1 h-10" /></div>
+                                              <div><Label className="text-xs">Margin Top</Label><Input type="number" value={item.marginTop} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginTop: e.target.value} : i))} /></div>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="space-y-2">
+                                            <RadioGroup value={item.imageSourceType || 'url'} onValueChange={(value) => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, imageSourceType: value} : i))} className="flex gap-4">
+                                              <div className="flex items-center space-x-2"><RadioGroupItem value="url" id={`item-img-url-${item.id}`} /><Label htmlFor={`item-img-url-${item.id}`}>Nhập link</Label></div>
+                                              <div className="flex items-center space-x-2"><RadioGroupItem value="upload" id={`item-img-upload-${item.id}`} /><Label htmlFor={`item-img-upload-${item.id}`}>Tải ảnh</Label></div>
+                                            </RadioGroup>
+                                            {(item.imageSourceType === 'url' || !item.imageSourceType) ? <Input placeholder="Link ảnh" value={item.imageUrl} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, imageUrl: e.target.value} : i))} /> : <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, imageUrl: url} : i))} />}
+                                            <div><Label className="text-xs">Rộng (%)</Label><Slider value={[item.width]} onValueChange={([val]) => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, width: val} : i))} max={100} step={1} /></div>
+                                            <div><Label className="text-xs">Margin Top (px)</Label><Input type="number" value={item.marginTop} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginTop: e.target.value} : i))} /></div>
+                                          </div>
+                                        )}
                                       </SortableItem>
                                     ))}
                                   </div>
                                 </SortableContext>
-                                <Button type="button" variant="outline" size="sm" onClick={() => handleUpdateBlock(block.id, 'texts', [...block.texts, { id: uuidv4(), text: 'Nội dung mới', isGuestName: false, fontSize: 32, color: '#FFFFFF', fontWeight: 'bold' }])}><PlusCircle className="mr-2 h-4 w-4" /> Thêm Text</Button>
+                                <div className="flex gap-2 mt-2">
+                                  <Button type="button" variant="outline" size="sm" onClick={() => handleUpdateBlock(block.id, 'items', [...block.items, { id: uuidv4(), type: 'text', text: 'Nội dung mới', isGuestName: false, fontSize: 32, color: '#FFFFFF', fontWeight: 'bold', fontStyle: 'normal', fontFamily: 'sans-serif', marginTop: 0 }])}><PlusCircle className="mr-2 h-4 w-4" /> Thêm Text</Button>
+                                  <Button type="button" variant="outline" size="sm" onClick={() => handleUpdateBlock(block.id, 'items', [...block.items, { id: uuidv4(), type: 'image', imageUrl: '', imageSourceType: 'url', width: 100, marginTop: 10 }])}><ImageIcon className="mr-2 h-4 w-4" /> Thêm Ảnh</Button>
+                                </div>
                               </>
                             )}
                           </div>
