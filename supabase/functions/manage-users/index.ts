@@ -7,19 +7,74 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-async function getUserRole(supabaseClient: SupabaseClient, userId: string): Promise<string | null> {
-  const { data, error } = await supabaseClient
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .single();
-  
-  if (error || !data) {
-    console.error('Error fetching user role:', error?.message);
-    return null;
-  }
-  return data.role;
+// --- Action Handlers ---
+
+async function listUsers(supabaseAdmin: SupabaseClient) {
+    const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
+    if (usersError) throw usersError;
+
+    const { data: profiles, error: profilesError } = await supabaseAdmin.from('profiles').select('*');
+    if (profilesError) throw profilesError;
+
+    const combined = users.map(u => {
+      const profile = profiles.find(p => p.id === u.id);
+      return {
+        id: u.id,
+        email: u.email,
+        username: u.email?.split('@')[0],
+        ...profile,
+      };
+    });
+    return new Response(JSON.stringify(combined), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
+
+async function createUser(supabaseAdmin: SupabaseClient, payload: any) {
+    const { username, password, full_name, department, role } = payload;
+    if (!password || password.length < 6) {
+      throw new Error("Mật khẩu phải có ít nhất 6 ký tự.");
+    }
+    const email = `${username}@event.app`;
+
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name, department, role }
+    });
+
+    if (error) throw error;
+    return new Response(JSON.stringify(data.user), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+}
+
+async function updateUser(supabaseAdmin: SupabaseClient, payload: any) {
+    const { id, password, full_name, department, role } = payload;
+    
+    if (password) {
+      if (password.length < 6) {
+        throw new Error("Mật khẩu phải có ít nhất 6 ký tự.");
+      }
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(id, { password });
+      if (authError) throw authError;
+    }
+
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ full_name, department, role })
+      .eq('id', id);
+    if (profileError) throw profileError;
+
+    return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+}
+
+async function deleteUser(supabaseAdmin: SupabaseClient, payload: any) {
+    const { id } = payload;
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+    if (error) throw error;
+    return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+}
+
+
+// --- Main Server ---
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -29,110 +84,40 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    
     const { method, payload } = await req.json();
 
-    // Special case for creating the first user without auth
+    // Unauthenticated bootstrap for the very first user
     if (method === 'CREATE_USER') {
       const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
       if (listError) throw listError;
-
       if (users.length === 0) {
-        const { username, password, full_name, department } = payload;
-        const email = `${username}@event.app`;
-        const { data, error } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
-          user_metadata: { full_name, department, role: 'Admin' } // Force first user to be Admin
-        });
-        if (error) throw error;
-        return new Response(JSON.stringify(data.user), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        return await createUser(supabaseAdmin, { ...payload, role: 'Admin' });
       }
     }
 
-    // For all other requests, require authentication
+    // Authenticated requests
     const authHeader = req.headers.get('Authorization')!
     const supabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } },
     })
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Unauthorized: Vui lòng đăng nhập lại.');
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-    }
-
-    const userRole = await getUserRole(supabase, user.id);
-    if (!userRole || !['Admin', 'Quản lý'].includes(userRole)) {
-        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (profileError || !profile) throw new Error('Không thể lấy thông tin phân quyền.');
+    if (!['Admin', 'Quản lý'].includes(profile.role)) throw new Error('Forbidden: Bạn không có quyền thực hiện hành động này.');
 
     switch (method) {
-      case 'LIST_USERS': {
-        const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
-        if (usersError) throw usersError;
-
-        const { data: profiles, error: profilesError } = await supabaseAdmin.from('profiles').select('*');
-        if (profilesError) throw profilesError;
-
-        const combined = users.map(u => {
-          const profile = profiles.find(p => p.id === u.id);
-          return {
-            id: u.id,
-            email: u.email,
-            username: u.email?.split('@')[0],
-            ...profile,
-          };
-        });
-
-        return new Response(JSON.stringify(combined), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-      
-      case 'CREATE_USER': {
-        const { username, password, full_name, department, role } = payload;
-        const email = `${username}@event.app`;
-
-        const { data, error } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
-          user_metadata: { full_name, department, role }
-        });
-
-        if (error) throw error;
-        return new Response(JSON.stringify(data.user), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-
-      case 'UPDATE_USER': {
-        const { id, password, full_name, department, role } = payload;
-        
-        if (password) {
-          const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(id, { password });
-          if (authError) throw authError;
-        }
-
-        const { error: profileError } = await supabaseAdmin
-          .from('profiles')
-          .update({ full_name, department, role })
-          .eq('id', id);
-        if (profileError) throw profileError;
-
-        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-
-      case 'DELETE_USER': {
-        const { id } = payload;
-        const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
-        if (error) throw error;
-        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-
-      default:
-        return new Response(JSON.stringify({ error: 'Invalid method' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      case 'LIST_USERS': return await listUsers(supabaseAdmin);
+      case 'CREATE_USER': return await createUser(supabaseAdmin, payload);
+      case 'UPDATE_USER': return await updateUser(supabaseAdmin, payload);
+      case 'DELETE_USER': return await deleteUser(supabaseAdmin, payload);
+      default: throw new Error('Invalid method');
     }
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 })
