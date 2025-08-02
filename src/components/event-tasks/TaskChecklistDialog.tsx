@@ -38,7 +38,7 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
             key={taskName}
             className={cn(
               "flex items-center justify-between p-2 rounded-md transition-colors",
-              getTaskStatus(taskName) && "bg-green-100 hover:bg-green-200"
+              getTaskStatus(taskName) && "bg-[#f4e9e0] hover:bg-[#e9dcd1]"
             )}
           >
             <div className="flex items-start space-x-2 flex-1 min-w-0">
@@ -46,9 +46,18 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
                 id={`${guest.id}-${taskName}`}
                 checked={getTaskStatus(taskName)}
                 onCheckedChange={(checked) => onTaskChange({ guestId: guest.id, taskName, isCompleted: !!checked })}
-                className="mt-0.5"
+                className={cn(
+                  "mt-0.5",
+                  getTaskStatus(taskName) && "data-[state=checked]:bg-[#8c5a3a] data-[state=checked]:border-[#8c5a3a]"
+                )}
               />
-              <Label htmlFor={`${guest.id}-${taskName}`} className="text-sm font-normal flex-1">
+              <Label
+                htmlFor={`${guest.id}-${taskName}`}
+                className={cn(
+                  "text-sm font-normal flex-1",
+                  getTaskStatus(taskName) && "text-[#8c5a3a]"
+                )}
+              >
                 {taskName}
               </Label>
             </div>
