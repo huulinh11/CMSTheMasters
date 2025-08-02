@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Edit, Save } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { showSuccess, showError } from "@/utils/toast";
+import { showNotice, showError } from "@/utils/toast";
 
 const InfoRow = ({ label, value }: { label: string, value?: string | null }) => {
   if (!value) return null;
@@ -40,7 +40,7 @@ const PublicInfoTab = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['public_checklist', guest.phone] });
-      showSuccess("Cập nhật tư liệu thành công!");
+      showNotice("Sửa tư liệu thành công");
       setIsEditing(false);
     },
     onError: (error: Error) => {
@@ -69,11 +69,11 @@ const PublicInfoTab = () => {
             <div className="flex justify-between items-center mb-1">
               <span className="text-slate-500">Tư liệu</span>
               {!isEditing ? (
-                <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                <Button size="sm" onClick={() => setIsEditing(true)}>
                   <Edit className="h-4 w-4 mr-2" /> Sửa
                 </Button>
               ) : (
-                <Button variant="ghost" size="sm" onClick={handleSave} disabled={mutation.isPending}>
+                <Button size="sm" onClick={handleSave} disabled={mutation.isPending}>
                   <Save className="h-4 w-4 mr-2" /> {mutation.isPending ? 'Đang lưu...' : 'Lưu'}
                 </Button>
               )}
@@ -82,9 +82,9 @@ const PublicInfoTab = () => {
               <Textarea
                 value={materials}
                 onChange={(e) => setMaterials(e.target.value)}
-                className="min-h-[150px] bg-slate-50 text-sm"
+                className="bg-slate-50 text-sm"
                 placeholder="Nhập tư liệu..."
-                autoFocus
+                rows={5}
               />
             ) : (
               <div className="p-2 border rounded-md bg-slate-50 text-sm whitespace-pre-wrap min-h-[40px]">
