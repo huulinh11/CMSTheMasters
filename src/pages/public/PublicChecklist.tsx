@@ -1,5 +1,5 @@
 import { useParams, Routes, Route, Outlet, Navigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
@@ -12,6 +12,7 @@ import PublicBenefitsTab from "@/pages/public/checklist/PublicBenefitsTab";
 import PublicEventInfoTab from "@/pages/public/checklist/PublicEventInfoTab";
 import PublicTasksTab from "@/pages/public/checklist/PublicTasksTab";
 import PublicInfoTab from "@/pages/public/checklist/PublicInfoTab";
+import { useEffect } from "react";
 
 type CombinedGuest = (Guest | VipGuest) & { type: 'Chức vụ' | 'Khách mời', secondaryInfo?: string, materials?: string };
 export type ChecklistDataContext = {
@@ -23,6 +24,7 @@ export type ChecklistDataContext = {
 
 const PublicChecklist = () => {
   const { phone } = useParams<{ phone: string }>();
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery<ChecklistDataContext | null>({
     queryKey: ['public_checklist', phone],
@@ -59,6 +61,25 @@ const PublicChecklist = () => {
     },
     enabled: !!phone,
   });
+
+  useEffect(() => {
+    if (!data?.guest.id) return;
+
+    const channel = supabase
+      .channel(`public:guest_tasks:guest_id=eq.${data.guest.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'guest_tasks', filter: `guest_id=eq.${data.guest.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['public_checklist', phone] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [data?.guest.id, phone, queryClient]);
 
   if (isLoading) {
     return (

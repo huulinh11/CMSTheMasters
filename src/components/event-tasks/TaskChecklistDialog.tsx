@@ -37,8 +37,8 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
           <div
             key={taskName}
             className={cn(
-              "flex items-center justify-between p-2 rounded-md transition-colors",
-              getTaskStatus(taskName) && "bg-[#f4e9e0] hover:bg-[#e9dcd1]"
+              "flex items-center justify-between p-3 rounded-lg transition-colors",
+              getTaskStatus(taskName) ? "bg-[#f4e9e0] hover:bg-[#e9dcd1]" : "bg-slate-50 hover:bg-slate-100"
             )}
           >
             <div className="flex items-start space-x-2 flex-1 min-w-0">
