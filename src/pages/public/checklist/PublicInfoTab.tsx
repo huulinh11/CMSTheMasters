@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOutletContext } from "react-router-dom";
 import { ChecklistDataContext } from "../PublicChecklist";
@@ -24,10 +24,18 @@ const PublicInfoTab = () => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [materials, setMaterials] = useState(guest.materials || "");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setMaterials(guest.materials || "");
   }, [guest.materials]);
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [isEditing, materials]);
 
   const mutation = useMutation({
     mutationFn: async (newMaterials: string) => {
@@ -80,11 +88,12 @@ const PublicInfoTab = () => {
             </div>
             {isEditing ? (
               <Textarea
+                ref={textareaRef}
                 value={materials}
                 onChange={(e) => setMaterials(e.target.value)}
-                className="bg-slate-50 text-sm"
+                className="p-2 bg-slate-50 text-sm min-h-[40px] resize-none overflow-hidden border rounded-md"
                 placeholder="Nhập tư liệu..."
-                rows={5}
+                autoFocus
               />
             ) : (
               <div className="p-2 border rounded-md bg-slate-50 text-sm whitespace-pre-wrap min-h-[40px]">
