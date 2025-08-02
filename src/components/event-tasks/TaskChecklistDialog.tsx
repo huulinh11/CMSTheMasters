@@ -10,6 +10,7 @@ import { TASKS_BY_ROLE } from "@/config/event-tasks";
 import { TaskHistoryDialog } from "./TaskHistoryDialog";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Progress } from "@/components/ui/progress";
 
 interface TaskChecklistDialogProps {
   guest: TaskGuest;
@@ -18,6 +19,9 @@ interface TaskChecklistDialogProps {
 
 const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest: TaskGuest, onTaskChange: TaskChecklistDialogProps['onTaskChange'], setHistoryModalState: (state: { guestId: string; taskName: string; } | null) => void }) => {
   const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
+  const completedCount = tasksForRole.filter(taskName => guest.tasks.find(t => t.task_name === taskName)?.is_completed).length;
+  const totalCount = tasksForRole.length;
+  const progressValue = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   const getTaskStatus = (taskName: string) => {
     const task = guest.tasks.find(t => t.task_name === taskName);
@@ -31,6 +35,13 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
           <span className="flex items-center"><User className="w-4 h-4 mr-2" /> {guest.role}</span>
           <span className="flex items-center"><Phone className="w-4 h-4 mr-2" /> {guest.phone}</span>
         </p>
+      </div>
+      <div className="mt-4 space-y-2">
+        <div className="flex justify-between items-center text-sm">
+            <span className="font-medium text-slate-600">Tiến độ</span>
+            <span className="font-bold text-[#8c5a3a]">{completedCount}/{totalCount} Hoàn thành</span>
+        </div>
+        <Progress value={progressValue} className="h-2 [&>div]:bg-[#8c5a3a]" />
       </div>
       <div className="grid grid-cols-1 gap-y-2 mt-4">
         {tasksForRole.map((taskName) => (

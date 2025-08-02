@@ -5,10 +5,15 @@ import { TASKS_BY_ROLE } from "@/config/event-tasks";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 const PublicTasksTab = () => {
   const { guest, tasks } = useOutletContext<ChecklistDataContext>();
   const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
+
+  const completedCount = tasks.filter(t => tasksForRole.includes(t.task_name) && t.is_completed).length;
+  const totalCount = tasksForRole.length;
+  const progressValue = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   const isTaskCompleted = (taskName: string) => {
     return tasks.some(t => t.task_name === taskName && t.is_completed);
@@ -23,6 +28,13 @@ const PublicTasksTab = () => {
       <h2 className="text-xl font-bold text-slate-800 text-center">Tác vụ tại sự kiện</h2>
       <Card>
         <CardContent className="p-3">
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-2 text-sm">
+              <span className="font-medium text-slate-600">Tiến độ</span>
+              <span className="font-bold text-[#8c5a3a]">{completedCount}/{totalCount} Hoàn thành</span>
+            </div>
+            <Progress value={progressValue} className="h-2 [&>div]:bg-[#8c5a3a]" />
+          </div>
           <div className="space-y-2">
             {tasksForRole.map(taskName => {
               const completed = isTaskCompleted(taskName);
