@@ -8,9 +8,18 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TextItem } from "@/types/profile-content";
 
+type LogoConfig = {
+  imageUrl: string;
+  width: number;
+  marginTop: number;
+  marginRight: number;
+  marginBottom: number;
+  marginLeft: number;
+};
+
 type ChecklistSettings = {
-  logo_url: string;
-  title_config: TextItem;
+  logo_config: Partial<LogoConfig>;
+  title_config: Partial<TextItem>;
 };
 
 const PublicBenefitsTab = () => {
@@ -20,7 +29,7 @@ const PublicBenefitsTab = () => {
     queryKey: ['checklist_settings'],
     queryFn: async () => {
       const { data, error } = await supabase.from('checklist_settings').select('*').limit(1).single();
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116: no rows found
+      if (error && error.code !== 'PGRST116') throw error;
       return data;
     }
   });
@@ -32,20 +41,38 @@ const PublicBenefitsTab = () => {
   }
 
   const titleStyle = settings?.title_config ? {
-    fontSize: `${settings.title_config.fontSize}px`,
-    color: settings.title_config.color,
-    fontWeight: settings.title_config.fontWeight as 'normal' | 'bold',
-    fontStyle: settings.title_config.fontStyle as 'normal' | 'italic',
-    fontFamily: settings.title_config.fontFamily,
+    fontSize: `${settings.title_config.fontSize || 24}px`,
+    color: settings.title_config.color || '#000000',
+    fontWeight: (settings.title_config.fontWeight as 'normal' | 'bold') || 'bold',
+    fontStyle: (settings.title_config.fontStyle as 'normal' | 'italic') || 'normal',
+    fontFamily: settings.title_config.fontFamily || 'sans-serif',
+    marginTop: `${settings.title_config.marginTop || 0}px`,
+    marginRight: `${settings.title_config.marginRight || 0}px`,
+    marginBottom: `${settings.title_config.marginBottom || 0}px`,
+    marginLeft: `${settings.title_config.marginLeft || 0}px`,
   } : {};
+
+  const logoConfig = settings?.logo_config;
 
   return (
     <div className="p-4 space-y-4">
       <div className="text-center space-y-3">
-        {settings?.logo_url && (
-          <img src={settings.logo_url} alt="Event Logo" className="mx-auto h-24 w-auto object-contain" />
+        {logoConfig?.imageUrl && (
+          <div style={{
+            marginTop: `${logoConfig.marginTop || 0}px`,
+            marginRight: `${logoConfig.marginRight || 0}px`,
+            marginBottom: `${logoConfig.marginBottom || 0}px`,
+            marginLeft: `${logoConfig.marginLeft || 0}px`,
+          }}>
+            <img 
+              src={logoConfig.imageUrl} 
+              alt="Event Logo" 
+              className="mx-auto h-auto object-contain"
+              style={{ width: `${logoConfig.width || 100}%` }}
+            />
+          </div>
         )}
-        {settings?.title_config && (
+        {settings?.title_config?.text && (
           <h1 style={titleStyle}>{settings.title_config.text}</h1>
         )}
         <p className="text-lg">Xin chào: <span className="font-bold">{guest.name}</span></p>
