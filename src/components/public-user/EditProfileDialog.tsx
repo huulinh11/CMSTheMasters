@@ -221,7 +221,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                         </div>
                         <div className="flex gap-4 items-start">
                           {/* Preview */}
-                          <div className="w-1/3 flex-shrink-0">
+                          <div className="w-1/3 flex-shrink-0 sticky top-0">
                             {block.type === 'image' && (
                               <div className="w-full aspect-video bg-slate-100 rounded-md border flex items-center justify-center overflow-hidden">
                                 {block.imageUrl ? <img src={block.imageUrl} alt="Preview" className="h-full object-contain" style={{ width: `${block.width || 100}%` }} /> : <ImageIcon className="h-8 w-8 text-slate-400" />}
