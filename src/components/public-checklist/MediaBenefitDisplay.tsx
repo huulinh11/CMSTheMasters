@@ -29,10 +29,16 @@ const getBenefitStatusAndData = (benefitName: string, mediaBenefit: MediaBenefit
 
   switch (benefitName) {
     case "Thư mời":
-      const status = mediaBenefit.invitation_status || 'Trống';
+      const status = mediaBenefit.invitation_status;
+      if (status === 'Đã gửi') {
+        return {
+          status: 'filled',
+          content: 'Đã gửi',
+        };
+      }
       return {
-        status: status !== 'Trống' ? 'filled' : 'empty',
-        content: status,
+        status: 'empty',
+        content: 'Trống',
       };
     case "Post bài page":
       return {
