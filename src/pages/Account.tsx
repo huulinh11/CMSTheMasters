@@ -6,9 +6,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Edit } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { showSuccess, showError, showNotice } from "@/utils/toast";
-import { AddEditUserDialog } from "../components/account/AddEditUserDialog";
-import { useAuth } from "../contexts/AuthContext";
+import { showSuccess, showError } from "@/utils/toast";
+import { AddEditUserDialog } from "@/components/account/AddEditUserDialog";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
   TableBody,
@@ -26,14 +26,17 @@ const AccountPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
 
-  const { data: users = [], isLoading } = useQuery<AppUser[]>({
+  const { data: users = [], isLoading, error: queryError } = useQuery<AppUser[]>({
     queryKey: ['app_users'],
     queryFn: async () => {
       if (!session) return [];
       const { data, error } = await supabase.functions.invoke('manage-users', {
         body: { method: 'LIST_USERS' },
       });
-      if (error) throw error;
+      if (error) {
+        const errorMessage = (error as any).context?.error?.message || error.message;
+        throw new Error(errorMessage);
+      }
       return data;
     },
     enabled: !!session,
@@ -44,21 +47,21 @@ const AccountPage = () => {
       const { data, error } = await supabase.functions.invoke('manage-users', {
         body: payload,
       });
-      if (error) throw error;
+      if (error) {
+        const errorMessage = (error as any).context?.error?.message || error.message;
+        throw new Error(errorMessage);
+      }
       return data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['app_users'] });
-      if (variables.method === 'CREATE_USER' && users.length === 0) {
-        showNotice("Tài khoản Admin đầu tiên đã được tạo. Vui lòng đăng nhập lại.");
-        // Consider forcing a logout/reload here
-      } else {
-        showSuccess(`Thao tác thành công!`);
-      }
+      showSuccess(`Thao tác thành công!`);
       setIsDialogOpen(false);
       setEditingUser(null);
     },
-    onError: (error: Error) => showError(error.message),
+    onError: (error: Error) => {
+      showError(error.message);
+    },
   });
 
   const handleSaveUser = (user: Partial<AppUser> & { password?: string }) => {
@@ -75,8 +78,8 @@ const AccountPage = () => {
     setIsDialogOpen(true);
   };
 
-  if (isLoading) {
-    return <div className="p-4 md:p-6"><Skeleton className="h-96 w-full" /></div>;
+  if (queryError) {
+    return <div className="p-4 md:p-6 text-red-500">Lỗi tải dữ liệu: {queryError.message}</div>;
   }
 
   return (
@@ -88,9 +91,11 @@ const AccountPage = () => {
         </Button>
       </div>
 
-      {isMobile ? (
+      {isLoading ? (
+        <Skeleton className="h-96 w-full" />
+      ) : isMobile ? (
         <div className="space-y-4">
-          {users.map((user, index) => (
+          {users.map((user) => (
             <Card key={user.id}>
               <CardHeader>
                 <CardTitle>{user.full_name}</CardTitle>
