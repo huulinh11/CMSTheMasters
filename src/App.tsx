@@ -28,13 +28,15 @@ const AppRoutes = () => {
 
   if (isPublicRoute) {
     return (
-      <PublicLayout>
-        <Routes>
-          <Route path="/profile/:slug" element={<PublicProfile />} />
-          <Route path="/checklist/:phone" element={<PublicChecklist />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </PublicLayout>
+      <Routes>
+        <Route path="/profile/:slug" element={<PublicProfile />} />
+        <Route path="/checklist/:phone/*" element={<PublicChecklist />} />
+        <Route path="*" element={
+          <PublicLayout>
+            <NotFound />
+          </PublicLayout>
+        } />
+      </Routes>
     );
   }
 

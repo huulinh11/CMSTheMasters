@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, Routes, Route, Outlet, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
@@ -6,17 +6,15 @@ import { VipGuest } from "@/types/vip-guest";
 import { MediaBenefit } from "@/types/media-benefit";
 import { GuestTask } from "@/types/event-task";
 import { TimelineEvent } from "@/types/timeline";
-import { MEDIA_BENEFITS_BY_ROLE } from "@/config/media-benefits-by-role";
-import { TASKS_BY_ROLE } from "@/config/event-tasks";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChecklistHeader } from "@/components/public-checklist/ChecklistHeader";
-import { ChecklistSection } from "@/components/public-checklist/ChecklistSection";
-import { MediaBenefitDisplay } from "@/components/public-checklist/MediaBenefitDisplay";
-import { EventTaskDisplay } from "@/components/public-checklist/EventTaskDisplay";
-import { TimelineDisplay } from "@/components/public-checklist/TimelineDisplay";
+import PublicChecklistLayout from "@/layouts/PublicChecklistLayout";
+import PublicBenefitsTab from "@/pages/public/checklist/PublicBenefitsTab";
+import PublicEventInfoTab from "@/pages/public/checklist/PublicEventInfoTab";
+import PublicTasksTab from "@/pages/public/checklist/PublicTasksTab";
+import PublicInfoTab from "@/pages/public/checklist/PublicInfoTab";
 
 type CombinedGuest = (Guest | VipGuest) & { type: 'Chức vụ' | 'Khách mời', secondaryInfo?: string, materials?: string };
-type ChecklistData = {
+export type ChecklistDataContext = {
   guest: CombinedGuest;
   mediaBenefit: MediaBenefit | null;
   tasks: GuestTask[];
@@ -26,7 +24,7 @@ type ChecklistData = {
 const PublicChecklist = () => {
   const { phone } = useParams<{ phone: string }>();
 
-  const { data, isLoading, error } = useQuery<ChecklistData | null>({
+  const { data, isLoading, error } = useQuery<ChecklistDataContext | null>({
     queryKey: ['public_checklist', phone],
     queryFn: async () => {
       if (!phone) return null;
@@ -34,11 +32,11 @@ const PublicChecklist = () => {
       let guest: CombinedGuest | null = null;
       const { data: vipGuest } = await supabase.from('vip_guests').select('*').eq('phone', phone).single();
       if (vipGuest) {
-        guest = { ...vipGuest, type: 'Chức vụ', secondaryInfo: vipGuest.secondary_info };
+        guest = { ...vipGuest, type: 'Chức vụ', secondaryInfo: vipGuest.secondary_info, materials: vipGuest.materials };
       } else {
         const { data: regularGuest } = await supabase.from('guests').select('*').eq('phone', phone).single();
         if (regularGuest) {
-          guest = { ...regularGuest, type: 'Khách mời' };
+          guest = { ...regularGuest, type: 'Khách mời', materials: regularGuest.materials };
         }
       }
 
@@ -64,11 +62,11 @@ const PublicChecklist = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto my-8 p-4">
-        <Skeleton className="h-24 w-full mb-8" />
-        <Skeleton className="h-48 w-full mb-8" />
-        <Skeleton className="h-48 w-full" />
-      </div>
+      <PublicChecklistLayout>
+        <div className="p-4">
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </PublicChecklistLayout>
     );
   }
 
@@ -81,32 +79,18 @@ const PublicChecklist = () => {
     );
   }
 
-  const { guest, mediaBenefit, tasks, timelineEvents } = data;
-  const benefitsForRole = MEDIA_BENEFITS_BY_ROLE[guest.role] || [];
-  const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
-
   return (
-    <div className="max-w-4xl mx-auto my-4 md:my-8 bg-white shadow-lg rounded-lg overflow-hidden">
-      <ChecklistHeader guest={guest} />
-      
-      {guest.type === 'Chức vụ' && guest.materials && (
-        <ChecklistSection title="Tư liệu">
-          <p className="text-slate-700 whitespace-pre-wrap">{guest.materials}</p>
-        </ChecklistSection>
-      )}
-
-      <ChecklistSection title="Quyền lợi truyền thông">
-        <MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} />
-      </ChecklistSection>
-
-      <ChecklistSection title="Tác vụ sự kiện">
-        <EventTaskDisplay tasksForRole={tasksForRole} completedTasks={tasks} />
-      </ChecklistSection>
-
-      <ChecklistSection title="Timeline">
-        <TimelineDisplay events={timelineEvents} />
-      </ChecklistSection>
-    </div>
+    <PublicChecklistLayout>
+      <Routes>
+        <Route path="/" element={<Outlet context={data} />}>
+          <Route index element={<PublicBenefitsTab />} />
+          <Route path="event-info" element={<PublicEventInfoTab />} />
+          <Route path="tasks" element={<PublicTasksTab />} />
+          <Route path="info" element={<PublicInfoTab />} />
+          <Route path="*" element={<Navigate to="" replace />} />
+        </Route>
+      </Routes>
+    </PublicChecklistLayout>
   );
 };
 
