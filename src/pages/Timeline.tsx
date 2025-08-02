@@ -9,7 +9,7 @@ import { Guest } from "@/types/guest";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Megaphone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showSuccess, showError } from "@/utils/toast";
 import { calculateTimeline } from "@/lib/time";
@@ -106,7 +106,7 @@ const Timeline = () => {
       setIsDialogOpen(false);
       setEditingItem(null);
     },
-    onError: (error) => showError(error.message),
+    onError: (error: any) => showError(error.message),
   });
 
   const deleteMutation = useMutation({
@@ -118,7 +118,7 @@ const Timeline = () => {
       queryClient.invalidateQueries({ queryKey: ['timeline_events'] });
       showSuccess("Đã xóa mốc thời gian.");
     },
-    onError: (error) => showError(error.message),
+    onError: (error: any) => showError(error.message),
   });
 
   const reorderMutation = useMutation({
@@ -127,7 +127,18 @@ const Timeline = () => {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['timeline_events'] }),
-    onError: (error) => showError(error.message),
+    onError: (error: any) => showError(error.message),
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('publish_timeline');
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess("Timeline đã được công khai!");
+    },
+    onError: (error: any) => showError(error.message),
   });
 
   const handleOpenAddDialog = () => {
@@ -182,6 +193,10 @@ const Timeline = () => {
             <Button onClick={handleOpenAddDialog}>
               <PlusCircle className="mr-2 h-4 w-4" />
               {isMobile ? 'Thêm' : 'Thêm mốc thời gian'}
+            </Button>
+            <Button onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending}>
+              <Megaphone className="mr-2 h-4 w-4" />
+              {publishMutation.isPending ? 'Đang public...' : 'Public timeline'}
             </Button>
           </div>
         </div>

@@ -46,7 +46,7 @@ const PublicChecklist = () => {
 
       const { data: mediaBenefit } = await supabase.from('media_benefits').select('*').eq('guest_id', guest.id).single();
       const { data: tasks } = await supabase.from('guest_tasks').select('*').eq('guest_id', guest.id);
-      const { data: timelineEvents } = await supabase.from('timeline_events').select('*').order('order');
+      const { data: timelineEvents } = await supabase.from('public_timeline_events').select('*').order('order');
 
       return {
         guest,
