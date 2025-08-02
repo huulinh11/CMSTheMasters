@@ -77,11 +77,11 @@ const PublicProfile = () => {
               contentBlocks.map((block) => {
                 switch (block.type) {
                   case 'image':
-                    const imageElement = <img src={block.imageUrl} alt="Profile content" className="w-full h-auto object-cover" />;
+                    const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover" style={{ width: `${block.width || 100}%` }} />;
                     return (
-                      <div key={block.id} className="w-full">
+                      <div key={block.id} className="w-full flex justify-center">
                         {block.linkUrl ? (
-                          <a href={block.linkUrl} target="_blank" rel="noopener noreferrer">
+                          <a href={block.linkUrl} target="_blank" rel="noopener noreferrer" style={{ width: `${block.width || 100}%` }}>
                             {imageElement}
                           </a>
                         ) : (
@@ -113,7 +113,15 @@ const PublicProfile = () => {
                           style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}
                         >
                           {(block as TextBlock).items.map(item => (
-                            <div key={item.id} style={{ marginTop: `${item.marginTop || 0}px` }}>
+                            <div 
+                              key={item.id} 
+                              style={{ 
+                                marginTop: `${item.marginTop || 0}px`,
+                                marginRight: `${item.marginRight || 0}px`,
+                                marginBottom: `${item.marginBottom || 0}px`,
+                                marginLeft: `${item.marginLeft || 0}px`,
+                              }}
+                            >
                               {item.type === 'text' ? (
                                 <p
                                   className="text-center"

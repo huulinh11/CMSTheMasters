@@ -6,6 +6,7 @@ export const imageBlockSchema = z.object({
   imageUrl: z.string().url({ message: "Link ảnh không hợp lệ." }).or(z.literal('')),
   linkUrl: z.string().url({ message: "Link liên kết không hợp lệ." }).optional().or(z.literal('')),
   imageSourceType: z.enum(['url', 'upload']).optional().default('url'),
+  width: z.coerce.number().min(0).max(100).optional().default(100),
 });
 
 export const videoBlockSchema = z.object({
@@ -27,6 +28,9 @@ export const textItemSchema = z.object({
   fontStyle: z.enum(['normal', 'italic']).optional().default('normal'),
   fontFamily: z.string().optional().default('sans-serif'),
   marginTop: z.coerce.number().optional().default(0),
+  marginRight: z.coerce.number().optional().default(0),
+  marginBottom: z.coerce.number().optional().default(0),
+  marginLeft: z.coerce.number().optional().default(0),
 });
 
 export const imageItemInTextBlockSchema = z.object({
@@ -36,6 +40,9 @@ export const imageItemInTextBlockSchema = z.object({
     imageSourceType: z.enum(['url', 'upload']).optional().default('url'),
     width: z.coerce.number().min(0).max(100).optional().default(100),
     marginTop: z.coerce.number().optional().default(10),
+    marginRight: z.coerce.number().optional().default(0),
+    marginBottom: z.coerce.number().optional().default(0),
+    marginLeft: z.coerce.number().optional().default(0),
 });
 
 export const textBlockItemSchema = z.union([textItemSchema, imageItemInTextBlockSchema]);

@@ -18,7 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, Trash2, GripVertical, Image as ImageIcon, Video, Type } from "lucide-react";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
-import { ContentBlock, TextBlock, TextItem, ImageItemInTextBlock, TextBlockItem } from "@/types/profile-content";
+import { ContentBlock, TextBlock, TextBlockItem } from "@/types/profile-content";
 import {
   DndContext,
   closestCenter,
@@ -98,6 +98,9 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
       const rawBlocks = Array.isArray(guest.profile_content) ? guest.profile_content : [];
       
       const migratedBlocks = rawBlocks.map(block => {
+        if (block.type === 'image') {
+          return { ...block, width: (block as any).width ?? 100 };
+        }
         if (block.type === 'text') {
           const textBlock = block as any;
           let items: TextBlockItem[] = [];
@@ -107,16 +110,22 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
             items = textBlock.texts.map((t: any) => ({ ...t, type: 'text' }));
           }
           
-          const migratedItems = items.map(item => {
+          const migratedItems = items.map((item: any) => {
+            const baseItem = {
+              ...item,
+              marginTop: item.marginTop ?? 0,
+              marginRight: item.marginRight ?? 0,
+              marginBottom: item.marginBottom ?? 0,
+              marginLeft: item.marginLeft ?? 0,
+            };
             if (item.type === 'text') {
               return {
-                ...item,
+                ...baseItem,
                 fontStyle: item.fontStyle || 'normal',
                 fontFamily: item.fontFamily || 'sans-serif',
-                marginTop: item.marginTop ?? 0,
               };
             }
-            return item;
+            return baseItem;
           });
 
           return { ...textBlock, items: migratedItems, texts: undefined };
@@ -137,7 +146,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
     let newBlock: ContentBlock;
     const base = { id: uuidv4() };
     if (type === 'image') {
-      newBlock = { ...base, type: 'image', imageUrl: '', linkUrl: '', imageSourceType: 'url' };
+      newBlock = { ...base, type: 'image', imageUrl: '', linkUrl: '', imageSourceType: 'url', width: 100 };
     } else if (type === 'video') {
       newBlock = { ...base, type: 'video', videoUrl: '' };
     } else {
@@ -214,8 +223,8 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                           {/* Preview */}
                           <div className="w-1/3 flex-shrink-0">
                             {block.type === 'image' && (
-                              <div className="w-full aspect-video bg-slate-100 rounded-md border flex items-center justify-center">
-                                {block.imageUrl ? <img src={block.imageUrl} alt="Preview" className="w-full h-full object-cover rounded-md" /> : <ImageIcon className="h-8 w-8 text-slate-400" />}
+                              <div className="w-full aspect-video bg-slate-100 rounded-md border flex items-center justify-center overflow-hidden">
+                                {block.imageUrl ? <img src={block.imageUrl} alt="Preview" className="h-full object-contain" style={{ width: `${block.width || 100}%` }} /> : <ImageIcon className="h-8 w-8 text-slate-400" />}
                               </div>
                             )}
                             {block.type === 'video' && (
@@ -226,7 +235,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                             {block.type === 'text' && (
                               <div className="w-full aspect-video rounded-md border bg-cover bg-center flex flex-col items-center justify-center p-1" style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}>
                                 {block.items.map(item => (
-                                  <div key={item.id} style={{ marginTop: `${item.marginTop}px` }}>
+                                  <div key={item.id} style={{ marginTop: `${item.marginTop}px`, marginRight: `${item.marginRight}px`, marginBottom: `${item.marginBottom}px`, marginLeft: `${item.marginLeft}px` }}>
                                     {item.type === 'text' ? (
                                       <p className="text-sm text-center break-words" style={{ color: item.color, fontSize: `${item.fontSize}px`, fontWeight: item.fontWeight, fontStyle: item.fontStyle, fontFamily: item.fontFamily }}>
                                         {item.isGuestName ? guest.name : item.text}
@@ -249,6 +258,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                                 </RadioGroup>
                                 {(block.imageSourceType === 'url' || !block.imageSourceType) ? <Input placeholder="Link ảnh" value={block.imageUrl} onChange={e => handleUpdateBlock(block.id, 'imageUrl', e.target.value)} className="truncate" /> : <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'imageUrl', url)} />}
                                 <Input placeholder="Link khi click (tùy chọn)" value={block.linkUrl} onChange={e => handleUpdateBlock(block.id, 'linkUrl', e.target.value)} className="truncate" />
+                                <div><Label className="text-xs">Rộng (%)</Label><Slider value={[block.width || 100]} onValueChange={([val]) => handleUpdateBlock(block.id, 'width', val)} max={100} step={1} /></div>
                               </>
                             )}
                             {block.type === 'video' && (
@@ -286,10 +296,15 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                                               <div><Label className="text-xs">Font</Label><Select value={item.fontFamily} onValueChange={value => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, fontFamily: value} : i))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fontFamilies.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent></Select></div>
                                               <div><Label className="text-xs">Kiểu</Label><Select value={`${item.fontWeight}-${item.fontStyle}`} onValueChange={value => { const [fontWeight, fontStyle] = value.split('-'); handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, fontWeight, fontStyle} : i))}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal-normal">Thường</SelectItem><SelectItem value="bold-normal">Đậm</SelectItem><SelectItem value="normal-italic">Nghiêng</SelectItem><SelectItem value="bold-italic">Đậm Nghiêng</SelectItem></SelectContent></Select></div>
                                             </div>
-                                            <div className="grid grid-cols-3 gap-2">
+                                            <div className="grid grid-cols-2 gap-2">
                                               <div><Label className="text-xs">Cỡ chữ</Label><Input type="number" value={item.fontSize} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, fontSize: e.target.value} : i))} /></div>
                                               <div><Label className="text-xs">Màu chữ</Label><Input type="color" value={item.color} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, color: e.target.value} : i))} className="p-1 h-10" /></div>
-                                              <div><Label className="text-xs">Margin Top</Label><Input type="number" value={item.marginTop} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginTop: e.target.value} : i))} /></div>
+                                            </div>
+                                            <div className="grid grid-cols-4 gap-1">
+                                              <div><Label className="text-xs">M.Top</Label><Input type="number" value={item.marginTop} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginTop: e.target.value} : i))} /></div>
+                                              <div><Label className="text-xs">M.Right</Label><Input type="number" value={item.marginRight} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginRight: e.target.value} : i))} /></div>
+                                              <div><Label className="text-xs">M.Bottom</Label><Input type="number" value={item.marginBottom} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginBottom: e.target.value} : i))} /></div>
+                                              <div><Label className="text-xs">M.Left</Label><Input type="number" value={item.marginLeft} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginLeft: e.target.value} : i))} /></div>
                                             </div>
                                           </div>
                                         ) : (
@@ -300,7 +315,12 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                                             </RadioGroup>
                                             {(item.imageSourceType === 'url' || !item.imageSourceType) ? <Input placeholder="Link ảnh" value={item.imageUrl} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, imageUrl: e.target.value} : i))} /> : <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, imageUrl: url} : i))} />}
                                             <div><Label className="text-xs">Rộng (%)</Label><Slider value={[item.width]} onValueChange={([val]) => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, width: val} : i))} max={100} step={1} /></div>
-                                            <div><Label className="text-xs">Margin Top (px)</Label><Input type="number" value={item.marginTop} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginTop: e.target.value} : i))} /></div>
+                                            <div className="grid grid-cols-4 gap-1">
+                                              <div><Label className="text-xs">M.Top</Label><Input type="number" value={item.marginTop} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginTop: e.target.value} : i))} /></div>
+                                              <div><Label className="text-xs">M.Right</Label><Input type="number" value={item.marginRight} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginRight: e.target.value} : i))} /></div>
+                                              <div><Label className="text-xs">M.Bottom</Label><Input type="number" value={item.marginBottom} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginBottom: e.target.value} : i))} /></div>
+                                              <div><Label className="text-xs">M.Left</Label><Input type="number" value={item.marginLeft} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginLeft: e.target.value} : i))} /></div>
+                                            </div>
                                           </div>
                                         )}
                                       </SortableItem>
@@ -308,8 +328,8 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                                   </div>
                                 </SortableContext>
                                 <div className="flex gap-2 mt-2">
-                                  <Button type="button" variant="outline" size="sm" onClick={() => handleUpdateBlock(block.id, 'items', [...block.items, { id: uuidv4(), type: 'text', text: 'Nội dung mới', isGuestName: false, fontSize: 32, color: '#FFFFFF', fontWeight: 'bold', fontStyle: 'normal', fontFamily: 'sans-serif', marginTop: 0 }])}><PlusCircle className="mr-2 h-4 w-4" /> Thêm Text</Button>
-                                  <Button type="button" variant="outline" size="sm" onClick={() => handleUpdateBlock(block.id, 'items', [...block.items, { id: uuidv4(), type: 'image', imageUrl: '', imageSourceType: 'url', width: 100, marginTop: 10 }])}><ImageIcon className="mr-2 h-4 w-4" /> Thêm Ảnh</Button>
+                                  <Button type="button" variant="outline" size="sm" onClick={() => handleUpdateBlock(block.id, 'items', [...block.items, { id: uuidv4(), type: 'text', text: 'Nội dung mới', isGuestName: false, fontSize: 32, color: '#FFFFFF', fontWeight: 'bold', fontStyle: 'normal', fontFamily: 'sans-serif', marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 }])}><PlusCircle className="mr-2 h-4 w-4" /> Thêm Text</Button>
+                                  <Button type="button" variant="outline" size="sm" onClick={() => handleUpdateBlock(block.id, 'items', [...block.items, { id: uuidv4(), type: 'image', imageUrl: '', imageSourceType: 'url', width: 100, marginTop: 10, marginRight: 0, marginBottom: 0, marginLeft: 0 }])}><ImageIcon className="mr-2 h-4 w-4" /> Thêm Ảnh</Button>
                                 </div>
                               </>
                             )}
