@@ -136,59 +136,86 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                 <div className="space-y-4">
                   {blocks.map(block => (
                     <SortableBlock key={block.id} block={block}>
-                      <div className="space-y-2 w-full">
-                        <div className="flex justify-between items-center">
+                      <div className="w-full">
+                        <div className="flex justify-between items-center mb-2">
                           <Label className="font-semibold capitalize text-slate-600">{block.type}</Label>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteBlock(block.id)}>
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
-                        {block.type === 'image' && (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Input placeholder="Link ảnh" value={block.imageUrl} onChange={e => handleUpdateBlock(block.id, 'imageUrl', e.target.value)} />
-                              <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'imageUrl', url)} />
-                            </div>
-                            <Input placeholder="Link khi click vào ảnh (tùy chọn)" value={block.linkUrl} onChange={e => handleUpdateBlock(block.id, 'linkUrl', e.target.value)} />
-                            {block.imageUrl && <img src={block.imageUrl} alt="Preview" className="rounded-md border max-h-48 object-contain" />}
-                          </div>
-                        )}
-                        {block.type === 'video' && (
-                          <div className="space-y-2">
-                            <Input placeholder="Link Youtube hoặc Facebook" value={block.videoUrl} onChange={e => handleUpdateBlock(block.id, 'videoUrl', e.target.value)} />
-                            <div className="flex items-center gap-4">
-                                <div className="flex-1 space-y-1">
-                                    <Label htmlFor={`aspectWidth-${block.id}`}>Tỷ lệ rộng</Label>
-                                    <Input id={`aspectWidth-${block.id}`} type="number" placeholder="16" value={block.aspectWidth || ''} onChange={e => handleUpdateBlock(block.id, 'aspectWidth', e.target.value ? Number(e.target.value) : undefined)} />
-                                </div>
-                                <div className="flex-1 space-y-1">
-                                    <Label htmlFor={`aspectHeight-${block.id}`}>Tỷ lệ cao</Label>
-                                    <Input id={`aspectHeight-${block.id}`} type="number" placeholder="9" value={block.aspectHeight || ''} onChange={e => handleUpdateBlock(block.id, 'aspectHeight', e.target.value ? Number(e.target.value) : undefined)} />
-                                </div>
-                            </div>
-                            {getVideoEmbedUrl(block.videoUrl) && (
-                              <div className="w-full bg-black rounded-md" style={{ aspectRatio: block.aspectWidth && block.aspectHeight ? `${block.aspectWidth} / ${block.aspectHeight}` : '16 / 9' }}>
-                                <iframe src={getVideoEmbedUrl(block.videoUrl)!} title="Video Preview" className="w-full h-full rounded-md border" allowFullScreen />
+                        <div className="flex gap-4 items-start">
+                          {/* Left side: Preview */}
+                          <div className="w-1/3 flex-shrink-0">
+                            {block.type === 'image' && (
+                              <div className="w-full aspect-video bg-slate-100 rounded-md border flex items-center justify-center">
+                                {block.imageUrl ? (
+                                  <img src={block.imageUrl} alt="Preview" className="w-full h-full object-cover rounded-md" />
+                                ) : (
+                                  <ImageIcon className="h-8 w-8 text-slate-400" />
+                                )}
+                              </div>
+                            )}
+                            {block.type === 'video' && (
+                              <div className="w-full aspect-video bg-slate-100 rounded-md border flex items-center justify-center">
+                                {getVideoEmbedUrl(block.videoUrl) ? (
+                                  <div className="w-full h-full bg-black rounded-md">
+                                    <iframe src={getVideoEmbedUrl(block.videoUrl)!} title="Video Preview" className="w-full h-full rounded-md border" allowFullScreen />
+                                  </div>
+                                ) : (
+                                  <Video className="h-8 w-8 text-slate-400" />
+                                )}
+                              </div>
+                            )}
+                            {block.type === 'text' && (
+                              <div className="w-full aspect-video rounded-md border bg-cover bg-center flex items-center justify-center p-1" style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}>
+                                <p className="text-sm font-bold text-white text-center drop-shadow-lg break-words">
+                                  {block.isGuestName ? guest.name : block.text}
+                                </p>
                               </div>
                             )}
                           </div>
-                        )}
-                        {block.type === 'text' && (
-                          <div className="space-y-2">
-                            <Textarea placeholder="Nội dung text" value={block.text} onChange={e => handleUpdateBlock(block.id, 'text', e.target.value)} />
-                            <div className="flex items-center gap-2">
-                              <Input placeholder="Link ảnh nền (tùy chọn)" value={block.backgroundImageUrl} onChange={e => handleUpdateBlock(block.id, 'backgroundImageUrl', e.target.value)} />
-                              <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'backgroundImageUrl', url)} />
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Switch id={`isGuestName-${block.id}`} checked={block.isGuestName} onCheckedChange={checked => handleUpdateBlock(block.id, 'isGuestName', checked)} />
-                              <Label htmlFor={`isGuestName-${block.id}`}>Tự động lấy tên khách mời</Label>
-                            </div>
-                            <div className="h-32 rounded-md border bg-cover bg-center flex items-center justify-center p-2" style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}>
-                              <p className="text-xl font-bold text-white text-center drop-shadow-lg">{block.isGuestName ? guest.name : block.text}</p>
-                            </div>
+
+                          {/* Right side: Controls */}
+                          <div className="w-2/3 flex-grow space-y-2">
+                            {block.type === 'image' && (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <Input placeholder="Link ảnh" value={block.imageUrl} onChange={e => handleUpdateBlock(block.id, 'imageUrl', e.target.value)} className="truncate" />
+                                  <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'imageUrl', url)} />
+                                </div>
+                                <Input placeholder="Link khi click (tùy chọn)" value={block.linkUrl} onChange={e => handleUpdateBlock(block.id, 'linkUrl', e.target.value)} className="truncate" />
+                              </>
+                            )}
+                            {block.type === 'video' && (
+                              <>
+                                <Input placeholder="Link Youtube hoặc Facebook" value={block.videoUrl} onChange={e => handleUpdateBlock(block.id, 'videoUrl', e.target.value)} className="truncate" />
+                                <div className="flex items-center gap-2">
+                                    <div className="flex-1 space-y-1">
+                                        <Label htmlFor={`aspectWidth-${block.id}`} className="text-xs">Rộng</Label>
+                                        <Input id={`aspectWidth-${block.id}`} type="number" placeholder="16" value={block.aspectWidth || ''} onChange={e => handleUpdateBlock(block.id, 'aspectWidth', e.target.value ? Number(e.target.value) : undefined)} />
+                                    </div>
+                                    <div className="flex-1 space-y-1">
+                                        <Label htmlFor={`aspectHeight-${block.id}`} className="text-xs">Cao</Label>
+                                        <Input id={`aspectHeight-${block.id}`} type="number" placeholder="9" value={block.aspectHeight || ''} onChange={e => handleUpdateBlock(block.id, 'aspectHeight', e.target.value ? Number(e.target.value) : undefined)} />
+                                    </div>
+                                </div>
+                              </>
+                            )}
+                            {block.type === 'text' && (
+                              <>
+                                <Textarea placeholder="Nội dung text" value={block.text} onChange={e => handleUpdateBlock(block.id, 'text', e.target.value)} rows={2} />
+                                <div className="flex items-center gap-2">
+                                  <Input placeholder="Link ảnh nền (tùy chọn)" value={block.backgroundImageUrl} onChange={e => handleUpdateBlock(block.id, 'backgroundImageUrl', e.target.value)} className="truncate" />
+                                  <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'backgroundImageUrl', url)} />
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Switch id={`isGuestName-${block.id}`} checked={block.isGuestName} onCheckedChange={checked => handleUpdateBlock(block.id, 'isGuestName', checked)} />
+                                  <Label htmlFor={`isGuestName-${block.id}`} className="text-sm">Tự động lấy tên khách mời</Label>
+                                </div>
+                              </>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </SortableBlock>
                   ))}
