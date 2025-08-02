@@ -48,15 +48,11 @@ const PublicChecklist = () => {
       const { data: tasks } = await supabase.from('guest_tasks').select('*').eq('guest_id', guest.id);
       const { data: timelineEvents } = await supabase.from('timeline_events').select('*').order('order');
 
-      const relevantTimelineEvents = (timelineEvents || []).filter(event => 
-        event.participants?.some(p => p === guest!.name || p === guest!.role)
-      );
-
       return {
         guest,
         mediaBenefit,
         tasks: tasks || [],
-        timelineEvents: relevantTimelineEvents,
+        timelineEvents: timelineEvents || [],
       };
     },
     enabled: !!phone,
