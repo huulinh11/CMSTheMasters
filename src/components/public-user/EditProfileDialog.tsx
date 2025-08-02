@@ -11,12 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, Trash2, GripVertical, Image as ImageIcon, Video, Type } from "lucide-react";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
-import { ContentBlock } from "@/types/profile-content";
+import { ContentBlock, TextItem } from "@/types/profile-content";
 import {
   DndContext,
   closestCenter,
@@ -94,11 +95,17 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
     let newBlock: ContentBlock;
     const base = { id: uuidv4() };
     if (type === 'image') {
-      newBlock = { ...base, type: 'image', imageUrl: '', linkUrl: '' };
+      newBlock = { ...base, type: 'image', imageUrl: '', linkUrl: '', imageSourceType: 'url' };
     } else if (type === 'video') {
       newBlock = { ...base, type: 'video', videoUrl: '' };
     } else {
-      newBlock = { ...base, type: 'text', text: '', backgroundImageUrl: '', isGuestName: false };
+      newBlock = { 
+        ...base, 
+        type: 'text', 
+        texts: [{ id: uuidv4(), text: 'Nội dung mới', isGuestName: false }], 
+        backgroundImageUrl: '', 
+        imageSourceType: 'url' 
+      };
     }
     setBlocks(prev => [...prev, newBlock]);
   };
@@ -167,10 +174,12 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                               </div>
                             )}
                             {block.type === 'text' && (
-                              <div className="w-full aspect-video rounded-md border bg-cover bg-center flex items-center justify-center p-1" style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}>
-                                <p className="text-sm font-bold text-white text-center drop-shadow-lg break-words">
-                                  {block.isGuestName ? guest.name : block.text}
-                                </p>
+                              <div className="w-full aspect-video rounded-md border bg-cover bg-center flex flex-col items-center justify-center p-1" style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}>
+                                {block.texts.map(textItem => (
+                                  <p key={textItem.id} className="text-sm font-bold text-white text-center drop-shadow-lg break-words">
+                                    {textItem.isGuestName ? guest.name : textItem.text}
+                                  </p>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -179,10 +188,25 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                           <div className="w-2/3 flex-grow space-y-2">
                             {block.type === 'image' && (
                               <>
-                                <div className="flex items-center gap-2">
+                                <RadioGroup
+                                  value={block.imageSourceType || 'url'}
+                                  onValueChange={(value) => handleUpdateBlock(block.id, 'imageSourceType', value)}
+                                  className="flex gap-4"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="url" id={`image-url-${block.id}`} />
+                                    <Label htmlFor={`image-url-${block.id}`}>Nhập link</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="upload" id={`image-upload-${block.id}`} />
+                                    <Label htmlFor={`image-upload-${block.id}`}>Tải ảnh</Label>
+                                  </div>
+                                </RadioGroup>
+                                {(block.imageSourceType === 'url' || !block.imageSourceType) ? (
                                   <Input placeholder="Link ảnh" value={block.imageUrl} onChange={e => handleUpdateBlock(block.id, 'imageUrl', e.target.value)} className="truncate" />
+                                ) : (
                                   <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'imageUrl', url)} />
-                                </div>
+                                )}
                                 <Input placeholder="Link khi click (tùy chọn)" value={block.linkUrl} onChange={e => handleUpdateBlock(block.id, 'linkUrl', e.target.value)} className="truncate" />
                               </>
                             )}
@@ -203,15 +227,69 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
                             )}
                             {block.type === 'text' && (
                               <>
-                                <Textarea placeholder="Nội dung text" value={block.text} onChange={e => handleUpdateBlock(block.id, 'text', e.target.value)} rows={2} />
-                                <div className="flex items-center gap-2">
+                                <Label className="font-medium text-sm">Ảnh nền</Label>
+                                <RadioGroup
+                                  value={block.imageSourceType || 'url'}
+                                  onValueChange={(value) => handleUpdateBlock(block.id, 'imageSourceType', value)}
+                                  className="flex gap-4"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="url" id={`bg-url-${block.id}`} />
+                                    <Label htmlFor={`bg-url-${block.id}`}>Nhập link</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="upload" id={`bg-upload-${block.id}`} />
+                                    <Label htmlFor={`bg-upload-${block.id}`}>Tải ảnh</Label>
+                                  </div>
+                                </RadioGroup>
+                                {(block.imageSourceType === 'url' || !block.imageSourceType) ? (
                                   <Input placeholder="Link ảnh nền (tùy chọn)" value={block.backgroundImageUrl} onChange={e => handleUpdateBlock(block.id, 'backgroundImageUrl', e.target.value)} className="truncate" />
+                                ) : (
                                   <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'backgroundImageUrl', url)} />
+                                )}
+                                <Separator className="my-3" />
+                                <Label className="font-medium text-sm">Nội dung Text</Label>
+                                <div className="space-y-3">
+                                  {block.texts.map((textItem, index) => (
+                                    <div key={textItem.id} className="p-2 border rounded-md bg-white relative">
+                                      <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-7 w-7" onClick={() => {
+                                        const newTexts = block.texts.filter(t => t.id !== textItem.id);
+                                        handleUpdateBlock(block.id, 'texts', newTexts);
+                                      }}>
+                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                      </Button>
+                                      <RadioGroup
+                                        value={textItem.isGuestName ? 'auto' : 'manual'}
+                                        onValueChange={(value) => {
+                                          const newTexts = block.texts.map(t => t.id === textItem.id ? {...t, isGuestName: value === 'auto'} : t);
+                                          handleUpdateBlock(block.id, 'texts', newTexts);
+                                        }}
+                                        className="flex gap-4 mb-2"
+                                      >
+                                        <div className="flex items-center space-x-2">
+                                          <RadioGroupItem value="manual" id={`text-manual-${textItem.id}`} />
+                                          <Label htmlFor={`text-manual-${textItem.id}`}>Text nhập</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <RadioGroupItem value="auto" id={`text-auto-${textItem.id}`} />
+                                          <Label htmlFor={`text-auto-${textItem.id}`}>Tên khách mời</Label>
+                                        </div>
+                                      </RadioGroup>
+                                      {!textItem.isGuestName && (
+                                        <Textarea placeholder={`Nội dung text ${index + 1}`} value={textItem.text} onChange={e => {
+                                          const newTexts = block.texts.map(t => t.id === textItem.id ? {...t, text: e.target.value} : t);
+                                          handleUpdateBlock(block.id, 'texts', newTexts);
+                                        }} rows={2} />
+                                      )}
+                                    </div>
+                                  ))}
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                  <Switch id={`isGuestName-${block.id}`} checked={block.isGuestName} onCheckedChange={checked => handleUpdateBlock(block.id, 'isGuestName', checked)} />
-                                  <Label htmlFor={`isGuestName-${block.id}`} className="text-sm">Tự động lấy tên khách mời</Label>
-                                </div>
+                                <Button type="button" variant="outline" size="sm" onClick={() => {
+                                  const newTexts = [...block.texts, { id: uuidv4(), text: 'Nội dung mới', isGuestName: false }];
+                                  handleUpdateBlock(block.id, 'texts', newTexts);
+                                }}>
+                                  <PlusCircle className="mr-2 h-4 w-4" /> Thêm Text
+                                </Button>
                               </>
                             )}
                           </div>

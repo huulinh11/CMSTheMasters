@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { useMemo } from "react";
-import { ContentBlock } from "@/types/profile-content";
+import { ContentBlock, TextBlock } from "@/types/profile-content";
 import { getVideoEmbedUrl } from "@/lib/video";
 
 type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: any };
@@ -75,7 +75,6 @@ const PublicProfile = () => {
           <div className="flex flex-col">
             {contentBlocks.length > 0 ? (
               contentBlocks.map((block) => {
-                const textContent = block.type === 'text' && block.isGuestName ? guest.name : (block.type === 'text' ? block.text : '');
                 switch (block.type) {
                   case 'image':
                     const imageElement = <img src={block.imageUrl} alt="Profile content" className="w-full h-auto object-cover" />;
@@ -110,12 +109,14 @@ const PublicProfile = () => {
                     return (
                       <div key={block.id} className="w-full">
                         <div
-                          className="w-full h-64 flex items-center justify-center p-4 bg-cover bg-center"
+                          className="w-full h-64 flex flex-col items-center justify-center p-4 bg-cover bg-center"
                           style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}
                         >
-                          <h2 className={`text-4xl font-bold text-white text-center drop-shadow-lg ${block.isGuestName ? 'italic' : ''}`}>
-                            {textContent}
-                          </h2>
+                          {(block as TextBlock).texts.map(textItem => (
+                            <h2 key={textItem.id} className={`text-4xl font-bold text-white text-center drop-shadow-lg ${textItem.isGuestName ? 'italic' : ''}`}>
+                              {textItem.isGuestName ? guest.name : textItem.text}
+                            </h2>
+                          ))}
                         </div>
                       </div>
                     );
