@@ -98,26 +98,37 @@ serve(async (req) => {
     }
 
     // Authenticated requests
-    const authHeader = req.headers.get('Authorization')!
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const supabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } },
     })
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized: Vui lòng đăng nhập lại.');
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profileError || !profile) throw new Error('Không thể lấy thông tin phân quyền.');
-    if (!['Admin', 'Quản lý'].includes(profile.role)) throw new Error('Forbidden: Bạn không có quyền thực hiện hành động này.');
+    if (profileError || !profile) {
+      return new Response(JSON.stringify({ error: 'Could not retrieve user profile.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (!['Admin', 'Quản lý'].includes(profile.role)) {
+      return new Response(JSON.stringify({ error: 'Forbidden: Insufficient permissions.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     switch (method) {
       case 'LIST_USERS': return await listUsers(supabaseAdmin);
       case 'CREATE_USER': return await createUser(supabaseAdmin, payload);
       case 'UPDATE_USER': return await updateUser(supabaseAdmin, payload);
       case 'DELETE_USER': return await deleteUser(supabaseAdmin, payload);
-      default: throw new Error('Invalid method');
+      default: 
+        return new Response(JSON.stringify({ error: 'Invalid method' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
   } catch (error) {
-    console.error(error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.error('Edge function error:', error);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 })
