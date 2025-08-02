@@ -1,9 +1,9 @@
 import { NavLink, useParams } from "react-router-dom";
-import { Gift, Calendar, ClipboardList, User } from "lucide-react";
+import { Megaphone, Calendar, ClipboardList, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const navItems = [
-  { to: "", icon: Gift, label: "Quyền lợi", end: true },
+  { to: "", icon: Megaphone, label: "Quyền lợi", end: true },
   { to: "/event-info", icon: Calendar, label: "Sự kiện" },
   { to: "/tasks", icon: ClipboardList, label: "Tác vụ" },
   { to: "/info", icon: User, label: "Cá nhân" },

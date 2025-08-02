@@ -1,4 +1,4 @@
-import { MediaBenefit, NewsItem, NewsVideo } from "@/types/media-benefit";
+import { MediaBenefit } from "@/types/media-benefit";
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ const LinkWithCopy = ({ link }: { link: string }) => {
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2">
       <a href={link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Link</a>
       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopy}>
         <Copy className="h-3 w-3" />
@@ -91,7 +91,7 @@ export const MediaBenefitDisplay = ({ benefits, mediaBenefitData }: MediaBenefit
         return (
           <Card key={benefitName}>
             <CardContent className="p-3 flex justify-between items-center">
-              <span className="font-medium text-slate-800">
+              <span className={cn("font-medium", isFilled ? "text-primary" : "text-slate-800")}>
                 {benefitName}
               </span>
               <div className={cn("font-semibold text-right", isFilled ? "text-primary" : "text-slate-500")}>
