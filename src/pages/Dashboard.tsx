@@ -17,6 +17,13 @@ type UpsaleHistory = {
   created_at: string;
 };
 
+const StatDisplay = ({ title, value }: { title: string; value: number }) => (
+  <div className="p-3 rounded-lg bg-white/60">
+    <p className="text-xs text-slate-500 truncate">{title}</p>
+    <p className="text-xl font-bold text-slate-800">{value}</p>
+  </div>
+);
+
 const Dashboard = () => {
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<(Pick<VipGuest, 'id' | 'role'>)[]>({
     queryKey: ['vip_guests_dashboard'],
@@ -200,10 +207,10 @@ const Dashboard = () => {
           <div>
             <h2 className="text-lg text-slate-700 font-bold mb-2">Diễn giả & Mentor</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <StatCard title="Tổng Speaker" value={stats.totalSpeakers} />
-              <StatCard title="Prime Speaker" value={stats.primeSpeakers} />
-              <StatCard title="Guest Speaker" value={stats.guestSpeakers} />
-              <StatCard title="Mentor kiến tạo" value={stats.mentorKienTao} />
+              <StatDisplay title="Tổng Speaker" value={stats.totalSpeakers} />
+              <StatDisplay title="Prime Speaker" value={stats.primeSpeakers} />
+              <StatDisplay title="Guest Speaker" value={stats.guestSpeakers} />
+              <StatDisplay title="Mentor kiến tạo" value={stats.mentorKienTao} />
             </div>
           </div>
 
@@ -211,11 +218,11 @@ const Dashboard = () => {
           <div>
             <h2 className="text-lg text-slate-700 font-bold mb-2">Khách mời</h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              <StatCard title="Tổng khách mời" value={stats.totalRegularGuests} />
-              <StatCard title="Khách phổ thông" value={stats.khachPhoThong} />
-              <StatCard title="VIP" value={stats.vip} />
-              <StatCard title="V-Vip" value={stats.vVip} />
-              <StatCard title="Super Vip" value={stats.superVip} />
+              <StatDisplay title="Tổng khách mời" value={stats.totalRegularGuests} />
+              <StatDisplay title="Khách phổ thông" value={stats.khachPhoThong} />
+              <StatDisplay title="VIP" value={stats.vip} />
+              <StatDisplay title="V-Vip" value={stats.vVip} />
+              <StatDisplay title="Super Vip" value={stats.superVip} />
             </div>
           </div>
 
@@ -223,11 +230,11 @@ const Dashboard = () => {
           <div>
             <h2 className="text-lg text-slate-700 font-bold mb-2">Ban tổ chức & Đối tác</h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              <StatCard title="Cố vấn" value={stats.coVan} />
-              <StatCard title="Đại sứ" value={stats.daiSu} />
-              <StatCard title="Nhà tài trợ" value={stats.nhaTaiTro} />
-              <StatCard title="Giám đốc" value={stats.giamDoc} />
-              <StatCard title="Phó BTC" value={stats.phoBTC} />
+              <StatDisplay title="Cố vấn" value={stats.coVan} />
+              <StatDisplay title="Đại sứ" value={stats.daiSu} />
+              <StatDisplay title="Nhà tài trợ" value={stats.nhaTaiTro} />
+              <StatDisplay title="Giám đốc" value={stats.giamDoc} />
+              <StatDisplay title="Phó BTC" value={stats.phoBTC} />
             </div>
           </div>
         </div>
@@ -235,14 +242,5 @@ const Dashboard = () => {
     </div>
   );
 };
-
-const StatCard = ({ title, value }: { title: string; value: number }) => (
-  <Card className="bg-white rounded-xl border">
-    <CardContent className="p-3">
-      <p className="text-xs text-slate-500">{title}</p>
-      <p className="text-xl font-bold text-slate-800">{value}</p>
-    </CardContent>
-  </Card>
-);
 
 export default Dashboard;
