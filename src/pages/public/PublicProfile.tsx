@@ -109,13 +109,22 @@ const PublicProfile = () => {
                     return (
                       <div key={block.id} className="w-full">
                         <div
-                          className="w-full h-64 flex flex-col items-center justify-center p-4 bg-cover bg-center"
+                          className="w-full min-h-[16rem] flex flex-col items-center justify-center p-4 bg-cover bg-center"
                           style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}
                         >
                           {(block as TextBlock).texts.map(textItem => (
-                            <h2 key={textItem.id} className={`text-4xl font-bold text-white text-center drop-shadow-lg ${textItem.isGuestName ? 'italic' : ''}`}>
+                            <p
+                              key={textItem.id}
+                              className={`text-center drop-shadow-lg ${textItem.isGuestName ? 'italic' : ''}`}
+                              style={{
+                                fontSize: `${textItem.fontSize || 32}px`,
+                                color: textItem.color || '#FFFFFF',
+                                fontWeight: textItem.fontWeight || 'bold',
+                                lineHeight: 1.2,
+                              }}
+                            >
                               {textItem.isGuestName ? guest.name : textItem.text}
-                            </h2>
+                            </p>
                           ))}
                         </div>
                       </div>
