@@ -1,7 +1,153 @@
-import PagePlaceholder from "@/components/PagePlaceholder";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { AppUser } from "@/types/app-user";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, Trash2, Edit } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { showSuccess, showError, showNotice } from "@/utils/toast";
+import { AddEditUserDialog } from "../components/account/AddEditUserDialog";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const Account = () => {
-  return <PagePlaceholder title="Tài khoản" />;
+const AccountPage = () => {
+  const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+  const { session } = useAuth();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<AppUser | null>(null);
+
+  const { data: users = [], isLoading } = useQuery<AppUser[]>({
+    queryKey: ['app_users'],
+    queryFn: async () => {
+      if (!session) return [];
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { method: 'LIST_USERS' },
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session,
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (payload: { method: string, payload: any }) => {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: payload,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['app_users'] });
+      if (variables.method === 'CREATE_USER' && users.length === 0) {
+        showNotice("Tài khoản Admin đầu tiên đã được tạo. Vui lòng đăng nhập lại.");
+        // Consider forcing a logout/reload here
+      } else {
+        showSuccess(`Thao tác thành công!`);
+      }
+      setIsDialogOpen(false);
+      setEditingUser(null);
+    },
+    onError: (error: Error) => showError(error.message),
+  });
+
+  const handleSaveUser = (user: Partial<AppUser> & { password?: string }) => {
+    const method = user.id ? 'UPDATE_USER' : 'CREATE_USER';
+    mutation.mutate({ method, payload: user });
+  };
+
+  const handleDeleteUser = (id: string) => {
+    mutation.mutate({ method: 'DELETE_USER', payload: { id } });
+  };
+
+  const handleOpenDialog = (user: AppUser | null) => {
+    setEditingUser(user);
+    setIsDialogOpen(true);
+  };
+
+  if (isLoading) {
+    return <div className="p-4 md:p-6"><Skeleton className="h-96 w-full" /></div>;
+  }
+
+  return (
+    <div className="p-4 md:p-6 space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-slate-800">Quản lý tài khoản</h1>
+        <Button onClick={() => handleOpenDialog(null)}>
+          <PlusCircle className="mr-2 h-4 w-4" /> Thêm tài khoản
+        </Button>
+      </div>
+
+      {isMobile ? (
+        <div className="space-y-4">
+          {users.map((user, index) => (
+            <Card key={user.id}>
+              <CardHeader>
+                <CardTitle>{user.full_name}</CardTitle>
+                <p className="text-sm text-muted-foreground">{user.username}</p>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p><strong>Bộ phận:</strong> {user.department}</p>
+                <p><strong>Quyền:</strong> {user.role}</p>
+                <div className="flex gap-2 pt-2">
+                  <Button variant="outline" size="sm" onClick={() => handleOpenDialog(user)}><Edit className="mr-2 h-4 w-4" /> Sửa</Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user.id)}><Trash2 className="mr-2 h-4 w-4" /> Xóa</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border bg-white">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>STT</TableHead>
+                <TableHead>Username</TableHead>
+                <TableHead>Họ và tên</TableHead>
+                <TableHead>Bộ phận</TableHead>
+                <TableHead>Loại phân quyền</TableHead>
+                <TableHead className="text-right">Tác vụ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user, index) => (
+                <TableRow key={user.id}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{user.username}</TableCell>
+                  <TableCell>{user.full_name}</TableCell>
+                  <TableCell>{user.department}</TableCell>
+                  <TableCell>{user.role}</TableCell>
+                  <TableCell className="text-right space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => handleOpenDialog(user)}>Sửa</Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user.id)}>Xóa</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <AddEditUserDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSave={handleSaveUser}
+        isSaving={mutation.isPending}
+        user={editingUser}
+      />
+    </div>
+  );
 };
 
-export default Account;
+export default AccountPage;

@@ -11,7 +11,9 @@ import {
   Settings,
   LucideIcon,
   Globe,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -27,18 +29,31 @@ const navItems = [
 ];
 
 const Sidebar = () => {
+  const { signOut } = useAuth();
+
   return (
-    <aside className="w-64 flex-shrink-0 bg-white border-r border-slate-200 p-4 hidden md:block">
-      <div className="font-bold text-2xl text-primary mb-8 px-2">EventApp</div>
-      <nav>
-        <ul>
-          {navItems.map((item) => (
-            <li key={item.to}>
-              <NavItem to={item.to} icon={item.icon} label={item.label} />
-            </li>
-          ))}
-        </ul>
-      </nav>
+    <aside className="w-64 flex-shrink-0 bg-white border-r border-slate-200 p-4 hidden md:flex flex-col">
+      <div>
+        <div className="font-bold text-2xl text-primary mb-8 px-2">EventApp</div>
+        <nav>
+          <ul>
+            {navItems.map((item) => (
+              <li key={item.to}>
+                <NavItem to={item.to} icon={item.icon} label={item.label} />
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+      <div className="mt-auto">
+        <button
+          onClick={signOut}
+          className="flex items-center p-2 my-1 rounded-lg transition-colors w-full text-slate-600 hover:bg-slate-100"
+        >
+          <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
+          <span className="truncate">Đăng xuất</span>
+        </button>
+      </div>
     </aside>
   );
 };

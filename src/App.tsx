@@ -2,9 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import Layout from "./components/Layout";
-import PublicLayout from "./layouts/PublicLayout";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Guests from "./pages/Guests";
 import MediaBenefits from "./pages/MediaBenefits";
@@ -20,31 +18,29 @@ import PublicUser from "./pages/PublicUser";
 import PublicProfile from "./pages/public/PublicProfile";
 import PublicChecklist from "./pages/public/PublicChecklist";
 import PublicTimelinePreview from "./pages/public/PublicTimelinePreview";
+import Login from "./pages/Login";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
-const AppRoutes = () => {
-  const location = useLocation();
-  const isPublicRoute = location.pathname.startsWith('/profile/') || location.pathname.startsWith('/checklist/') || location.pathname.startsWith('/timeline/public');
+const AppContent = () => {
+  const { user, loading } = useAuth();
 
-  if (isPublicRoute) {
-    return (
-      <Routes>
-        <Route path="/profile/:slug" element={<PublicProfile />} />
-        <Route path="/checklist/:phone/*" element={<PublicChecklist />} />
-        <Route path="/timeline/public" element={<PublicTimelinePreview />} />
-        <Route path="*" element={
-          <PublicLayout>
-            <NotFound />
-          </PublicLayout>
-        } />
-      </Routes>
-    );
+  if (loading) {
+    return <div className="flex h-screen items-center justify-center">Đang tải ứng dụng...</div>;
   }
 
   return (
-    <Layout>
-      <Routes>
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+      <Route path="/profile/:slug" element={<PublicProfile />} />
+      <Route path="/checklist/:phone/*" element={<PublicChecklist />} />
+      <Route path="/timeline/public" element={<PublicTimelinePreview />} />
+
+      {/* Protected Routes */}
+      <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/guests" element={<Guests />} />
         <Route path="/media-benefits" element={<MediaBenefits />} />
@@ -56,9 +52,10 @@ const AppRoutes = () => {
         <Route path="/public-user" element={<PublicUser />} />
         <Route path="/account" element={<Account />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Layout>
+      </Route>
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
@@ -68,7 +65,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppRoutes />
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

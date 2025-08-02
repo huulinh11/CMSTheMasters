@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Megaphone,
   Globe,
+  LogOut,
 } from "lucide-react";
 import {
   Sheet,
@@ -22,6 +23,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useAuth } from "../contexts/AuthContext";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Home", end: true },
@@ -42,6 +44,7 @@ const moreLinks = [
 const BottomNav = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const location = useLocation();
+  const { signOut } = useAuth();
 
   useEffect(() => {
     if (isSheetOpen) {
@@ -81,6 +84,12 @@ const BottomNav = () => {
                   <MoreLinkItem to={link.to} icon={link.icon} label={link.label} />
                 </li>
               ))}
+              <li>
+                <button onClick={signOut} className="flex items-center p-4 hover:bg-slate-50 transition-colors w-full">
+                  <LogOut className="w-6 h-6 mr-4 text-red-500" />
+                  <span className="flex-1 text-red-500 font-medium text-left">Đăng xuất</span>
+                </button>
+              </li>
             </ul>
           </SheetContent>
         </Sheet>
