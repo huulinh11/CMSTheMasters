@@ -19,18 +19,20 @@ import NotFound from "./pages/NotFound";
 import PublicUser from "./pages/PublicUser";
 import PublicProfile from "./pages/public/PublicProfile";
 import PublicChecklist from "./pages/public/PublicChecklist";
+import PublicTimelinePreview from "./pages/public/PublicTimelinePreview";
 
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const location = useLocation();
-  const isPublicRoute = location.pathname.startsWith('/profile/') || location.pathname.startsWith('/checklist/');
+  const isPublicRoute = location.pathname.startsWith('/profile/') || location.pathname.startsWith('/checklist/') || location.pathname.startsWith('/timeline/public');
 
   if (isPublicRoute) {
     return (
       <Routes>
         <Route path="/profile/:slug" element={<PublicProfile />} />
         <Route path="/checklist/:phone/*" element={<PublicChecklist />} />
+        <Route path="/timeline/public" element={<PublicTimelinePreview />} />
         <Route path="*" element={
           <PublicLayout>
             <NotFound />

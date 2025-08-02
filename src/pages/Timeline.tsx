@@ -9,13 +9,14 @@ import { Guest } from "@/types/guest";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Megaphone } from "lucide-react";
+import { PlusCircle, Megaphone, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showSuccess, showError } from "@/utils/toast";
 import { calculateTimeline } from "@/lib/time";
 import { AddEditTimelineItemDialog } from "@/components/timeline/AddEditTimelineItemDialog";
 import { TimelineTable } from "@/components/timeline/TimelineTable";
 import { TimelineCard } from "@/components/timeline/TimelineCards";
+import { Link } from "react-router-dom";
 import {
   DndContext,
   closestCenter,
@@ -45,6 +46,15 @@ const Timeline = () => {
     queryKey: ['timeline_events'],
     queryFn: async () => {
       const { data, error } = await supabase.from('timeline_events').select('*').order('order', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+  });
+
+  const { data: publicDbItems = [], isLoading: isLoadingPublicItems } = useQuery<TimelineEvent[]>({
+    queryKey: ['public_timeline_events'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('public_timeline_events').select('*').order('order', { ascending: true });
       if (error) throw new Error(error.message);
       return data || [];
     },
@@ -82,6 +92,28 @@ const Timeline = () => {
       start_time: startTimes[index] || '00:00',
     })));
   }, [dbItems, baseTime]);
+
+  const isSynced = useMemo(() => {
+    if (dbItems.length !== publicDbItems.length) {
+      return false;
+    }
+    if (dbItems.length === 0) {
+      return true;
+    }
+
+    const normalizeItem = (item: TimelineEvent) => ({
+      id: item.id,
+      duration_minutes: item.duration_minutes,
+      content: item.content,
+      notes: item.notes || null,
+      participants: item.participants ? [...(item.participants as string[])].sort() : null,
+    });
+
+    const adminNormalized = dbItems.map(normalizeItem);
+    const publicNormalized = publicDbItems.map(normalizeItem);
+
+    return JSON.stringify(adminNormalized) === JSON.stringify(publicNormalized);
+  }, [dbItems, publicDbItems]);
 
   const participantOptions = useMemo((): ParticipantOption[] => {
     const roleOptions: ParticipantOption[] = roles.map(r => ({ value: r.name, label: r.name, group: 'Vai trò' }));
@@ -136,6 +168,7 @@ const Timeline = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public_timeline_events'] });
       showSuccess("Timeline đã được công khai!");
     },
     onError: (error: any) => showError(error.message),
@@ -172,7 +205,7 @@ const Timeline = () => {
     }
   }
 
-  const isLoading = isLoadingItems;
+  const isLoading = isLoadingItems || isLoadingPublicItems;
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -194,10 +227,17 @@ const Timeline = () => {
               <PlusCircle className="mr-2 h-4 w-4" />
               {isMobile ? 'Thêm' : 'Thêm mốc thời gian'}
             </Button>
-            <Button onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending}>
-              <Megaphone className="mr-2 h-4 w-4" />
-              {publishMutation.isPending ? 'Đang public...' : 'Public timeline'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending || isSynced} className="flex-1">
+                <Megaphone className="mr-2 h-4 w-4" />
+                {publishMutation.isPending ? 'Đang public...' : 'Public timeline'}
+              </Button>
+              <Link to="/timeline/public" target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="icon">
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
