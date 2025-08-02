@@ -6,8 +6,13 @@ import { Separator } from "@/components/ui/separator";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { cn } from "@/lib/utils";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type CombinedGuest = (Guest | VipGuest) & { type: 'Chức vụ' | 'Khách mời' };
 
@@ -66,22 +71,17 @@ export const TimelineDisplay = ({ events, guest }: TimelineDisplayProps) => {
   return (
     <Card>
       <CardContent className="p-4 md:p-6">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4">
-          <Label>Lọc theo:</Label>
-          <RadioGroup value={filter} onValueChange={(value) => setFilter(value as any)} className="flex gap-x-6 gap-y-2 flex-wrap">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="all" id="filter-all" />
-              <Label htmlFor="filter-all" className="font-normal">Tất cả</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="role" id="filter-role" />
-              <Label htmlFor="filter-role" className="font-normal">Vai trò của bạn</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="name" id="filter-name" />
-              <Label htmlFor="filter-name" className="font-normal">Đích danh bạn</Label>
-            </div>
-          </RadioGroup>
+        <div className="flex justify-center mb-4">
+          <Select value={filter} onValueChange={(value) => setFilter(value as 'all' | 'role' | 'name')}>
+            <SelectTrigger className="w-full max-w-xs">
+              <SelectValue placeholder="Lọc theo..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả hoạt động</SelectItem>
+              <SelectItem value="role">Hoạt động theo vai trò</SelectItem>
+              <SelectItem value="name">Hoạt động có mặt bạn</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <Separator />
         <div className="mt-4">
@@ -91,7 +91,7 @@ export const TimelineDisplay = ({ events, guest }: TimelineDisplayProps) => {
               return (
                 <React.Fragment key={event.id}>
                   <div className="flex items-start space-x-4">
-                    <div className="font-bold text-lg w-16 text-right flex-shrink-0 text-primary">{startTimes[index]}</div>
+                    <div className="font-bold text-lg w-16 text-right flex-shrink-0 text-slate-800">{startTimes[index]}</div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-slate-800">
                         {event.content}
