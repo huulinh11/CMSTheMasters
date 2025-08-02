@@ -24,10 +24,17 @@ type LogoConfig = {
   marginLeft: number;
 };
 
+type DresscodeImageConfig = {
+  imageUrl: string;
+  imageSourceType: 'url' | 'upload';
+};
+
 type ChecklistSettings = {
   id: string;
   logo_config: Partial<LogoConfig>;
   title_config: Partial<TextItem>;
+  dresscode_title?: string;
+  dresscode_image_config?: Partial<DresscodeImageConfig>;
 };
 
 const fontFamilies = [
@@ -66,6 +73,7 @@ const ChecklistSettings = () => {
         ...data,
         logo_config: data.logo_config || {},
         title_config: data.title_config || {},
+        dresscode_image_config: data.dresscode_image_config || {},
       });
     }
   }, [data]);
@@ -89,7 +97,7 @@ const ChecklistSettings = () => {
     mutation.mutate(settings);
   };
 
-  const handleConfigChange = (configType: 'logo_config' | 'title_config', field: string, value: any) => {
+  const handleConfigChange = (configType: 'logo_config' | 'title_config' | 'dresscode_image_config', field: string, value: any) => {
     setSettings(prev => ({
       ...prev,
       [configType]: {
@@ -141,6 +149,35 @@ const ChecklistSettings = () => {
             <div><Label>Màu chữ</Label><Input type="color" value={settings.title_config?.color || '#000000'} onChange={e => handleConfigChange('title_config', 'color', e.target.value)} className="p-1 h-10" /></div>
           </div>
           <div><Label>Canh lề</Label><MarginEditor values={settings.title_config || {}} onChange={(field, value) => handleConfigChange('title_config', field, value)} /></div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Cấu hình Dresscode</CardTitle>
+          <CardDescription>Tùy chỉnh hiển thị dresscode trên trang checklist.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Tiêu đề</Label>
+            <Input 
+              placeholder="Trang phục" 
+              value={settings.dresscode_title || ''} 
+              onChange={(e) => setSettings(prev => ({ ...prev, dresscode_title: e.target.value }))} 
+            />
+          </div>
+          <Separator />
+          <RadioGroup 
+            value={settings.dresscode_image_config?.imageSourceType || 'url'} 
+            onValueChange={(value) => handleConfigChange('dresscode_image_config', 'imageSourceType', value as 'url' | 'upload')} 
+            className="flex gap-4"
+          >
+            <div className="flex items-center space-x-2"><RadioGroupItem value="url" id="dresscode-url" /><Label htmlFor="dresscode-url">Nhập link</Label></div>
+            <div className="flex items-center space-x-2"><RadioGroupItem value="upload" id="dresscode-upload" /><Label htmlFor="dresscode-upload">Tải ảnh</Label></div>
+          </RadioGroup>
+          {(settings.dresscode_image_config?.imageSourceType === 'url' || !settings.dresscode_image_config?.imageSourceType) 
+            ? <Input placeholder="URL hình ảnh dresscode" value={settings.dresscode_image_config?.imageUrl || ''} onChange={(e) => handleConfigChange('dresscode_image_config', 'imageUrl', e.target.value)} /> 
+            : <ImageUploader guestId="checklist-settings-dresscode" onUploadSuccess={url => handleConfigChange('dresscode_image_config', 'imageUrl', url)} />}
         </CardContent>
       </Card>
 
