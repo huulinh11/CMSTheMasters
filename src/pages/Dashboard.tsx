@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -174,62 +174,62 @@ const Dashboard = () => {
           <Skeleton className="h-40 w-full rounded-xl" />
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Revenue Stats */}
-          <RevenueStats 
-            totalSponsorship={revenueStats.totalSponsorship}
-            totalPaid={revenueStats.totalPaid}
-            totalUnpaid={revenueStats.totalUnpaid}
-          />
+          <div>
+            <h2 className="text-lg text-slate-700 font-bold mb-2">Doanh thu</h2>
+            <RevenueStats 
+              totalSponsorship={revenueStats.totalSponsorship}
+              totalPaid={revenueStats.totalPaid}
+              totalUnpaid={revenueStats.totalUnpaid}
+            />
+          </div>
 
           {/* Group 1: Total */}
-          <Card className="bg-white/70 border-none shadow-sm rounded-xl">
-            <CardContent className="p-4">
-              <p className="text-sm font-medium text-slate-500">Tổng số người</p>
-              <p className="text-3xl font-bold text-slate-800">{stats.totalPeople}</p>
-            </CardContent>
-          </Card>
+          <div>
+            <h2 className="text-lg text-slate-700 font-bold mb-2">Tổng quan</h2>
+            <Card className="bg-white/70 border-none shadow-sm rounded-xl">
+              <CardContent className="p-4">
+                <p className="text-sm font-medium text-slate-500">Tổng số người</p>
+                <p className="text-3xl font-bold text-slate-800">{stats.totalPeople}</p>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Group 2 */}
-          <Card className="bg-white/70 border-none shadow-sm rounded-xl">
-            <CardHeader className="p-4">
-              <CardTitle className="text-base text-slate-700">Diễn giả & Mentor</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div>
+            <h2 className="text-lg text-slate-700 font-bold mb-2">Diễn giả & Mentor</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <StatCard title="Tổng Speaker" value={stats.totalSpeakers} />
               <StatCard title="Prime Speaker" value={stats.primeSpeakers} />
               <StatCard title="Guest Speaker" value={stats.guestSpeakers} />
               <StatCard title="Mentor kiến tạo" value={stats.mentorKienTao} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Group 3 */}
-          <Card className="bg-white/70 border-none shadow-sm rounded-xl">
-            <CardHeader className="p-4">
-              <CardTitle className="text-base text-slate-700">Khách mời</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 grid grid-cols-2 md:grid-cols-5 gap-2">
+          <div>
+            <h2 className="text-lg text-slate-700 font-bold mb-2">Khách mời</h2>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               <StatCard title="Tổng khách mời" value={stats.totalRegularGuests} />
               <StatCard title="Khách phổ thông" value={stats.khachPhoThong} />
               <StatCard title="VIP" value={stats.vip} />
               <StatCard title="V-Vip" value={stats.vVip} />
               <StatCard title="Super Vip" value={stats.superVip} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Group 4 */}
-          <Card className="bg-white/70 border-none shadow-sm rounded-xl">
-            <CardHeader className="p-4">
-              <CardTitle className="text-base text-slate-700">Ban tổ chức & Đối tác</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 grid grid-cols-2 md:grid-cols-5 gap-2">
+          <div>
+            <h2 className="text-lg text-slate-700 font-bold mb-2">Ban tổ chức & Đối tác</h2>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               <StatCard title="Cố vấn" value={stats.coVan} />
               <StatCard title="Đại sứ" value={stats.daiSu} />
               <StatCard title="Nhà tài trợ" value={stats.nhaTaiTro} />
               <StatCard title="Giám đốc" value={stats.giamDoc} />
               <StatCard title="Phó BTC" value={stats.phoBTC} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       )}
     </div>
