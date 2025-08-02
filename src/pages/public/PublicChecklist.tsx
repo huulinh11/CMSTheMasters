@@ -66,7 +66,7 @@ const PublicChecklist = () => {
     if (!data?.guest.id) return;
 
     const channel = supabase
-      .channel(`public:guest_tasks:guest_id=eq.${data.guest.id}`)
+      .channel(`public-checklist-${data.guest.id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'guest_tasks', filter: `guest_id=eq.${data.guest.id}` },
