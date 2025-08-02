@@ -82,7 +82,24 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving 
 
   useEffect(() => {
     if (guest) {
-      setBlocks(Array.isArray(guest.profile_content) ? guest.profile_content : []);
+      const rawBlocks = Array.isArray(guest.profile_content) ? guest.profile_content : [];
+      
+      const migratedBlocks = rawBlocks.map(block => {
+        if (block.type === 'text' && !('texts' in block)) {
+          // This is an old text block, let's convert it.
+          const oldBlock = block as any;
+          return {
+            id: oldBlock.id,
+            type: 'text',
+            texts: [{ id: uuidv4(), text: oldBlock.text || '', isGuestName: oldBlock.isGuestName || false }],
+            backgroundImageUrl: oldBlock.backgroundImageUrl || '',
+            imageSourceType: oldBlock.imageSourceType || 'url',
+          };
+        }
+        return block;
+      });
+
+      setBlocks(migratedBlocks);
     }
   }, [guest]);
 
