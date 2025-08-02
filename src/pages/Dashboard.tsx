@@ -9,6 +9,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { VipGuest } from "@/types/vip-guest";
 import { Guest } from "@/types/guest";
 import { Skeleton } from "@/components/ui/skeleton";
+import RevenueStats from "@/components/dashboard/RevenueStats";
+import { GuestRevenue } from "@/types/guest-revenue";
+
+type UpsaleHistory = {
+  guest_id: string;
+  from_sponsorship: number;
+  from_payment_source: string | null;
+  created_at: string;
+};
 
 const Dashboard = () => {
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<(Pick<VipGuest, 'id' | 'role'>)[]>({
@@ -28,6 +37,77 @@ const Dashboard = () => {
       return data || [];
     }
   });
+
+  const { data: vipRevenueData = [], isLoading: isLoadingVipRevenue } = useQuery<any[]>({
+    queryKey: ['vip_revenue_dashboard'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_vip_guest_revenue_details');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const { data: regularRevenueData = [], isLoading: isLoadingRegularRevenue } = useQuery<any[]>({
+    queryKey: ['guest_revenue_dashboard'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_guest_revenue_details');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const { data: upsaleHistory = [], isLoading: isLoadingHistory } = useQuery<UpsaleHistory[]>({
+    queryKey: ['guest_upsale_history_dashboard'],
+    queryFn: async () => {
+        const { data, error } = await supabase.from('guest_upsale_history').select('guest_id, from_sponsorship, from_payment_source, created_at');
+        if (error) throw error;
+        return data || [];
+    }
+  });
+
+  const revenueStats = useMemo(() => {
+    const totalSponsorshipVip = vipRevenueData.reduce((sum, g) => sum + (g.sponsorship || 0), 0);
+    const totalPaidVip = vipRevenueData.reduce((sum, g) => sum + (g.paid_amount || 0), 0);
+
+    const historyMap = new Map<string, UpsaleHistory[]>();
+    upsaleHistory.forEach(h => {
+        const history = historyMap.get(h.guest_id) || [];
+        history.push(h);
+        historyMap.set(h.guest_id, history);
+    });
+
+    const regularGuestsWithEffectiveSponsorship: Partial<GuestRevenue>[] = regularRevenueData.map(g => {
+      const originalSponsorship = g.sponsorship || 0;
+      let effectiveSponsorship = originalSponsorship;
+
+      if (g.is_upsaled) {
+        const guestHistory = historyMap.get(g.id);
+        if (guestHistory && guestHistory.length > 0) {
+          const firstUpsale = guestHistory.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+          if (firstUpsale.from_payment_source === 'Chỉ tiêu') {
+            effectiveSponsorship = originalSponsorship - firstUpsale.from_sponsorship;
+          }
+        }
+      } else if (g.payment_source === 'Chỉ tiêu') {
+        effectiveSponsorship = 0;
+      }
+
+      return {
+        ...g,
+        sponsorship: effectiveSponsorship,
+        paid: g.paid_amount || 0,
+      };
+    });
+
+    const totalSponsorshipRegular = regularGuestsWithEffectiveSponsorship.reduce((sum, g) => sum + (g.sponsorship || 0), 0);
+    const totalPaidRegular = regularGuestsWithEffectiveSponsorship.reduce((sum, g) => sum + (g.paid || 0), 0);
+
+    const totalSponsorship = totalSponsorshipVip + totalSponsorshipRegular;
+    const totalPaid = totalPaidVip + totalPaidRegular;
+    const totalUnpaid = totalSponsorship - totalPaid;
+
+    return { totalSponsorship, totalPaid, totalUnpaid };
+  }, [vipRevenueData, regularRevenueData, upsaleHistory]);
 
   const stats = useMemo(() => {
     const allGuests = [...vipGuests, ...regularGuests];
@@ -66,7 +146,7 @@ const Dashboard = () => {
     };
   }, [vipGuests, regularGuests]);
 
-  const isLoading = isLoadingVip || isLoadingRegular;
+  const isLoading = isLoadingVip || isLoadingRegular || isLoadingVipRevenue || isLoadingRegularRevenue || isLoadingHistory;
 
   return (
     <div className="p-4 md:p-6 bg-transparent min-h-full">
@@ -90,12 +170,20 @@ const Dashboard = () => {
       {isLoading ? (
         <div className="space-y-6">
           <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-2xl" />
           <Skeleton className="h-48 w-full rounded-2xl" />
           <Skeleton className="h-48 w-full rounded-2xl" />
           <Skeleton className="h-48 w-full rounded-2xl" />
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Revenue Stats */}
+          <RevenueStats 
+            totalSponsorship={revenueStats.totalSponsorship}
+            totalPaid={revenueStats.totalPaid}
+            totalUnpaid={revenueStats.totalUnpaid}
+          />
+
           {/* Group 1: Total */}
           <Card className="bg-white/70 border-none shadow-sm rounded-2xl">
             <CardContent className="p-6 flex items-center justify-between">
