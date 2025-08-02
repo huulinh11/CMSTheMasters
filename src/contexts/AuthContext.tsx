@@ -28,7 +28,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const bootstrapAdmin = async () => {
+      try {
+        await supabase.functions.invoke('manage-users', {
+          body: {
+            method: 'CREATE_USER',
+            payload: {
+              username: 'admin',
+              password: 'PRpro@123',
+              full_name: 'Administrator',
+              department: 'System',
+              role: 'Admin'
+            }
+          }
+        });
+        console.log("Admin user bootstrap check complete.");
+      } catch (error) {
+        // This is expected to fail if the user already exists or if there are other users.
+        // We can safely ignore this error.
+        console.warn("Admin bootstrap failed (this is expected if users already exist):", (error as Error).message);
+      }
+    };
+
     const getSession = async () => {
+      await bootstrapAdmin();
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);

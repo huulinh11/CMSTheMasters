@@ -31,7 +31,28 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    const { method, payload } = await req.json();
 
+    // Special case for creating the first user without auth
+    if (method === 'CREATE_USER') {
+      const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
+      if (listError) throw listError;
+
+      if (users.length === 0) {
+        const { username, password, full_name, department } = payload;
+        const email = `${username}@event.app`;
+        const { data, error } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { full_name, department, role: 'Admin' } // Force first user to be Admin
+        });
+        if (error) throw error;
+        return new Response(JSON.stringify(data.user), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
+    // For all other requests, require authentication
     const authHeader = req.headers.get('Authorization')!
     const supabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } },
@@ -43,19 +64,7 @@ serve(async (req) => {
     }
 
     const userRole = await getUserRole(supabase, user.id);
-    const { method, payload } = await req.json();
-
-    // Special case for creating the first user
-    if (method === 'CREATE_USER') {
-        const { data: users, error } = await supabaseAdmin.auth.admin.listUsers();
-        if (error) throw error;
-        if (users.users.length === 0) {
-            // Allow creation of the first user, force role to Admin
-            payload.role = 'Admin';
-        } else if (!userRole || !['Admin', 'Quản lý'].includes(userRole)) {
-            return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-        }
-    } else if (!userRole || !['Admin', 'Quản lý'].includes(userRole)) {
+    if (!userRole || !['Admin', 'Quản lý'].includes(userRole)) {
         return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
