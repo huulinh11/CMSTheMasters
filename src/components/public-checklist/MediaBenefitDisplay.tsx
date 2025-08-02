@@ -1,56 +1,76 @@
 import { MediaBenefit, NewsItem, NewsVideo } from "@/types/media-benefit";
 import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
+import { showSuccess } from "@/utils/toast";
 
-const LinkDisplay = ({ link }: { link: string }) => (
-  <a href={link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Link</a>
-);
+const LinkWithCopy = ({ link }: { link: string }) => {
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(link);
+    showSuccess("Đã sao chép link!");
+  };
 
-const NewsDisplay = ({ items }: { items: NewsItem[] | null | undefined }) => {
-  if (!items || items.length === 0) return <span className="text-slate-500">Trống</span>;
   return (
-    <div className="flex flex-col space-y-1 items-end">
-      {items.map(item => (
-        <div key={item.id} className="flex items-center space-x-2">
-          {item.article_link && <span>Bài: <LinkDisplay link={item.article_link} /></span>}
-          {item.post_link && <span>Post: <LinkDisplay link={item.post_link} /></span>}
-        </div>
-      ))}
+    <div className="flex items-center gap-1">
+      <a href={link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Link</a>
+      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopy}>
+        <Copy className="h-3 w-3" />
+      </Button>
     </div>
   );
 };
 
-const VideoNewsDisplay = ({ video }: { video: NewsVideo | null | undefined }) => {
-  if (!video || (!video.script_link && !video.video_link)) return <span className="text-slate-500">Trống</span>;
-  return (
-    <div className="flex items-center space-x-2">
-      {video.script_link && <span>Script: <LinkDisplay link={video.script_link} /></span>}
-      {video.video_link && <span>Video: <LinkDisplay link={video.video_link} /></span>}
-    </div>
-  );
-};
-
-const getBenefitStatus = (benefitName: string, mediaBenefit: MediaBenefit | null): React.ReactNode => {
-  if (!mediaBenefit) return <span className="text-slate-500">Trống</span>;
+const getBenefitStatusAndData = (benefitName: string, mediaBenefit: MediaBenefit | null): { status: 'filled' | 'empty', content: React.ReactNode } => {
+  if (!mediaBenefit) return { status: 'empty', content: 'Trống' };
 
   switch (benefitName) {
     case "Thư mời":
-      return <span className="font-semibold">{mediaBenefit.invitation_status || 'Trống'}</span>;
+      const status = mediaBenefit.invitation_status || 'Trống';
+      return {
+        status: status !== 'Trống' ? 'filled' : 'empty',
+        content: status,
+      };
     case "Post bài page":
-      return mediaBenefit.page_post_link ? <LinkDisplay link={mediaBenefit.page_post_link} /> : <span className="text-slate-500">Trống</span>;
-    case "Post bài BTC":
-      return mediaBenefit.btc_post_link ? <LinkDisplay link={mediaBenefit.btc_post_link} /> : <span className="text-slate-500">Trống</span>;
+      return {
+        status: !!mediaBenefit.page_post_link ? 'filled' : 'empty',
+        content: mediaBenefit.page_post_link ? <LinkWithCopy link={mediaBenefit.page_post_link} /> : 'Trống',
+      };
     case "Báo trước sự kiện":
-      return <NewsDisplay items={mediaBenefit.pre_event_news} />;
     case "Báo sau sự kiện":
-      return <NewsDisplay items={mediaBenefit.post_event_news} />;
+      const newsItems = benefitName === "Báo trước sự kiện" ? mediaBenefit.pre_event_news : mediaBenefit.post_event_news;
+      const finalLinks = newsItems?.map(item => item.post_link).filter(Boolean) as string[];
+      if (finalLinks.length > 0) {
+        return {
+          status: 'filled',
+          content: <div className="flex flex-col items-end gap-1">{finalLinks.map((link, i) => <LinkWithCopy key={i} link={link} />)}</div>
+        };
+      }
+      return { status: 'empty', content: 'Trống' };
     case "Video thảm đỏ":
-      return mediaBenefit.red_carpet_video_link ? <LinkDisplay link={mediaBenefit.red_carpet_video_link} /> : <span className="text-slate-500">Trống</span>;
+       return {
+        status: !!mediaBenefit.red_carpet_video_link ? 'filled' : 'empty',
+        content: mediaBenefit.red_carpet_video_link ? <LinkWithCopy link={mediaBenefit.red_carpet_video_link} /> : 'Trống',
+      };
     case "Video đưa tin":
-      return <VideoNewsDisplay video={mediaBenefit.news_video} />;
+      const finalVideoLink = mediaBenefit.news_video?.video_link;
+      if (finalVideoLink) {
+        return {
+          status: 'filled',
+          content: <LinkWithCopy link={finalVideoLink} />
+        };
+      }
+      return { status: 'empty', content: 'Trống' };
     case "Bộ ảnh Beauty AI":
-      return mediaBenefit.beauty_ai_photos_link ? <LinkDisplay link={mediaBenefit.beauty_ai_photos_link} /> : <span className="text-slate-500">Trống</span>;
+      return {
+        status: !!mediaBenefit.beauty_ai_photos_link ? 'filled' : 'empty',
+        content: mediaBenefit.beauty_ai_photos_link ? <LinkWithCopy link={mediaBenefit.beauty_ai_photos_link} /> : 'Trống',
+      };
     default:
-      return <span className="text-slate-500">N/A</span>;
+      return { status: 'empty', content: 'N/A' };
   }
 };
 
@@ -60,14 +80,27 @@ interface MediaBenefitDisplayProps {
 }
 
 export const MediaBenefitDisplay = ({ benefits, mediaBenefitData }: MediaBenefitDisplayProps) => {
+  const filteredBenefits = benefits.filter(b => b !== "Post bài BTC");
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-      {benefits.map(benefitName => (
-        <div key={benefitName} className="flex justify-between items-start">
-          <span className="font-medium text-slate-700 pr-4">{benefitName}:</span>
-          <div className="text-right">{getBenefitStatus(benefitName, mediaBenefitData)}</div>
-        </div>
-      ))}
+    <div className="space-y-3">
+      {filteredBenefits.map(benefitName => {
+        const { status, content } = getBenefitStatusAndData(benefitName, mediaBenefitData);
+        const isFilled = status === 'filled';
+
+        return (
+          <Card key={benefitName}>
+            <CardContent className="p-3 flex justify-between items-center">
+              <span className="font-medium text-slate-800">
+                {benefitName}
+              </span>
+              <div className={cn("font-semibold text-right", isFilled ? "text-primary" : "text-slate-500")}>
+                {content}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };

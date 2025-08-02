@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOutletContext } from "react-router-dom";
 import { ChecklistDataContext } from "../PublicChecklist";
@@ -79,14 +78,10 @@ const PublicBenefitsTab = () => {
         <p className="text-slate-600">{guest.role}</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Quyền Lợi</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} />
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-800 px-2">Quyền Lợi</h2>
+        <MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} />
+      </div>
     </div>
   );
 };
