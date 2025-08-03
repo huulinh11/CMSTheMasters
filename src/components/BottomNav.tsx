@@ -27,20 +27,25 @@ const BottomNav = () => {
     }
   }, [location.pathname]);
 
-  // Main navigation items are always the same for logged-in users
   const mainNavItems = useMemo(() => {
-    return allNavItems.filter(item => !item.isMoreLink);
-  }, []);
-
-  // "More" links are filtered based on user role
-  const moreLinks = useMemo(() => {
     if (!profile) return [];
     return allNavItems.filter(item => {
-      if (!item.isMoreLink) return false; // Only consider items for the "More" menu
+      if (item.isMoreLink) return false;
       if (item.roles) {
         return item.roles.includes(profile.role);
       }
-      return true; // If no roles are specified, it's visible to everyone
+      return true;
+    });
+  }, [profile]);
+
+  const moreLinks = useMemo(() => {
+    if (!profile) return [];
+    return allNavItems.filter(item => {
+      if (!item.isMoreLink) return false;
+      if (item.roles) {
+        return item.roles.includes(profile.role);
+      }
+      return true;
     });
   }, [profile]);
 
@@ -59,32 +64,34 @@ const BottomNav = () => {
           />
         ))}
 
-        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetTrigger asChild>
-            <button className={`flex flex-col items-center justify-center w-full h-full transition-colors ${isMorePageActive ? "text-primary" : "text-slate-500"}`}>
-              <MoreHorizontal className="w-6 h-6 mb-1" />
-              <span className="text-xs font-medium">Khác</span>
-            </button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-3/4 p-0 bg-white">
-            <SheetHeader className="p-4 text-left border-b">
-              <SheetTitle className="text-2xl font-bold text-slate-800">Khác</SheetTitle>
-            </SheetHeader>
-            <ul className="divide-y divide-slate-200">
-              {moreLinks.map((link) => (
-                <li key={link.to}>
-                  <MoreLinkItem to={link.to} icon={link.icon} label={link.label} />
+        {moreLinks.length > 0 && (
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetTrigger asChild>
+              <button className={`flex flex-col items-center justify-center w-full h-full transition-colors ${isMorePageActive ? "text-primary" : "text-slate-500"}`}>
+                <MoreHorizontal className="w-6 h-6 mb-1" />
+                <span className="text-xs font-medium">Khác</span>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-3/4 p-0 bg-white">
+              <SheetHeader className="p-4 text-left border-b">
+                <SheetTitle className="text-2xl font-bold text-slate-800">Khác</SheetTitle>
+              </SheetHeader>
+              <ul className="divide-y divide-slate-200">
+                {moreLinks.map((link) => (
+                  <li key={link.to}>
+                    <MoreLinkItem to={link.to} icon={link.icon} label={link.label} />
+                  </li>
+                ))}
+                <li>
+                  <button onClick={signOut} className="flex items-center p-4 hover:bg-slate-50 transition-colors w-full">
+                    <LogOut className="w-6 h-6 mr-4 text-red-500" />
+                    <span className="flex-1 text-red-500 font-medium text-left">Đăng xuất</span>
+                  </button>
                 </li>
-              ))}
-              <li>
-                <button onClick={signOut} className="flex items-center p-4 hover:bg-slate-50 transition-colors w-full">
-                  <LogOut className="w-6 h-6 mr-4 text-red-500" />
-                  <span className="flex-1 text-red-500 font-medium text-left">Đăng xuất</span>
-                </button>
-              </li>
-            </ul>
-          </SheetContent>
-        </Sheet>
+              </ul>
+            </SheetContent>
+          </Sheet>
+        )}
       </nav>
     </footer>
   );
