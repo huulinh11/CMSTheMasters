@@ -5,24 +5,26 @@ import { useAuth } from "../contexts/AuthContext";
 import { allNavItems } from "@/config/nav";
 
 const Sidebar = () => {
-  const { signOut, profile } = useAuth();
+  const { signOut, user, profile } = useAuth();
   const location = useLocation();
 
+  const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
+
   const mainNavItems = useMemo(() => {
-    if (!profile) return [];
+    if (!userRole) return [];
     return allNavItems.filter(item => {
       if (item.isMoreLink) return false;
       if (item.roles) {
-        return item.roles.includes(profile.role);
+        return item.roles.includes(userRole);
       }
       return true;
     });
-  }, [profile]);
+  }, [userRole]);
 
   const hasVisibleMoreLinks = useMemo(() => {
-    if (!profile) return false;
-    return allNavItems.some(item => item.isMoreLink && (!item.roles || item.roles.includes(profile.role)));
-  }, [profile]);
+    if (!userRole) return false;
+    return allNavItems.some(item => item.isMoreLink && (!item.roles || item.roles.includes(userRole)));
+  }, [userRole]);
 
   const isMorePageActive = useMemo(() => {
     if (!hasVisibleMoreLinks) return false;

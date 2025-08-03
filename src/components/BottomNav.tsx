@@ -19,7 +19,7 @@ import { allNavItems } from "@/config/nav";
 const BottomNav = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const location = useLocation();
-  const { signOut, profile } = useAuth();
+  const { signOut, user, profile } = useAuth();
 
   useEffect(() => {
     if (isSheetOpen) {
@@ -27,27 +27,29 @@ const BottomNav = () => {
     }
   }, [location.pathname]);
 
+  const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
+
   const mainNavItems = useMemo(() => {
-    if (!profile) return [];
+    if (!userRole) return [];
     return allNavItems.filter(item => {
       if (item.isMoreLink) return false;
       if (item.roles) {
-        return item.roles.includes(profile.role);
+        return item.roles.includes(userRole);
       }
       return true;
     });
-  }, [profile]);
+  }, [userRole]);
 
   const moreLinks = useMemo(() => {
-    if (!profile) return [];
+    if (!userRole) return [];
     return allNavItems.filter(item => {
       if (!item.isMoreLink) return false;
       if (item.roles) {
-        return item.roles.includes(profile.role);
+        return item.roles.includes(userRole);
       }
       return true;
     });
-  }, [profile]);
+  }, [userRole]);
 
   const isMorePageActive = moreLinks.some(link => location.pathname.startsWith(link.to));
 
