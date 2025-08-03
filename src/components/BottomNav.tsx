@@ -1,19 +1,9 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import {
-  LayoutDashboard,
-  Users,
-  ClipboardList,
   MoreHorizontal,
   LucideIcon,
-  Info,
-  CircleDollarSign,
-  CalendarClock,
-  UserCircle,
-  Settings,
   ChevronRight,
-  Megaphone,
-  Globe,
   LogOut,
 } from "lucide-react";
 import {
@@ -37,18 +27,20 @@ const BottomNav = () => {
     }
   }, [location.pathname]);
 
+  // Main navigation items are always the same for logged-in users
   const mainNavItems = useMemo(() => {
     return allNavItems.filter(item => !item.isMoreLink);
   }, []);
 
+  // "More" links are filtered based on user role
   const moreLinks = useMemo(() => {
     if (!profile) return [];
     return allNavItems.filter(item => {
-      if (!item.isMoreLink) return false; // Chỉ lấy các link trong menu "Khác"
+      if (!item.isMoreLink) return false; // Only consider items for the "More" menu
       if (item.roles) {
         return item.roles.includes(profile.role);
       }
-      return true;
+      return true; // If no roles are specified, it's visible to everyone
     });
   }, [profile]);
 
