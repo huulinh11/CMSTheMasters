@@ -27,7 +27,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export const RegularTasksTab = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewingGuest, setViewingGuest] = useState<TaskGuest | null>(null);
   const [imagePreviewGuest, setImagePreviewGuest] = useState<TaskGuest | null>(null);
@@ -82,9 +82,10 @@ export const RegularTasksTab = () => {
   });
 
   const handleTaskChange = (payload: { guestId: string; taskName: string; isCompleted: boolean; }) => {
+    const updatedBy = profile?.full_name || user?.email?.split('@')[0] || 'Unknown User';
     taskMutation.mutate({
       ...payload,
-      updatedBy: profile?.full_name || 'Unknown User'
+      updatedBy,
     });
   };
 

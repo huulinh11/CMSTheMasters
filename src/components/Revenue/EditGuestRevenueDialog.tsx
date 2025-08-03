@@ -36,7 +36,7 @@ interface EditGuestRevenueDialogProps {
 
 const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", roleConfigs }: EditGuestRevenueDialogProps) => {
   const queryClient = useQueryClient();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [sponsorship, setSponsorship] = useState(0);
   const [formattedSponsorship, setFormattedSponsorship] = useState("0");
   const [paymentSource, setPaymentSource] = useState<PaymentSource | "">("");
@@ -128,7 +128,8 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
         showError("Vui lòng chọn vai trò mới để upsale.");
         return;
       }
-      upsaleMutation.mutate({ newRole, sponsorship, paymentSource: paymentSource || "Trống", upsaledBy: profile?.full_name || 'Unknown User' });
+      const upsaledBy = profile?.full_name || user?.email?.split('@')[0] || 'Unknown User';
+      upsaleMutation.mutate({ newRole, sponsorship, paymentSource: paymentSource || "Trống", upsaledBy });
     } else {
       editMutation.mutate({ sponsorship, payment_source: paymentSource, is_upsaled: isUpsaled });
     }
