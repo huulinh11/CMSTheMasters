@@ -1,33 +1,8 @@
 import { NavLink } from "react-router-dom";
 import { useMemo } from "react";
-import {
-  LayoutDashboard,
-  Users,
-  Megaphone,
-  ClipboardList,
-  Info,
-  CircleDollarSign,
-  CalendarClock,
-  UserCircle,
-  Settings,
-  LucideIcon,
-  Globe,
-  LogOut,
-} from "lucide-react";
+import { LogOut, LucideIcon } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-
-const allNavItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/guests", icon: Users, label: "Khách mời" },
-  { to: "/media-benefits", icon: Megaphone, label: "Quyền lợi truyền thông" },
-  { to: "/event-tasks", icon: ClipboardList, label: "Tác vụ sự kiện" },
-  { to: "/information", icon: Info, label: "Thông tin" },
-  { to: "/revenue", icon: CircleDollarSign, label: "Doanh thu", roles: ['Admin', 'Quản lý', 'Sale'] },
-  { to: "/timeline", icon: CalendarClock, label: "Timeline" },
-  { to: "/public-user", icon: Globe, label: "Public User" },
-  { to: "/account", icon: UserCircle, label: "Tài khoản", roles: ['Admin', 'Quản lý'] },
-  { to: "/settings", icon: Settings, label: "Cấu hình" },
-];
+import { allNavItems } from "@/config/nav";
 
 const Sidebar = () => {
   const { signOut, profile } = useAuth();

@@ -1,28 +1,21 @@
 import { NavLink } from "react-router-dom";
-import {
-  Info,
-  CircleDollarSign,
-  CalendarClock,
-  UserCircle,
-  Settings,
-  ChevronRight,
-  LucideIcon,
-  Megaphone,
-  Globe,
-} from "lucide-react";
+import { useMemo } from "react";
+import { ChevronRight, LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-
-const moreLinks = [
-  { to: "/media-benefits", icon: Megaphone, label: "Quyền lợi truyền thông" },
-  { to: "/information", icon: Info, label: "Thông tin" },
-  { to: "/revenue", icon: CircleDollarSign, label: "Doanh thu" },
-  { to: "/timeline", icon: CalendarClock, label: "Timeline" },
-  { to: "/public-user", icon: Globe, label: "Public User" },
-  { to: "/account", icon: UserCircle, label: "Tài khoản" },
-  { to: "/settings", icon: Settings, label: "Cấu hình" },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { allNavItems } from "@/config/nav";
 
 const More = () => {
+  const { profile } = useAuth();
+
+  const moreLinks = useMemo(() => {
+    if (!profile) return [];
+    return allNavItems.filter(item => {
+      const isVisibleByRole = item.roles ? item.roles.includes(profile.role) : true;
+      return item.isMoreLink && isVisibleByRole;
+    });
+  }, [profile]);
+
   return (
     <div className="p-4 md:p-8">
       <h1 className="text-2xl font-bold mb-6 text-slate-800">Khác</h1>
