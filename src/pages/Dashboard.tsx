@@ -26,7 +26,9 @@ const StatDisplay = ({ title, value }: { title: string; value: number }) => (
 const Dashboard = () => {
   const { profile, user } = useAuth();
   const displayName = profile?.full_name || user?.email?.split('@')[0];
-  const canViewRevenue = !!(profile && (profile.role === 'Admin' || profile.role === 'Quản lý'));
+  
+  const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
+  const canViewRevenue = !!(userRole && ['Admin', 'Quản lý', 'Sale'].includes(userRole));
 
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<(Pick<VipGuest, 'id' | 'role'>)[]>({
     queryKey: ['vip_guests_dashboard'],
