@@ -1,9 +1,19 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import {
+  LayoutDashboard,
+  Users,
+  ClipboardList,
   MoreHorizontal,
   LucideIcon,
+  Info,
+  CircleDollarSign,
+  CalendarClock,
+  UserCircle,
+  Settings,
   ChevronRight,
+  Megaphone,
+  Globe,
   LogOut,
 } from "lucide-react";
 import {
@@ -27,20 +37,19 @@ const BottomNav = () => {
     }
   }, [location.pathname]);
 
-  const [mainNavItems, moreLinks] = useMemo(() => {
-    if (!profile) return [[], []];
-    
-    const visibleItems = allNavItems.filter(item => {
+  const mainNavItems = useMemo(() => {
+    return allNavItems.filter(item => !item.isMoreLink);
+  }, []);
+
+  const moreLinks = useMemo(() => {
+    if (!profile) return [];
+    return allNavItems.filter(item => {
+      if (!item.isMoreLink) return false; // Chỉ lấy các link trong menu "Khác"
       if (item.roles) {
         return item.roles.includes(profile.role);
       }
       return true;
     });
-
-    const mainItems = visibleItems.filter(item => !item.isMoreLink);
-    const moreItems = visibleItems.filter(item => item.isMoreLink);
-
-    return [mainItems, moreItems];
   }, [profile]);
 
   const isMorePageActive = moreLinks.some(link => location.pathname.startsWith(link.to));
