@@ -62,13 +62,14 @@ export const VipTasksTab = () => {
   });
 
   const taskMutation = useMutation({
-    mutationFn: async ({ guestId, taskName, isCompleted }: { guestId: string, taskName: string, isCompleted: boolean }) => {
+    mutationFn: async (variables: { guestId: string; taskName: string; isCompleted: boolean; updatedBy: string }) => {
+      const { guestId, taskName, isCompleted, updatedBy } = variables;
       const { error } = await supabase.from('guest_tasks').upsert({
         guest_id: guestId,
         task_name: taskName,
         is_completed: isCompleted,
         updated_at: new Date().toISOString(),
-        updated_by: profile?.full_name || 'Unknown User'
+        updated_by: updatedBy,
       });
       if (error) throw error;
     },
@@ -79,6 +80,13 @@ export const VipTasksTab = () => {
     },
     onError: (error) => showError(error.message),
   });
+
+  const handleTaskChange = (payload: { guestId: string; taskName: string; isCompleted: boolean; }) => {
+    taskMutation.mutate({
+      ...payload,
+      updatedBy: profile?.full_name || 'Unknown User'
+    });
+  };
 
   const combinedGuests = useMemo((): TaskGuest[] => {
     const tasksByGuest = new Map<string, GuestTask[]>();
@@ -174,14 +182,14 @@ export const VipTasksTab = () => {
       ) : isMobile ? (
         <EventTasksCards
           guests={filteredGuests}
-          onTaskChange={taskMutation.mutate}
+          onTaskChange={handleTaskChange}
           onViewDetails={setViewingGuest}
           onImageClick={setImagePreviewGuest}
         />
       ) : (
         <EventTasksTable
           guests={filteredGuests}
-          onTaskChange={taskMutation.mutate}
+          onTaskChange={handleTaskChange}
           onViewDetails={setViewingGuest}
           onImageClick={setImagePreviewGuest}
         />
