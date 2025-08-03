@@ -82,7 +82,7 @@ export const VipTasksTab = () => {
   });
 
   const handleTaskChange = (payload: { guestId: string; taskName: string; isCompleted: boolean; }) => {
-    const updatedBy = profile?.full_name || user?.email?.split('@')[0] || 'Unknown User';
+    const updatedBy = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown User';
     taskMutation.mutate({
       ...payload,
       updatedBy,

@@ -128,7 +128,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
         showError("Vui lòng chọn vai trò mới để upsale.");
         return;
       }
-      const upsaledBy = profile?.full_name || user?.email?.split('@')[0] || 'Unknown User';
+      const upsaledBy = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown User';
       upsaleMutation.mutate({ newRole, sponsorship, paymentSource: paymentSource || "Trống", upsaledBy });
     } else {
       editMutation.mutate({ sponsorship, payment_source: paymentSource, is_upsaled: isUpsaled });
