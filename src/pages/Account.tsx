@@ -33,9 +33,13 @@ const AccountPage = () => {
       const { data, error } = await supabase.functions.invoke('manage-users', {
         body: { method: 'LIST_USERS' },
       });
+      
       if (error) {
-        const errorMessage = (error as any).context?.error?.message || error.message;
-        throw new Error(errorMessage);
+        if (error.name === 'FunctionsHttpError') {
+          const errorBody = await error.context.json();
+          throw new Error(errorBody.error || 'Lỗi khi tải danh sách người dùng.');
+        }
+        throw error;
       }
       return data;
     },
@@ -48,8 +52,11 @@ const AccountPage = () => {
         body: payload,
       });
       if (error) {
-        const errorMessage = (error as any).context?.error?.message || error.message;
-        throw new Error(errorMessage);
+        if (error.name === 'FunctionsHttpError') {
+          const errorBody = await error.context.json();
+          throw new Error(errorBody.error || 'Thao tác thất bại.');
+        }
+        throw error;
       }
       return data;
     },
