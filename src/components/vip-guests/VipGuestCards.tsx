@@ -19,6 +19,7 @@ interface VipGuestCardsProps {
   onDelete: (id: string) => void;
   onView: (guest: VipGuest) => void;
   roleConfigs: RoleConfiguration[];
+  canDelete: boolean;
 }
 
 export const VipGuestCards = ({
@@ -29,6 +30,7 @@ export const VipGuestCards = ({
   onDelete,
   onView,
   roleConfigs,
+  canDelete,
 }: VipGuestCardsProps) => {
 
   const getRoleColors = (roleName: string) => {
@@ -65,10 +67,12 @@ export const VipGuestCards = ({
                       <Edit className="mr-2 h-4 w-4" />
                       Sửa
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDelete(guest.id)} className="text-red-600">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Xóa
-                    </DropdownMenuItem>
+                    {canDelete && (
+                      <DropdownMenuItem onClick={() => onDelete(guest.id)} className="text-red-600">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Xóa
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

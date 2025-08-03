@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { generateGuestSlug } from "@/lib/slug";
+import { useAuth } from "@/contexts/AuthContext";
 
 const generateId = (role: string, existingGuests: VipGuest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -35,6 +36,9 @@ const generateId = (role: string, existingGuests: VipGuest[]): string => {
 
 const VipGuestTab = () => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
+  const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
+
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
@@ -95,6 +99,7 @@ const VipGuestTab = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
+      if (!canDelete) throw new Error("Bạn không có quyền xóa khách.");
       const { error } = await supabase.from('vip_guests').delete().in('id', ids);
       if (error) throw new Error(error.message);
     },
@@ -229,7 +234,7 @@ const VipGuestTab = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {selectedGuests.length > 0 && (
+          {canDelete && selectedGuests.length > 0 && (
             <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending} className="w-full">
               <Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})
             </Button>
@@ -277,7 +282,7 @@ const VipGuestTab = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              {selectedGuests.length > 0 && (
+              {canDelete && selectedGuests.length > 0 && (
                 <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending}>
                   <Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})
                 </Button>
@@ -304,6 +309,7 @@ const VipGuestTab = () => {
           onDelete={handleDeleteGuest}
           onView={handleViewGuest}
           roleConfigs={roleConfigs}
+          canDelete={canDelete}
         />
       ) : (
         <VipGuestTable
@@ -315,6 +321,7 @@ const VipGuestTab = () => {
           onDelete={handleDeleteGuest}
           onView={handleViewGuest}
           roleConfigs={roleConfigs}
+          canDelete={canDelete}
         />
       )}
 

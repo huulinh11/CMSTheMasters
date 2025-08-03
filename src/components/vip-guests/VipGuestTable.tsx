@@ -27,6 +27,7 @@ interface VipGuestTableProps {
   onDelete: (id: string) => void;
   onView: (guest: VipGuest) => void;
   roleConfigs: RoleConfiguration[];
+  canDelete: boolean;
 }
 
 export const VipGuestTable = ({
@@ -38,6 +39,7 @@ export const VipGuestTable = ({
   onDelete,
   onView,
   roleConfigs,
+  canDelete,
 }: VipGuestTableProps) => {
   const allSelected = guests.length > 0 && selectedGuests.length === guests.length;
   const isIndeterminate = selectedGuests.length > 0 && selectedGuests.length < guests.length;
@@ -114,10 +116,12 @@ export const VipGuestTable = ({
                         <Edit className="mr-2 h-4 w-4" />
                         Sửa
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDelete(guest.id)} className="text-red-600">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Xóa
-                      </DropdownMenuItem>
+                      {canDelete && (
+                        <DropdownMenuItem onClick={() => onDelete(guest.id)} className="text-red-600">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Xóa
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

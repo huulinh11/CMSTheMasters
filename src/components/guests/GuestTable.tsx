@@ -27,6 +27,7 @@ interface GuestTableProps {
   onDelete: (id: string) => void;
   onView: (guest: Guest) => void;
   roleConfigs: RoleConfiguration[];
+  canDelete: boolean;
 }
 
 export const GuestTable = ({
@@ -38,6 +39,7 @@ export const GuestTable = ({
   onDelete,
   onView,
   roleConfigs,
+  canDelete,
 }: GuestTableProps) => {
 
   const getRoleColors = (roleName: string) => {
@@ -110,10 +112,12 @@ export const GuestTable = ({
                         <Edit className="mr-2 h-4 w-4" />
                         Sửa
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDelete(guest.id)} className="text-red-600">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Xóa
-                      </DropdownMenuItem>
+                      {canDelete && (
+                        <DropdownMenuItem onClick={() => onDelete(guest.id)} className="text-red-600">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Xóa
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

@@ -26,6 +26,7 @@ const StatDisplay = ({ title, value }: { title: string; value: number }) => (
 const Dashboard = () => {
   const { profile, user } = useAuth();
   const displayName = profile?.full_name || user?.email?.split('@')[0];
+  const canViewRevenue = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
 
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<(Pick<VipGuest, 'id' | 'role'>)[]>({
     queryKey: ['vip_guests_dashboard'],
@@ -51,7 +52,8 @@ const Dashboard = () => {
       const { data, error } = await supabase.rpc('get_vip_guest_revenue_details');
       if (error) throw new Error(error.message);
       return data || [];
-    }
+    },
+    enabled: canViewRevenue,
   });
 
   const { data: regularRevenueData = [], isLoading: isLoadingRegularRevenue } = useQuery<any[]>({
@@ -60,7 +62,8 @@ const Dashboard = () => {
       const { data, error } = await supabase.rpc('get_guest_revenue_details');
       if (error) throw new Error(error.message);
       return data || [];
-    }
+    },
+    enabled: canViewRevenue,
   });
 
   const { data: upsaleHistory = [], isLoading: isLoadingHistory } = useQuery<UpsaleHistory[]>({
@@ -69,10 +72,13 @@ const Dashboard = () => {
         const { data, error } = await supabase.from('guest_upsale_history').select('guest_id, from_sponsorship, from_payment_source, created_at');
         if (error) throw error;
         return data || [];
-    }
+    },
+    enabled: canViewRevenue,
   });
 
   const revenueStats = useMemo(() => {
+    if (!canViewRevenue) return { totalSponsorship: 0, totalPaid: 0, totalUnpaid: 0 };
+
     const totalSponsorshipVip = vipRevenueData.reduce((sum, g) => sum + (g.sponsorship || 0), 0);
     const totalPaidVip = vipRevenueData.reduce((sum, g) => sum + (g.paid_amount || 0), 0);
 
@@ -114,7 +120,7 @@ const Dashboard = () => {
     const totalUnpaid = totalSponsorship - totalPaid;
 
     return { totalSponsorship, totalPaid, totalUnpaid };
-  }, [vipRevenueData, regularRevenueData, upsaleHistory]);
+  }, [canViewRevenue, vipRevenueData, regularRevenueData, upsaleHistory]);
 
   const stats = useMemo(() => {
     const allGuests = [...vipGuests, ...regularGuests];
@@ -153,7 +159,7 @@ const Dashboard = () => {
     };
   }, [vipGuests, regularGuests]);
 
-  const isLoading = isLoadingVip || isLoadingRegular || isLoadingVipRevenue || isLoadingRegularRevenue || isLoadingHistory;
+  const isLoading = isLoadingVip || isLoadingRegular || (canViewRevenue && (isLoadingVipRevenue || isLoadingRegularRevenue || isLoadingHistory));
 
   return (
     <div className="p-4 md:p-6 bg-transparent min-h-full">
@@ -175,14 +181,16 @@ const Dashboard = () => {
       ) : (
         <div className="space-y-6">
           {/* Revenue Stats */}
-          <div>
-            <h2 className="text-lg text-slate-700 font-bold mb-2">Doanh thu</h2>
-            <RevenueStats 
-              totalSponsorship={revenueStats.totalSponsorship}
-              totalPaid={revenueStats.totalPaid}
-              totalUnpaid={revenueStats.totalUnpaid}
-            />
-          </div>
+          {canViewRevenue && (
+            <div>
+              <h2 className="text-lg text-slate-700 font-bold mb-2">Doanh thu</h2>
+              <RevenueStats 
+                totalSponsorship={revenueStats.totalSponsorship}
+                totalPaid={revenueStats.totalPaid}
+                totalUnpaid={revenueStats.totalUnpaid}
+              />
+            </div>
+          )}
 
           {/* Group 1: Total */}
           <div>

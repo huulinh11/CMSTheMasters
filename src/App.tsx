@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Guests from "./pages/Guests";
 import MediaBenefits from "./pages/MediaBenefits";
@@ -21,6 +21,7 @@ import PublicTimelinePreview from "./pages/public/PublicTimelinePreview";
 import Login from "./pages/Login";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import RoleProtectedRoute from "./components/RoleProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -47,7 +48,9 @@ const AppContent = () => {
         <Route path="/event-tasks" element={<EventTasks />} />
         <Route path="/more" element={<More />} />
         <Route path="/information" element={<Information />} />
-        <Route path="/revenue" element={<Revenue />} />
+        <Route element={<RoleProtectedRoute allowedRoles={['Admin', 'Quản lý', 'Sale']} />}>
+          <Route path="/revenue" element={<Revenue />} />
+        </Route>
         <Route path="/timeline" element={<Timeline />} />
         <Route path="/public-user" element={<PublicUser />} />
         <Route path="/account" element={<Account />} />
