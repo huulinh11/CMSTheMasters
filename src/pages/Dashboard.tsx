@@ -1,7 +1,5 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VipGuest } from "@/types/vip-guest";
@@ -9,6 +7,7 @@ import { Guest } from "@/types/guest";
 import { Skeleton } from "@/components/ui/skeleton";
 import RevenueStats from "@/components/dashboard/RevenueStats";
 import { GuestRevenue } from "@/types/guest-revenue";
+import { useAuth } from "@/contexts/AuthContext";
 
 type UpsaleHistory = {
   guest_id: string;
@@ -25,6 +24,8 @@ const StatDisplay = ({ title, value }: { title: string; value: number }) => (
 );
 
 const Dashboard = () => {
+  const { profile } = useAuth();
+
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<(Pick<VipGuest, 'id' | 'role'>)[]>({
     queryKey: ['vip_guests_dashboard'],
     queryFn: async () => {
@@ -156,20 +157,9 @@ const Dashboard = () => {
   return (
     <div className="p-4 md:p-6 bg-transparent min-h-full">
       <header className="flex justify-between items-center mb-6">
-        <div>
-          <p className="text-slate-500 text-sm md:text-base">Welcome home</p>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-800">Ivanovic Suparjo</h1>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button className="relative p-2 rounded-full hover:bg-slate-200/50">
-            <Bell className="text-slate-600 h-5 w-5 md:h-6 md:w-6" />
-            <span className="absolute top-1 right-1.5 block h-2 w-2 rounded-full bg-primary ring-2 ring-slate-50"></span>
-          </button>
-          <Avatar className="h-9 w-9 md:h-10 md:w-10">
-            <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026024d" alt="User" />
-            <AvatarFallback>IS</AvatarFallback>
-          </Avatar>
-        </div>
+        <h1 className="text-xl md:text-2xl font-bold text-slate-800">
+          Hello {profile?.full_name}
+        </h1>
       </header>
 
       {isLoading ? (
