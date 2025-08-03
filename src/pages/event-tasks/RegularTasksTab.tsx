@@ -22,10 +22,12 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { TaskFilterSheet } from "@/components/event-tasks/TaskFilterSheet";
 import { ALL_TASKS } from "@/config/event-tasks";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const RegularTasksTab = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewingGuest, setViewingGuest] = useState<TaskGuest | null>(null);
   const [imagePreviewGuest, setImagePreviewGuest] = useState<TaskGuest | null>(null);
@@ -66,7 +68,7 @@ export const RegularTasksTab = () => {
         task_name: taskName,
         is_completed: isCompleted,
         updated_at: new Date().toISOString(),
-        updated_by: 'Admin' // Placeholder for user management
+        updated_by: profile?.full_name || 'Unknown User'
       });
       if (error) throw error;
     },
