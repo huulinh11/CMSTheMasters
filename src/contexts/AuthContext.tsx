@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, useContext, ReactNode } from 'react
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { showError } from '@/utils/toast';
 
 export type Profile = {
   id: string;
@@ -28,10 +29,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setLoading(true);
-
-    // Initial check
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -43,9 +42,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setProfile(userProfile);
       }
       setLoading(false);
-    });
+    };
 
-    // Listener for changes
+    getSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -59,7 +59,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setProfile(null);
       }
-      setLoading(false);
     });
 
     return () => {
@@ -68,9 +67,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
-    navigate('/login');
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Error signing out:", error);
+      showError(`Lỗi đăng xuất: ${error.message}`);
+    } else {
+      // Explicitly clear state and navigate
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      navigate('/login');
+    }
   };
 
   const value = {
