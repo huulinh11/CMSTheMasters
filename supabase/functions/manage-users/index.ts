@@ -121,7 +121,7 @@ serve(async (req) => {
       return createErrorResponse('Xác thực không hợp lệ.', 401);
     }
 
-    const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single();
     if (profileError || !profile) {
       return createErrorResponse('Không thể lấy thông tin phân quyền.', 403);
     }
