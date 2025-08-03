@@ -24,7 +24,8 @@ const StatDisplay = ({ title, value }: { title: string; value: number }) => (
 );
 
 const Dashboard = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const displayName = profile?.full_name || user?.email?.split('@')[0];
 
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<(Pick<VipGuest, 'id' | 'role'>)[]>({
     queryKey: ['vip_guests_dashboard'],
@@ -126,7 +127,7 @@ const Dashboard = () => {
 
     const khachPhoThong = countByRole("Khách phổ thông");
     const vip = countByRole("VIP");
-    const vVip = countByRole("V-VIP");
+    const vVip = countByRole("V-Vip");
     const superVip = countByRole("Super Vip");
     const totalRegularGuests = khachPhoThong + vip + vVip + superVip;
 
@@ -157,8 +158,9 @@ const Dashboard = () => {
   return (
     <div className="p-4 md:p-6 bg-transparent min-h-full">
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-xl md:text-2xl font-bold text-slate-800">
-          Hello {profile?.full_name}
+        <h1 className="text-2xl text-slate-800">
+          <span className="font-normal">Hello </span>
+          <span className="font-bold">{displayName}</span>
         </h1>
       </header>
 
