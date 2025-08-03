@@ -12,3 +12,17 @@ export type CommissionDetail = {
   commission_earned: number;
   referral_date: string;
 };
+
+export type UpsaleCommissionSummary = {
+  upsale_person_name: string;
+  upsale_count: number;
+  total_upsale_amount: number;
+  total_commission: number;
+};
+
+export type UpsaleCommissionDetail = {
+  upsaled_guest_name: string;
+  upsale_amount: number;
+  commission_earned: number;
+  upsale_date: string;
+};
