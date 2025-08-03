@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -25,26 +25,26 @@ import {
 } from "@/components/ui/sheet";
 import { useAuth } from "../contexts/AuthContext";
 
-const navItems = [
+const allNavItems = [
   { to: "/", icon: LayoutDashboard, label: "Home", end: true },
   { to: "/guests", icon: Users, label: "Khách mời" },
   { to: "/media-benefits", icon: Megaphone, label: "Quyền lợi" },
   { to: "/event-tasks", icon: ClipboardList, label: "Tác vụ" },
 ];
 
-const moreLinks = [
+const allMoreLinks = [
   { to: "/information", icon: Info, label: "Thông tin" },
-  { to: "/revenue", icon: CircleDollarSign, label: "Doanh thu" },
+  { to: "/revenue", icon: CircleDollarSign, label: "Doanh thu", roles: ['Admin', 'Quản lý', 'Sale'] },
   { to: "/timeline", icon: CalendarClock, label: "Timeline" },
   { to: "/public-user", icon: Globe, label: "Public User" },
-  { to: "/account", icon: UserCircle, label: "Tài khoản" },
+  { to: "/account", icon: UserCircle, label: "Tài khoản", roles: ['Admin', 'Quản lý'] },
   { to: "/settings", icon: Settings, label: "Cấu hình" },
 ];
 
 const BottomNav = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
 
   useEffect(() => {
     if (isSheetOpen) {
@@ -52,12 +52,22 @@ const BottomNav = () => {
     }
   }, [location.pathname]);
 
+  const moreLinks = useMemo(() => {
+    if (!profile) return [];
+    return allMoreLinks.filter(item => {
+      if (item.roles) {
+        return item.roles.includes(profile.role);
+      }
+      return true;
+    });
+  }, [profile]);
+
   const isMorePageActive = moreLinks.some(link => location.pathname.startsWith(link.to));
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:hidden">
       <nav className="flex justify-around items-center h-16">
-        {navItems.map((item) => (
+        {allNavItems.map((item) => (
           <NavItem
             key={item.to}
             to={item.to}

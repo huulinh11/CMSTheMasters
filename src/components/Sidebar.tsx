@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useMemo } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -15,21 +16,31 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
-const navItems = [
+const allNavItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/guests", icon: Users, label: "Khách mời" },
   { to: "/media-benefits", icon: Megaphone, label: "Quyền lợi truyền thông" },
   { to: "/event-tasks", icon: ClipboardList, label: "Tác vụ sự kiện" },
   { to: "/information", icon: Info, label: "Thông tin" },
-  { to: "/revenue", icon: CircleDollarSign, label: "Doanh thu" },
+  { to: "/revenue", icon: CircleDollarSign, label: "Doanh thu", roles: ['Admin', 'Quản lý', 'Sale'] },
   { to: "/timeline", icon: CalendarClock, label: "Timeline" },
   { to: "/public-user", icon: Globe, label: "Public User" },
-  { to: "/account", icon: UserCircle, label: "Tài khoản" },
+  { to: "/account", icon: UserCircle, label: "Tài khoản", roles: ['Admin', 'Quản lý'] },
   { to: "/settings", icon: Settings, label: "Cấu hình" },
 ];
 
 const Sidebar = () => {
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
+
+  const navItems = useMemo(() => {
+    if (!profile) return [];
+    return allNavItems.filter(item => {
+      if (item.roles) {
+        return item.roles.includes(profile.role);
+      }
+      return true;
+    });
+  }, [profile]);
 
   return (
     <aside className="w-64 flex-shrink-0 bg-white border-r border-slate-200 p-4 hidden md:flex flex-col">

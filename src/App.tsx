@@ -53,7 +53,9 @@ const AppContent = () => {
         </Route>
         <Route path="/timeline" element={<Timeline />} />
         <Route path="/public-user" element={<PublicUser />} />
-        <Route path="/account" element={<Account />} />
+        <Route element={<RoleProtectedRoute allowedRoles={['Admin', 'Quản lý']} />}>
+          <Route path="/account" element={<Account />} />
+        </Route>
         <Route path="/settings" element={<Settings />} />
       </Route>
 
