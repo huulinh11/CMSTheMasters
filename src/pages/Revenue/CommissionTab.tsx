@@ -28,9 +28,9 @@ const CommissionTab = () => {
   );
 
   const { data: referrerSummary = [], isLoading: isLoadingReferrer } = useQuery<CommissionSummary[]>({
-    queryKey: ['referral_commission_summary_from_log'],
+    queryKey: ['referral_commission_summary'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_commission_summary');
+      const { data, error } = await supabase.from('referral_commission_summary').select('*');
       if (error) throw new Error(error.message);
       return data || [];
     },
@@ -38,9 +38,9 @@ const CommissionTab = () => {
   });
 
   const { data: upsaleSummaryData = [], isLoading: isLoadingUpsale } = useQuery<UpsaleCommissionSummary[]>({
-    queryKey: ['upsale_commission_summary_from_log'],
+    queryKey: ['upsale_commission_summary'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_upsale_commission_summary');
+      const { data, error } = await supabase.from('upsale_commission_summary').select('*');
       if (error) throw new Error(error.message);
       return data || [];
     },
@@ -75,7 +75,9 @@ const CommissionTab = () => {
       data.sort((a, b) => {
         if (a.upsale_person_name === profile.full_name) return -1;
         if (b.upsale_person_name === profile.full_name) return 1;
-        if (sortOrder === 'default') return 0; // Keep original sort for other items
+        // For other items, maintain the selected sort order
+        if (sortOrder === 'high-to-low') return b.total_commission - a.total_commission;
+        if (sortOrder === 'low-to-high') return a.total_commission - b.total_commission;
         return 0;
       });
     }
