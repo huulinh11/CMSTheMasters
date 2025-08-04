@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import RevenueStats from "@/components/dashboard/RevenueStats";
 import { GuestRevenue } from "@/types/guest-revenue";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Camera } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import QrScanner from "@/components/QrScanner";
+import { useNavigate } from "react-router-dom";
+import { showSuccess, showError } from "@/utils/toast";
 
 type UpsaleHistory = {
   guest_id: string;
@@ -26,6 +32,8 @@ const StatDisplay = ({ title, value }: { title: string; value: number }) => (
 const Dashboard = () => {
   const { profile, user } = useAuth();
   const displayName = profile?.full_name || user?.email?.split('@')[0];
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const navigate = useNavigate();
   
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
   const canViewRevenue = !!(userRole && ['Admin', 'Quản lý', 'Sale'].includes(userRole));
@@ -162,6 +170,24 @@ const Dashboard = () => {
     };
   }, [vipGuests, regularGuests]);
 
+  const handleScan = (scannedUrl: string | null) => {
+    if (scannedUrl) {
+      try {
+        const url = new URL(scannedUrl);
+        const guestId = url.searchParams.get('guestId');
+        if (guestId) {
+          showSuccess(`Đã quét thành công! Đang mở checklist...`);
+          setIsScannerOpen(false);
+          navigate(`/event-tasks?guestId=${guestId}`);
+        } else {
+          showError("Mã QR không hợp lệ (thiếu guestId).");
+        }
+      } catch (error) {
+        showError("Mã QR không phải là một URL hợp lệ.");
+      }
+    }
+  };
+
   const isLoading = isLoadingVip || isLoadingRegular || (canViewRevenue && (isLoadingVipRevenue || isLoadingRegularRevenue || isLoadingHistory));
 
   return (
@@ -171,6 +197,10 @@ const Dashboard = () => {
           <span className="font-normal">Hello </span>
           <span className="font-bold">{displayName}</span>
         </h1>
+        <Button onClick={() => setIsScannerOpen(true)}>
+          <Camera className="mr-2 h-4 w-4" />
+          Quét mã QR
+        </Button>
       </header>
 
       {isLoading ? (
@@ -242,6 +272,11 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+      <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
+        <DialogContent className="p-0 bg-transparent border-none max-w-md">
+          <QrScanner onScan={handleScan} onClose={() => setIsScannerOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
