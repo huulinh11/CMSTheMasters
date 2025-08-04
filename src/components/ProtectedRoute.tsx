@@ -1,17 +1,14 @@
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate, Outlet } from 'react-router-dom';
-import { Skeleton } from '@/components/ui/skeleton';
 import Layout from './Layout';
 
 const ProtectedRoute = () => {
   const { user, loading } = useAuth();
 
+  // The main loading state is handled in App.tsx.
+  // If we reach this component, loading is already false.
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <p>Đang tải...</p>
-      </div>
-    );
+    return null; // Render nothing while the auth state is being determined at the top level.
   }
 
   if (!user) {
