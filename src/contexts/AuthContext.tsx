@@ -29,7 +29,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setLoading(true);
+    const fetchInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        setProfile(userProfile);
+      }
+      setLoading(false);
+    };
+
+    fetchInitialSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -43,7 +60,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setProfile(null);
       }
-      setLoading(false);
     });
 
     return () => {
@@ -57,7 +73,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error signing out:", error);
       showError(`Lỗi đăng xuất: ${error.message}`);
     } else {
-      // Explicitly clear state and navigate
       setSession(null);
       setUser(null);
       setProfile(null);
