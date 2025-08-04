@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { useEffect, useRef } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from "./ui/button";
 import { X } from "lucide-react";
 
@@ -9,37 +9,41 @@ interface QrScannerComponentProps {
 }
 
 const QrScannerComponent = ({ onScan, onClose }: QrScannerComponentProps) => {
-  useEffect(() => {
-    let scanner: Html5QrcodeScanner | null = null;
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
-    const onScanSuccess = (decodedText: string) => {
-      if (scanner) {
-        scanner.clear().catch(error => {
-          console.error("Failed to clear html5-qrcode-scanner.", error);
-        });
-        onScan(decodedText);
+  useEffect(() => {
+    const config = {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      rememberLastUsedCamera: true,
+    };
+
+    const html5QrCode = new Html5Qrcode('qr-reader-container');
+    scannerRef.current = html5QrCode;
+
+    const startCamera = async () => {
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          config,
+          (decodedText) => {
+            onScan(decodedText);
+          },
+          (errorMessage) => {
+            // ignore scan errors
+          }
+        );
+      } catch (err) {
+        console.error("Unable to start QR scanner.", err);
       }
     };
 
-    const onScanFailure = (error: any) => {
-      // This function is called frequently, so we don't log errors to avoid spamming the console.
-    };
-
-    // Only initialize the scanner if the element exists
-    const scannerElement = document.getElementById('qr-reader-container');
-    if (scannerElement) {
-      scanner = new Html5QrcodeScanner(
-        'qr-reader-container', 
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        /* verbose= */ false
-      );
-      scanner.render(onScanSuccess, onScanFailure);
-    }
+    startCamera();
 
     return () => {
-      if (scanner) {
-        scanner.clear().catch(error => {
-          console.error("Failed to clear html5-qrcode-scanner.", error);
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch(err => {
+          console.error("Failed to stop the scanner.", err);
         });
       }
     };
