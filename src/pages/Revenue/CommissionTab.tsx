@@ -15,24 +15,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CommissionTab = () => {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const isMobile = useIsMobile();
   const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
   const [selectedUpsalePerson, setSelectedUpsalePerson] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState<'default' | 'high-to-low' | 'low-to-high'>('default');
   
-  const isSale = useMemo(() => profile?.role === 'Sale', [profile]);
-
   const [commissionType, setCommissionType] = useState<'all' | 'referrer' | 'upsale'>();
 
   useEffect(() => {
-    if (commissionType === undefined && profile) {
-      if (profile.role === 'Sale') {
-        setCommissionType('upsale');
-      } else {
-        setCommissionType('all');
-      }
+    if (profile && commissionType === undefined) {
+      setCommissionType(profile.role === 'Sale' ? 'upsale' : 'all');
     }
   }, [profile, commissionType]);
 
@@ -43,7 +37,7 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: commissionType === 'referrer' || commissionType === 'all',
+    enabled: !!commissionType && (commissionType === 'referrer' || commissionType === 'all'),
   });
 
   const { data: upsaleSummaryData = [], isLoading: isLoadingUpsale } = useQuery<UpsaleCommissionSummary[]>({
@@ -53,7 +47,7 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: commissionType === 'upsale' || commissionType === 'all',
+    enabled: !!commissionType && (commissionType === 'upsale' || commissionType === 'all'),
   });
 
   const processedReferrerSummary = useMemo(() => {
@@ -76,7 +70,7 @@ const CommissionTab = () => {
     let myData: UpsaleCommissionSummary | null = null;
     let otherData = [...data];
 
-    if (isSale && profile) {
+    if (profile?.role === 'Sale' && profile.full_name) {
       const myIndex = otherData.findIndex(item => item.upsale_person_name === profile.full_name);
       if (myIndex !== -1) {
         myData = otherData.splice(myIndex, 1)[0];
@@ -90,14 +84,14 @@ const CommissionTab = () => {
     }
     
     return myData ? [myData, ...otherData] : otherData;
-  }, [upsaleSummaryData, searchTerm, sortOrder, isSale, profile]);
+  }, [upsaleSummaryData, searchTerm, sortOrder, profile]);
 
-  const isLoading = isLoadingReferrer || isLoadingUpsale;
+  const isLoading = authLoading || !commissionType || isLoadingReferrer || isLoadingUpsale;
 
   const handleViewReferrerDetails = (referrerName: string) => setSelectedReferrer(referrerName);
   const handleViewUpsaleDetails = (personName: string) => setSelectedUpsalePerson(personName);
 
-  if (isLoading && !commissionType) {
+  if (isLoading) {
     return <Skeleton className="h-96 w-full rounded-lg" />;
   }
 
