@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CommissionSummary, UpsaleCommissionSummary } from "@/types/commission";
@@ -22,10 +22,17 @@ const CommissionTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState<'default' | 'high-to-low' | 'low-to-high'>('default');
   
-  const isSale = profile?.role === 'Sale';
+  const isSale = useMemo(() => profile?.role === 'Sale', [profile]);
+
   const [commissionType, setCommissionType] = useState<'all' | 'referrer' | 'upsale'>(
     isSale ? 'upsale' : 'all'
   );
+
+  useEffect(() => {
+    if (isSale) {
+      setCommissionType('upsale');
+    }
+  }, [isSale]);
 
   const { data: referrerSummary = [], isLoading: isLoadingReferrer } = useQuery<CommissionSummary[]>({
     queryKey: ['referral_commission_summary'],
@@ -34,7 +41,7 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: commissionType === 'referrer' || commissionType === 'all',
+    enabled: !isSale && (commissionType === 'referrer' || commissionType === 'all'),
   });
 
   const { data: upsaleSummaryData = [], isLoading: isLoadingUpsale } = useQuery<UpsaleCommissionSummary[]>({
@@ -44,7 +51,6 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: commissionType === 'upsale' || commissionType === 'all',
   });
 
   const processedReferrerSummary = useMemo(() => {
@@ -61,22 +67,23 @@ const CommissionTab = () => {
   }, [referrerSummary, searchTerm, sortOrder]);
 
   const processedUpsaleSummary = useMemo(() => {
-    let data = upsaleSummaryData.filter(item => 
-      item.upsale_person_name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    data.sort((a, b) => {
-      if (sortOrder === 'high-to-low') return b.total_commission - a.total_commission;
-      if (sortOrder === 'low-to-high') return a.total_commission - b.total_commission;
-      return 0;
-    });
+    let data = [...upsaleSummaryData];
+    if (searchTerm) {
+      data = data.filter(item => item.upsale_person_name.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    
+    if (sortOrder === 'high-to-low') {
+      data.sort((a, b) => b.total_commission - a.total_commission);
+    } else if (sortOrder === 'low-to-high') {
+      data.sort((a, b) => a.total_commission - b.total_commission);
+    }
     
     if (isSale && profile) {
-      data.sort((a, b) => {
-        if (a.upsale_person_name === profile.full_name) return -1;
-        if (b.upsale_person_name === profile.full_name) return 1;
-        return 0;
-      });
+      const myIndex = data.findIndex(item => item.upsale_person_name === profile.full_name);
+      if (myIndex > 0) {
+        const me = data.splice(myIndex, 1);
+        data.unshift(me[0]);
+      }
     }
     return data;
   }, [upsaleSummaryData, searchTerm, sortOrder, isSale, profile]);
@@ -184,16 +191,18 @@ const CommissionTab = () => {
               <SelectItem value="low-to-high">Hoa hồng: Thấp đến cao</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Loại hoa hồng" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="referrer">Giới thiệu</SelectItem>
-              <SelectItem value="upsale">Upsale</SelectItem>
-            </SelectContent>
-          </Select>
+          {!isSale && (
+            <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Loại hoa hồng" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="referrer">Giới thiệu</SelectItem>
+                <SelectItem value="upsale">Upsale</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 
