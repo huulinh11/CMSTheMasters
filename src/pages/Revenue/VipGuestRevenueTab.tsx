@@ -22,6 +22,7 @@ import HistoryDialog from "@/components/Revenue/HistoryDialog";
 import { ViewVipGuestSheet } from "@/components/vip-guests/ViewVipGuestSheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { useAuth } from "@/contexts/AuthContext";
 
 const VipGuestRevenueTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,6 +32,8 @@ const VipGuestRevenueTab = () => {
   const [historyGuest, setHistoryGuest] = useState<VipGuestRevenue | null>(null);
   const [viewingGuest, setViewingGuest] = useState<VipGuestRevenue | null>(null);
   const isMobile = useIsMobile();
+  const { profile } = useAuth();
+  const canViewSummaryStats = profile?.role === 'Admin' || profile?.role === 'Quản lý';
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuestRevenue[]>({
     queryKey: ['vip_revenue'],
@@ -71,7 +74,7 @@ const VipGuestRevenueTab = () => {
 
   return (
     <div className="space-y-4">
-      <VipRevenueStats guests={filteredGuests} />
+      {canViewSummaryStats && <VipRevenueStats guests={filteredGuests} />}
       
       <div className="flex items-center gap-2">
         <Input

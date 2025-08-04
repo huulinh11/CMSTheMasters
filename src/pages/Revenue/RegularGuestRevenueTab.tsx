@@ -22,6 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ViewGuestSheet } from "@/components/guests/ViewGuestSheet";
 import { Guest } from "@/types/guest";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { useAuth } from "@/contexts/AuthContext";
 
 type UpsaleHistory = {
   guest_id: string;
@@ -39,6 +40,8 @@ const RegularGuestRevenueTab = () => {
   const [editMode, setEditMode] = useState<'edit' | 'upsale'>('edit');
   const [viewingGuest, setViewingGuest] = useState<GuestRevenue | null>(null);
   const isMobile = useIsMobile();
+  const { profile } = useAuth();
+  const canViewSummaryStats = profile?.role === 'Admin' || profile?.role === 'Quản lý';
 
   const { data: guestsData = [], isLoading: isLoadingGuests } = useQuery<any[]>({
     queryKey: ['guest_revenue_details'],
@@ -129,7 +132,7 @@ const RegularGuestRevenueTab = () => {
 
   return (
     <div className="space-y-4">
-      <RegularRevenueStats guests={filteredGuests} />
+      {canViewSummaryStats && <RegularRevenueStats guests={filteredGuests} />}
       
       <div className="flex items-center gap-2">
         <Input

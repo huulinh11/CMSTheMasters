@@ -29,6 +29,7 @@ const Dashboard = () => {
   
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
   const canViewRevenue = !!(userRole && ['Admin', 'Quản lý', 'Sale'].includes(userRole));
+  const canViewSummaryStats = !!(userRole && ['Admin', 'Quản lý'].includes(userRole));
 
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<(Pick<VipGuest, 'id' | 'role'>)[]>({
     queryKey: ['vip_guests_dashboard'],
@@ -183,7 +184,7 @@ const Dashboard = () => {
       ) : (
         <div className="space-y-6">
           {/* Revenue Stats */}
-          {canViewRevenue && (
+          {canViewSummaryStats && (
             <div>
               <h2 className="text-lg text-slate-700 font-bold mb-2">Doanh thu</h2>
               <RevenueStats 
