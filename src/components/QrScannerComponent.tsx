@@ -1,30 +1,24 @@
-import { QrScanner as ReactQrScanner } from '@yudiel/react-qr-scanner';
+import { Scanner } from '@yudiel/react-qr-scanner';
 import { Button } from "./ui/button";
 import { X } from "lucide-react";
 
-interface QrScannerProps {
+interface QrScannerComponentProps {
   onScan: (data: string | null) => void;
   onClose: () => void;
 }
 
-const QrScanner = ({ onScan, onClose }: QrScannerProps) => {
+const QrScannerComponent = ({ onScan, onClose }: QrScannerComponentProps) => {
   return (
     <div className="relative w-full max-w-md mx-auto aspect-square overflow-hidden rounded-lg">
-      <ReactQrScanner
-        onDecode={(result) => onScan(result)}
+      <Scanner
+        onResult={(result) => onScan(result)}
         onError={(error) => {
-          if (error) {
+          if (error instanceof Error) {
             console.info("QR Scanner Error:", error.message);
           }
         }}
         constraints={{
             facingMode: 'environment'
-        }}
-        styles={{
-            container: {
-                width: '100%',
-                height: '100%',
-            }
         }}
       />
       <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
@@ -37,4 +31,4 @@ const QrScanner = ({ onScan, onClose }: QrScannerProps) => {
   );
 };
 
-export default QrScanner;
+export default QrScannerComponent;

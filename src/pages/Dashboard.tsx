@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Camera } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import QrScanner from "@/components/QrScanner";
+import QrScannerComponent from "@/components/QrScannerComponent";
 import { useNavigate } from "react-router-dom";
 import { showSuccess, showError } from "@/utils/toast";
 
@@ -274,7 +274,7 @@ const Dashboard = () => {
       )}
       <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
         <DialogContent className="p-0 bg-transparent border-none max-w-md">
-          <QrScanner onScan={handleScan} onClose={() => setIsScannerOpen(false)} />
+          <QrScannerComponent onScan={handleScan} onClose={() => setIsScannerOpen(false)} />
         </DialogContent>
       </Dialog>
     </div>
