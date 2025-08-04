@@ -32,8 +32,10 @@ const VipGuestRevenueTab = () => {
   const [historyGuest, setHistoryGuest] = useState<VipGuestRevenue | null>(null);
   const [viewingGuest, setViewingGuest] = useState<VipGuestRevenue | null>(null);
   const isMobile = useIsMobile();
-  const { profile } = useAuth();
-  const canViewSummaryStats = profile?.role === 'Admin' || profile?.role === 'Quản lý';
+  const { profile, user } = useAuth();
+
+  const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
+  const canViewSummaryStats = !!(userRole && ['Admin', 'Quản lý'].includes(userRole));
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuestRevenue[]>({
     queryKey: ['vip_revenue'],

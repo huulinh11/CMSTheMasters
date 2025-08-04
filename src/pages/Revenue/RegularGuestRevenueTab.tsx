@@ -40,8 +40,10 @@ const RegularGuestRevenueTab = () => {
   const [editMode, setEditMode] = useState<'edit' | 'upsale'>('edit');
   const [viewingGuest, setViewingGuest] = useState<GuestRevenue | null>(null);
   const isMobile = useIsMobile();
-  const { profile } = useAuth();
-  const canViewSummaryStats = profile?.role === 'Admin' || profile?.role === 'Quản lý';
+  const { profile, user } = useAuth();
+
+  const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
+  const canViewSummaryStats = !!(userRole && ['Admin', 'Quản lý'].includes(userRole));
 
   const { data: guestsData = [], isLoading: isLoadingGuests } = useQuery<any[]>({
     queryKey: ['guest_revenue_details'],
