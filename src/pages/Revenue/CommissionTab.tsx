@@ -189,29 +189,31 @@ const CommissionTab = () => {
               <SelectItem value="low-to-high">Hoa hồng: Thấp đến cao</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Loại hoa hồng" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="referrer">Giới thiệu</SelectItem>
-              <SelectItem value="upsale">Upsale</SelectItem>
-            </SelectContent>
-          </Select>
+          {!isSale && (
+            <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Loại hoa hồng" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="referrer">Giới thiệu</SelectItem>
+                <SelectItem value="upsale">Upsale</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 
-      { (commissionType === 'all' || commissionType === 'referrer') && !isSale && (
-        <div className="space-y-2">
-          <h2 className="text-xl font-bold text-slate-800">Hoa hồng giới thiệu</h2>
-          {renderReferrerContent()}
-        </div>
-      )}
       { (commissionType === 'all' || commissionType === 'upsale') && (
         <div className="space-y-2">
           <h2 className="text-xl font-bold text-slate-800">Hoa hồng Upsale</h2>
           {renderUpsaleContent()}
+        </div>
+      )}
+      { (commissionType === 'all' || commissionType === 'referrer') && !isSale && (
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-slate-800">Hoa hồng giới thiệu</h2>
+          {renderReferrerContent()}
         </div>
       )}
 
