@@ -7,7 +7,6 @@ import Dashboard from "./pages/Dashboard";
 import Guests from "./pages/Guests";
 import MediaBenefits from "./pages/MediaBenefits";
 import EventTasks from "./pages/EventTasks";
-import More from "./pages/More";
 import Information from "./pages/Information";
 import Revenue from "./pages/Revenue";
 import Timeline from "./pages/Timeline";
@@ -46,7 +45,6 @@ const AppContent = () => {
         <Route path="/guests" element={<Guests />} />
         <Route path="/media-benefits" element={<MediaBenefits />} />
         <Route path="/event-tasks" element={<EventTasks />} />
-        <Route path="/more" element={<More />} />
         <Route path="/information" element={<Information />} />
         <Route element={<RoleProtectedRoute allowedRoles={['Admin', 'Quản lý', 'Sale']} />}>
           <Route path="/revenue" element={<Revenue />} />
