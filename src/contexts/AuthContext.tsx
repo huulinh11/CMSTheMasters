@@ -29,37 +29,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(userProfile);
-      }
-      setLoading(false);
-    };
-
-    fetchInitialSession();
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+
       if (session?.user) {
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(userProfile);
+        try {
+          const { data: userProfile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (error) {
+            console.warn("Could not fetch user profile:", error.message);
+            setProfile(null);
+          } else {
+            setProfile(userProfile);
+          }
+        } catch (e) {
+          console.error("Error fetching profile:", e);
+          setProfile(null);
+        }
       } else {
         setProfile(null);
       }
+      
+      setLoading(false);
     });
 
     return () => {
@@ -73,9 +69,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error signing out:", error);
       showError(`Lỗi đăng xuất: ${error.message}`);
     } else {
-      setSession(null);
-      setUser(null);
-      setProfile(null);
       navigate('/login');
     }
   };
