@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CommissionSummary, UpsaleCommissionSummary } from "@/types/commission";
@@ -24,9 +24,17 @@ const CommissionTab = () => {
   
   const isSale = useMemo(() => profile?.role === 'Sale', [profile]);
 
-  const [commissionType, setCommissionType] = useState<'all' | 'referrer' | 'upsale'>(
-    isSale ? 'upsale' : 'all'
-  );
+  const [commissionType, setCommissionType] = useState<'all' | 'referrer' | 'upsale'>();
+
+  useEffect(() => {
+    if (commissionType === undefined && profile) {
+      if (profile.role === 'Sale') {
+        setCommissionType('upsale');
+      } else {
+        setCommissionType('all');
+      }
+    }
+  }, [profile, commissionType]);
 
   const { data: referrerSummary = [], isLoading: isLoadingReferrer } = useQuery<CommissionSummary[]>({
     queryKey: ['referral_commission_summary'],
@@ -89,7 +97,7 @@ const CommissionTab = () => {
   const handleViewReferrerDetails = (referrerName: string) => setSelectedReferrer(referrerName);
   const handleViewUpsaleDetails = (personName: string) => setSelectedUpsalePerson(personName);
 
-  if (isLoading) {
+  if (isLoading && !commissionType) {
     return <Skeleton className="h-96 w-full rounded-lg" />;
   }
 
