@@ -29,33 +29,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const getProfile = async (user: User) => {
       try {
-        setSession(session);
-        setUser(session?.user ?? null);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+    };
 
-        if (session?.user) {
-          const { data: userProfile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (error) {
-            console.warn("Could not fetch user profile:", error.message);
-            setProfile(null);
-          } else {
-            setProfile(userProfile);
-          }
-        } else {
-          setProfile(null);
-        }
-      } catch (e) {
-        console.error("Error in onAuthStateChange:", e);
+    // 1. Check the initial session state once when the app loads
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const profileData = await getProfile(currentUser);
+        setProfile(profileData);
+      }
+      // 2. Mark loading as false after the initial check is complete
+      setLoading(false);
+    });
+
+    // 3. Listen for subsequent auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const profileData = await getProfile(currentUser);
+        setProfile(profileData);
+      } else {
         setProfile(null);
-      } finally {
-        // This is the crucial part. No matter what happens, we are done loading.
-        setLoading(false);
       }
     });
 
@@ -70,6 +81,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error signing out:", error);
       showError(`Lỗi đăng xuất: ${error.message}`);
     } else {
+      // Manually clear state for an immediate UI update
+      setSession(null);
+      setUser(null);
+      setProfile(null);
       navigate('/login');
     }
   };
