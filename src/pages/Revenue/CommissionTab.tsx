@@ -11,8 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import CommissionDetailsDialog from "@/components/Revenue/CommissionDetailsDialog";
 import UpsaleCommissionDetailsDialog from "@/components/Revenue/UpsaleCommissionDetailsDialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CommissionTab = () => {
   const { profile } = useAuth();
@@ -20,8 +19,9 @@ const CommissionTab = () => {
   const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
   const [selectedUpsalePerson, setSelectedUpsalePerson] = useState<string | null>(null);
   
-  const [commissionType, setCommissionType] = useState<'referrer' | 'upsale'>(
-    profile?.role === 'Sale' ? 'upsale' : 'referrer'
+  const isSale = profile?.role === 'Sale';
+  const [commissionType, setCommissionType] = useState<'all' | 'referrer' | 'upsale'>(
+    isSale ? 'upsale' : 'all'
   );
 
   const { data: referrerSummary = [], isLoading: isLoadingReferrer } = useQuery<CommissionSummary[]>({
@@ -31,7 +31,7 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: commissionType === 'referrer',
+    enabled: !isSale && (commissionType === 'referrer' || commissionType === 'all'),
   });
 
   const { data: upsaleSummaryData = [], isLoading: isLoadingUpsale } = useQuery<UpsaleCommissionSummary[]>({
@@ -41,11 +41,11 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: commissionType === 'upsale',
+    enabled: commissionType === 'upsale' || commissionType === 'all',
   });
 
   const upsaleSummary = useMemo(() => {
-    if (profile?.role === 'Sale' && upsaleSummaryData.length > 0) {
+    if (isSale && upsaleSummaryData.length > 0) {
       return [...upsaleSummaryData].sort((a, b) => {
         if (a.upsale_person_name === profile.full_name) return -1;
         if (b.upsale_person_name === profile.full_name) return 1;
@@ -53,7 +53,7 @@ const CommissionTab = () => {
       });
     }
     return upsaleSummaryData;
-  }, [upsaleSummaryData, profile]);
+  }, [upsaleSummaryData, profile, isSale]);
 
   const isLoading = isLoadingReferrer || isLoadingUpsale;
 
@@ -178,24 +178,33 @@ const CommissionTab = () => {
 
   return (
     <div className="space-y-4">
-      {profile?.role !== 'Sale' && (
-        <RadioGroup
-          value={commissionType}
-          onValueChange={(value) => setCommissionType(value as 'referrer' | 'upsale')}
-          className="flex items-center space-x-4"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="referrer" id="r1" />
-            <Label htmlFor="r1">Hoa hồng giới thiệu</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="upsale" id="r2" />
-            <Label htmlFor="r2">Hoa hồng Upsale</Label>
-          </div>
-        </RadioGroup>
+      {!isSale && (
+        <div className="flex justify-end">
+          <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
+            <SelectTrigger className="w-full md:w-[280px]">
+              <SelectValue placeholder="Chọn loại hoa hồng" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả hoa hồng</SelectItem>
+              <SelectItem value="referrer">Hoa hồng giới thiệu</SelectItem>
+              <SelectItem value="upsale">Hoa hồng Upsale</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
-      {commissionType === 'referrer' ? renderReferrerContent() : renderUpsaleContent()}
+      { (commissionType === 'all' || commissionType === 'referrer') && !isSale && (
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-slate-800">Hoa hồng giới thiệu</h2>
+          {renderReferrerContent()}
+        </div>
+      )}
+      { (commissionType === 'all' || commissionType === 'upsale') && (
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-slate-800">Hoa hồng Upsale</h2>
+          {renderUpsaleContent()}
+        </div>
+      )}
 
       <CommissionDetailsDialog
         referrerName={selectedReferrer}
