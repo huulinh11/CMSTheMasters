@@ -15,20 +15,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CommissionTab = () => {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile } = useAuth();
   const isMobile = useIsMobile();
   const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
   const [selectedUpsalePerson, setSelectedUpsalePerson] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState<'default' | 'high-to-low' | 'low-to-high'>('default');
   
-  const [commissionType, setCommissionType] = useState<'all' | 'referrer' | 'upsale'>();
+  const isSale = useMemo(() => profile?.role === 'Sale', [profile]);
+
+  const [commissionType, setCommissionType] = useState<'all' | 'referrer' | 'upsale'>(
+    isSale ? 'upsale' : 'all'
+  );
 
   useEffect(() => {
-    if (profile && commissionType === undefined) {
-      setCommissionType(profile.role === 'Sale' ? 'upsale' : 'all');
-    }
-  }, [profile, commissionType]);
+    setCommissionType(isSale ? 'upsale' : 'all');
+  }, [isSale]);
 
   const { data: referrerSummary = [], isLoading: isLoadingReferrer } = useQuery<CommissionSummary[]>({
     queryKey: ['referral_commission_summary'],
@@ -37,7 +39,7 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: !!commissionType && (commissionType === 'referrer' || commissionType === 'all'),
+    enabled: !isSale && (commissionType === 'referrer' || commissionType === 'all'),
   });
 
   const { data: upsaleSummaryData = [], isLoading: isLoadingUpsale } = useQuery<UpsaleCommissionSummary[]>({
@@ -47,7 +49,6 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: !!commissionType && (commissionType === 'upsale' || commissionType === 'all'),
   });
 
   const processedReferrerSummary = useMemo(() => {
@@ -67,26 +68,25 @@ const CommissionTab = () => {
       item.upsale_person_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
-    let myData: UpsaleCommissionSummary | null = null;
-    let otherData = [...data];
-
-    if (profile?.role === 'Sale' && profile.full_name) {
-      const myIndex = otherData.findIndex(item => item.upsale_person_name === profile.full_name);
-      if (myIndex !== -1) {
-        myData = otherData.splice(myIndex, 1)[0];
-      }
-    }
-
+    // Apply general sorting first
     if (sortOrder === 'high-to-low') {
-      otherData.sort((a, b) => b.total_commission - a.total_commission);
+      data.sort((a, b) => b.total_commission - a.total_commission);
     } else if (sortOrder === 'low-to-high') {
-      otherData.sort((a, b) => a.total_commission - b.total_commission);
+      data.sort((a, b) => a.total_commission - b.total_commission);
     }
     
-    return myData ? [myData, ...otherData] : otherData;
-  }, [upsaleSummaryData, searchTerm, sortOrder, profile]);
+    // If user is a Sale, pin their own record to the top
+    if (isSale && profile) {
+      data.sort((a, b) => {
+        if (a.upsale_person_name === profile.full_name) return -1;
+        if (b.upsale_person_name === profile.full_name) return 1;
+        return 0; // Keep the existing sort order for other items
+      });
+    }
+    return data;
+  }, [upsaleSummaryData, searchTerm, sortOrder, isSale, profile]);
 
-  const isLoading = authLoading || !commissionType || isLoadingReferrer || isLoadingUpsale;
+  const isLoading = isLoadingReferrer || isLoadingUpsale;
 
   const handleViewReferrerDetails = (referrerName: string) => setSelectedReferrer(referrerName);
   const handleViewUpsaleDetails = (personName: string) => setSelectedUpsalePerson(personName);
@@ -202,7 +202,7 @@ const CommissionTab = () => {
         </div>
       </div>
 
-      { (commissionType === 'all' || commissionType === 'referrer') && (
+      { (commissionType === 'all' || commissionType === 'referrer') && !isSale && (
         <div className="space-y-2">
           <h2 className="text-xl font-bold text-slate-800">Hoa hồng giới thiệu</h2>
           {renderReferrerContent()}
