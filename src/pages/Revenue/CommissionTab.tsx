@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CommissionSummary, UpsaleCommissionSummary } from "@/types/commission";
@@ -27,14 +27,6 @@ const CommissionTab = () => {
   const [commissionType, setCommissionType] = useState<'all' | 'referrer' | 'upsale'>(
     isSale ? 'upsale' : 'all'
   );
-
-  useEffect(() => {
-    if (isSale) {
-      setCommissionType('upsale');
-    } else {
-      setCommissionType('all');
-    }
-  }, [isSale]);
 
   const { data: referrerSummary = [], isLoading: isLoadingReferrer } = useQuery<CommissionSummary[]>({
     queryKey: ['referral_commission_summary'],
