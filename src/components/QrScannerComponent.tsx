@@ -1,6 +1,7 @@
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { Button } from "./ui/button";
 import { X } from "lucide-react";
+import { Result } from '@zxing/library';
 
 interface QrScannerComponentProps {
   onScan: (data: string | null) => void;
@@ -11,7 +12,7 @@ const QrScannerComponent = ({ onScan, onClose }: QrScannerComponentProps) => {
   return (
     <div className="relative w-full max-w-md mx-auto aspect-square overflow-hidden rounded-lg">
       <Scanner
-        onResult={(result) => onScan(result)}
+        onResult={(result: Result) => onScan(result.getText())}
         onError={(error) => {
           if (error instanceof Error) {
             console.info("QR Scanner Error:", error.message);
