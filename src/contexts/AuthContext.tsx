@@ -30,11 +30,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      try {
+        setSession(session);
+        setUser(session?.user ?? null);
 
-      if (session?.user) {
-        try {
+        if (session?.user) {
           const { data: userProfile, error } = await supabase
             .from('profiles')
             .select('*')
@@ -47,15 +47,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           } else {
             setProfile(userProfile);
           }
-        } catch (e) {
-          console.error("Error fetching profile:", e);
+        } else {
           setProfile(null);
         }
-      } else {
+      } catch (e) {
+        console.error("Error in onAuthStateChange:", e);
         setProfile(null);
+      } finally {
+        // This is the crucial part. No matter what happens, we are done loading.
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return () => {
