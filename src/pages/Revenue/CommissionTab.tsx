@@ -34,7 +34,7 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: !isSale && (commissionType === 'referrer' || commissionType === 'all'),
+    enabled: commissionType === 'referrer' || commissionType === 'all',
   });
 
   const { data: upsaleSummaryData = [], isLoading: isLoadingUpsale } = useQuery<UpsaleCommissionSummary[]>({
@@ -61,23 +61,20 @@ const CommissionTab = () => {
   }, [referrerSummary, searchTerm, sortOrder]);
 
   const processedUpsaleSummary = useMemo(() => {
-    let data = [...upsaleSummaryData];
-    if (searchTerm) {
-      data = data.filter(item => item.upsale_person_name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }
-    if (sortOrder === 'high-to-low') {
-      data.sort((a, b) => b.total_commission - a.total_commission);
-    } else if (sortOrder === 'low-to-high') {
-      data.sort((a, b) => a.total_commission - b.total_commission);
-    }
+    let data = upsaleSummaryData.filter(item => 
+      item.upsale_person_name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    data.sort((a, b) => {
+      if (sortOrder === 'high-to-low') return b.total_commission - a.total_commission;
+      if (sortOrder === 'low-to-high') return a.total_commission - b.total_commission;
+      return 0;
+    });
     
     if (isSale && profile) {
       data.sort((a, b) => {
         if (a.upsale_person_name === profile.full_name) return -1;
         if (b.upsale_person_name === profile.full_name) return 1;
-        // For other items, maintain the selected sort order
-        if (sortOrder === 'high-to-low') return b.total_commission - a.total_commission;
-        if (sortOrder === 'low-to-high') return a.total_commission - b.total_commission;
         return 0;
       });
     }
@@ -187,18 +184,16 @@ const CommissionTab = () => {
               <SelectItem value="low-to-high">Hoa hồng: Thấp đến cao</SelectItem>
             </SelectContent>
           </Select>
-          {!isSale && (
-            <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Loại hoa hồng" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="referrer">Giới thiệu</SelectItem>
-                <SelectItem value="upsale">Upsale</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+          <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="Loại hoa hồng" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="referrer">Giới thiệu</SelectItem>
+              <SelectItem value="upsale">Upsale</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
