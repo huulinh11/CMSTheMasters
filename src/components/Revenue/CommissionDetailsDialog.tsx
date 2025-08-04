@@ -21,7 +21,7 @@ interface CommissionDetailsDialogProps {
 
 const CommissionDetailsDialog = ({ referrerName, open, onOpenChange }: CommissionDetailsDialogProps) => {
   const { data: details = [], isLoading } = useQuery<CommissionDetail[]>({
-    queryKey: ['commission_details', referrerName],
+    queryKey: ['commission_details_from_log', referrerName],
     queryFn: async () => {
       if (!referrerName) return [];
       const { data, error } = await supabase.rpc('get_commission_details', { referrer_name_in: referrerName });

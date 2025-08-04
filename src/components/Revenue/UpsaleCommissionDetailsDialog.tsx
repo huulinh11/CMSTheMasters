@@ -21,7 +21,7 @@ interface UpsaleCommissionDetailsDialogProps {
 
 const UpsaleCommissionDetailsDialog = ({ upsalePersonName, open, onOpenChange }: UpsaleCommissionDetailsDialogProps) => {
   const { data: details = [], isLoading } = useQuery<UpsaleCommissionDetail[]>({
-    queryKey: ['upsale_commission_details', upsalePersonName],
+    queryKey: ['upsale_commission_details_from_log', upsalePersonName],
     queryFn: async () => {
       if (!upsalePersonName) return [];
       const { data, error } = await supabase.rpc('get_upsale_commission_details', { upsaled_by_in: upsalePersonName });

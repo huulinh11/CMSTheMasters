@@ -25,9 +25,9 @@ const CommissionTab = () => {
   );
 
   const { data: referrerSummary = [], isLoading: isLoadingReferrer } = useQuery<CommissionSummary[]>({
-    queryKey: ['referral_commission_summary'],
+    queryKey: ['referral_commission_summary_from_log'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('referral_commission_summary').select('*');
+      const { data, error } = await supabase.rpc('get_commission_summary');
       if (error) throw new Error(error.message);
       return data || [];
     },
@@ -35,9 +35,9 @@ const CommissionTab = () => {
   });
 
   const { data: upsaleSummaryData = [], isLoading: isLoadingUpsale } = useQuery<UpsaleCommissionSummary[]>({
-    queryKey: ['upsale_commission_summary'],
+    queryKey: ['upsale_commission_summary_from_log'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('upsale_commission_summary').select('*');
+      const { data, error } = await supabase.rpc('get_upsale_commission_summary');
       if (error) throw new Error(error.message);
       return data || [];
     },
