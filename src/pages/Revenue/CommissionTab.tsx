@@ -31,6 +31,8 @@ const CommissionTab = () => {
   useEffect(() => {
     if (isSale) {
       setCommissionType('upsale');
+    } else {
+      setCommissionType('all');
     }
   }, [isSale]);
 
@@ -41,7 +43,7 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    enabled: !isSale && (commissionType === 'referrer' || commissionType === 'all'),
+    enabled: commissionType === 'referrer' || commissionType === 'all',
   });
 
   const { data: upsaleSummaryData = [], isLoading: isLoadingUpsale } = useQuery<UpsaleCommissionSummary[]>({
@@ -51,13 +53,13 @@ const CommissionTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     },
+    enabled: commissionType === 'upsale' || commissionType === 'all',
   });
 
   const processedReferrerSummary = useMemo(() => {
-    let data = [...referrerSummary];
-    if (searchTerm) {
-      data = data.filter(item => item.referrer_name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }
+    let data = referrerSummary.filter(item => 
+      item.referrer_name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
     if (sortOrder === 'high-to-low') {
       data.sort((a, b) => b.total_commission - a.total_commission);
     } else if (sortOrder === 'low-to-high') {
@@ -67,25 +69,27 @@ const CommissionTab = () => {
   }, [referrerSummary, searchTerm, sortOrder]);
 
   const processedUpsaleSummary = useMemo(() => {
-    let data = [...upsaleSummaryData];
-    if (searchTerm) {
-      data = data.filter(item => item.upsale_person_name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }
+    let data = upsaleSummaryData.filter(item => 
+      item.upsale_person_name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
     
-    if (sortOrder === 'high-to-low') {
-      data.sort((a, b) => b.total_commission - a.total_commission);
-    } else if (sortOrder === 'low-to-high') {
-      data.sort((a, b) => a.total_commission - b.total_commission);
-    }
-    
+    let myData: UpsaleCommissionSummary | null = null;
+    let otherData = [...data];
+
     if (isSale && profile) {
-      const myIndex = data.findIndex(item => item.upsale_person_name === profile.full_name);
-      if (myIndex > 0) {
-        const me = data.splice(myIndex, 1);
-        data.unshift(me[0]);
+      const myIndex = otherData.findIndex(item => item.upsale_person_name === profile.full_name);
+      if (myIndex !== -1) {
+        myData = otherData.splice(myIndex, 1)[0];
       }
     }
-    return data;
+
+    if (sortOrder === 'high-to-low') {
+      otherData.sort((a, b) => b.total_commission - a.total_commission);
+    } else if (sortOrder === 'low-to-high') {
+      otherData.sort((a, b) => a.total_commission - b.total_commission);
+    }
+    
+    return myData ? [myData, ...otherData] : otherData;
   }, [upsaleSummaryData, searchTerm, sortOrder, isSale, profile]);
 
   const isLoading = isLoadingReferrer || isLoadingUpsale;
@@ -191,22 +195,20 @@ const CommissionTab = () => {
               <SelectItem value="low-to-high">Hoa hồng: Thấp đến cao</SelectItem>
             </SelectContent>
           </Select>
-          {!isSale && (
-            <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Loại hoa hồng" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="referrer">Giới thiệu</SelectItem>
-                <SelectItem value="upsale">Upsale</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+          <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="Loại hoa hồng" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="referrer">Giới thiệu</SelectItem>
+              <SelectItem value="upsale">Upsale</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      { (commissionType === 'all' || commissionType === 'referrer') && !isSale && (
+      { (commissionType === 'all' || commissionType === 'referrer') && (
         <div className="space-y-2">
           <h2 className="text-xl font-bold text-slate-800">Hoa hồng giới thiệu</h2>
           {renderReferrerContent()}
