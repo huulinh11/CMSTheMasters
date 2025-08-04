@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Progress } from "@/components/ui/progress";
 
 interface TaskChecklistDialogProps {
-  guest: TaskGuest;
+  guest: TaskGuest | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onTaskChange: (payload: { guestId: string; taskName: string; isCompleted: boolean }) => void;
 }
 
@@ -87,26 +89,16 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
   );
 };
 
-export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange }: TaskChecklistDialogProps) => {
   const [historyModalState, setHistoryModalState] = useState<{ guestId: string; taskName: string } | null>(null);
   const isMobile = useIsMobile();
 
-  const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
-  const completedCount = tasksForRole.filter(taskName => guest.tasks.find(t => t.task_name === taskName)?.is_completed).length;
-  const totalCount = tasksForRole.length;
-
-  const triggerButton = (
-    <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-      {completedCount}/{totalCount} tác vụ
-    </Button>
-  );
+  if (!guest) return null;
 
   if (isMobile) {
     return (
       <>
-        <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
+        <Drawer open={open} onOpenChange={onOpenChange}>
           <DrawerContent className="flex flex-col max-h-[90vh]">
             <DrawerHeader className="flex justify-between items-center p-4 border-b flex-shrink-0">
               <DrawerTitle>{guest.name}</DrawerTitle>
@@ -133,8 +125,7 @@ export const TaskChecklistDialog = ({ guest, onTaskChange }: TaskChecklistDialog
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>{triggerButton}</DialogTrigger>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md flex flex-col max-h-[80vh]">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>{guest.name}</DialogTitle>

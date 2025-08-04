@@ -9,16 +9,16 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { TaskGuest } from "@/types/event-task";
-import { TaskChecklistDialog } from "./TaskChecklistDialog";
+import { TASKS_BY_ROLE } from "@/config/event-tasks";
 
 interface EventTasksTableProps {
   guests: TaskGuest[];
-  onTaskChange: (payload: { guestId: string; taskName: string; isCompleted: boolean; }) => void;
   onViewDetails: (guest: TaskGuest) => void;
   onImageClick: (guest: TaskGuest) => void;
+  onOpenChecklist: (guest: TaskGuest) => void;
 }
 
-export const EventTasksTable = ({ guests, onTaskChange, onViewDetails, onImageClick }: EventTasksTableProps) => {
+export const EventTasksTable = ({ guests, onViewDetails, onImageClick, onOpenChecklist }: EventTasksTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -36,29 +36,37 @@ export const EventTasksTable = ({ guests, onTaskChange, onViewDetails, onImageCl
         </TableHeader>
         <TableBody>
           {guests.length > 0 ? (
-            guests.map((guest) => (
-              <TableRow key={guest.id}>
-                <TableCell>
-                  <button onClick={() => onImageClick(guest)}>
-                    <Avatar>
-                      <AvatarImage src={guest.image_url} alt={guest.name} />
-                      <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </button>
-                </TableCell>
-                <TableCell>{guest.id}</TableCell>
-                <TableCell className="font-medium">{guest.name}</TableCell>
-                <TableCell>{guest.role}</TableCell>
-                <TableCell>{guest.secondaryInfo || 'N/A'}</TableCell>
-                <TableCell>{guest.phone}</TableCell>
-                <TableCell>
-                  <TaskChecklistDialog guest={guest} onTaskChange={onTaskChange} />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="link" onClick={() => onViewDetails(guest)}>Xem</Button>
-                </TableCell>
-              </TableRow>
-            ))
+            guests.map((guest) => {
+              const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
+              const completedCount = guest.tasks.filter(t => tasksForRole.includes(t.task_name) && t.is_completed).length;
+              const totalCount = tasksForRole.length;
+
+              return (
+                <TableRow key={guest.id}>
+                  <TableCell>
+                    <button onClick={() => onImageClick(guest)}>
+                      <Avatar>
+                        <AvatarImage src={guest.image_url} alt={guest.name} />
+                        <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </TableCell>
+                  <TableCell>{guest.id}</TableCell>
+                  <TableCell className="font-medium">{guest.name}</TableCell>
+                  <TableCell>{guest.role}</TableCell>
+                  <TableCell>{guest.secondaryInfo || 'N/A'}</TableCell>
+                  <TableCell>{guest.phone}</TableCell>
+                  <TableCell>
+                    <Button variant="outline" size="sm" onClick={() => onOpenChecklist(guest)}>
+                      {completedCount}/{totalCount} tác vụ
+                    </Button>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="link" onClick={() => onViewDetails(guest)}>Xem</Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           ) : (
             <TableRow>
               <TableCell colSpan={8} className="h-24 text-center">

@@ -6,6 +6,8 @@ import { MediaBenefitDisplay } from "@/components/public-checklist/MediaBenefitD
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TextItem } from "@/types/profile-content";
+import { GuestQrCode } from "@/components/public-checklist/GuestQrCode";
+import { Separator } from "@/components/ui/separator";
 
 type LogoConfig = {
   imageUrl: string;
@@ -54,7 +56,7 @@ const PublicBenefitsTab = () => {
   const logoConfig = settings?.logo_config;
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-6">
       <div className="text-center space-y-3">
         {logoConfig?.imageUrl && (
           <div style={{
@@ -77,6 +79,10 @@ const PublicBenefitsTab = () => {
         <p className="text-lg">Xin chào: <span className="font-bold">{guest.name}</span></p>
         <p className="text-slate-600">{guest.role}</p>
       </div>
+
+      <GuestQrCode guestId={guest.id} guestName={guest.name} />
+
+      <Separator />
 
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-slate-800 px-2">Quyền Lợi</h2>

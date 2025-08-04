@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -23,6 +23,8 @@ import { ChevronDown } from "lucide-react";
 import { TaskFilterSheet } from "@/components/event-tasks/TaskFilterSheet";
 import { ALL_TASKS } from "@/config/event-tasks";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "react-router-dom";
+import { TaskChecklistDialog } from "@/components/event-tasks/TaskChecklistDialog";
 
 export const VipTasksTab = () => {
   const queryClient = useQueryClient();
@@ -33,6 +35,8 @@ export const VipTasksTab = () => {
   const [imagePreviewGuest, setImagePreviewGuest] = useState<TaskGuest | null>(null);
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
+  const [dialogGuest, setDialogGuest] = useState<TaskGuest | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
@@ -103,6 +107,18 @@ export const VipTasksTab = () => {
       tasks: tasksByGuest.get(guest.id) || [],
     }));
   }, [guests, tasks]);
+
+  useEffect(() => {
+    const guestId = searchParams.get('guestId');
+    if (guestId && combinedGuests.length > 0) {
+      const guestToOpen = combinedGuests.find(g => g.id === guestId);
+      if (guestToOpen) {
+        setDialogGuest(guestToOpen);
+        // Clean up URL param after use
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, combinedGuests, setSearchParams]);
 
   const filteredGuests = useMemo(() => {
     return combinedGuests.filter(guest => {
@@ -183,16 +199,16 @@ export const VipTasksTab = () => {
       ) : isMobile ? (
         <EventTasksCards
           guests={filteredGuests}
-          onTaskChange={handleTaskChange}
           onViewDetails={setViewingGuest}
           onImageClick={setImagePreviewGuest}
+          onOpenChecklist={setDialogGuest}
         />
       ) : (
         <EventTasksTable
           guests={filteredGuests}
-          onTaskChange={handleTaskChange}
           onViewDetails={setViewingGuest}
           onImageClick={setImagePreviewGuest}
+          onOpenChecklist={setDialogGuest}
         />
       )}
       <ViewVipGuestSheet
@@ -206,6 +222,12 @@ export const VipTasksTab = () => {
         open={!!imagePreviewGuest}
         onOpenChange={() => setImagePreviewGuest(null)}
         guestType="vip"
+      />
+      <TaskChecklistDialog
+        guest={dialogGuest}
+        open={!!dialogGuest}
+        onOpenChange={(isOpen) => !isOpen && setDialogGuest(null)}
+        onTaskChange={handleTaskChange}
       />
     </div>
   );
