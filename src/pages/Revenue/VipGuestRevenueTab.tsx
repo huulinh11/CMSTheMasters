@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VipGuestRevenue } from "@/types/vip-guest-revenue";
-import { VipGuest } from "@/types/vip-guest";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -73,7 +72,7 @@ const VipGuestRevenueTab = () => {
   }, [guests, searchTerm, roleFilters]);
 
   const handleViewGuest = (guest: VipGuestRevenue) => {
-    navigate(`/guests/vip/${guest.id}`);
+    navigate(`/guests?view_vip=${guest.id}`);
   };
 
   const isLoading = isLoadingGuests || isLoadingRoles;

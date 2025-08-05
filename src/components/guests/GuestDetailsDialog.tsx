@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard } from "lucide-react";
+import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -73,6 +73,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isRevenueDialogOpen, setIsRevenueDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [revenueDialogMode, setRevenueDialogMode] = useState<'edit' | 'upsale'>('edit');
   const queryClient = useQueryClient();
   const { profile, user } = useAuth();
 
@@ -289,20 +290,34 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
               <Card>
                 <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center text-base md:text-lg"><DollarSign className="mr-2" /> Doanh thu</CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => setIsRevenueDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => { setRevenueDialogMode('edit'); setIsRevenueDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
                 </CardHeader>
                 <CardContent className="p-3 md:p-4 pt-0">
                   <InfoRow icon={DollarSign} label="Tài trợ" value={formatCurrency(revenue.sponsorship)} />
                   <InfoRow icon={CheckCircle} label="Đã thanh toán" value={formatCurrency(revenue.paid)} />
                   <InfoRow icon={AlertCircle} label="Chưa thanh toán" value={formatCurrency(revenue.unpaid)} />
                   <InfoRow icon={Info} label="Nguồn thanh toán" value={revenue.payment_source} />
-                  <Button 
-                    className="w-full mt-4" 
-                    onClick={() => setIsPaymentDialogOpen(true)} 
-                    disabled={!revenue || revenue.unpaid <= 0}
-                  >
-                    <CreditCard className="mr-2 h-4 w-4" /> Thanh toán
-                  </Button>
+                  <div className="flex gap-2 mt-4">
+                    <Button 
+                      className="flex-1" 
+                      onClick={() => setIsPaymentDialogOpen(true)} 
+                      disabled={!revenue || revenue.unpaid <= 0}
+                    >
+                      <CreditCard className="mr-2 h-4 w-4" /> Thanh toán
+                    </Button>
+                    {guestType === 'regular' && (
+                        <Button 
+                          className="flex-1" 
+                          variant="secondary"
+                          onClick={() => {
+                              setRevenueDialogMode('upsale');
+                              setIsRevenueDialogOpen(true);
+                          }}
+                        >
+                          <TrendingUp className="mr-2 h-4 w-4" /> Upsale
+                        </Button>
+                    )}
+                  </div>
                   <div className="mt-4">
                     <h4 className="font-semibold mb-2 flex items-center"><History className="mr-2 h-4 w-4" /> Lịch sử giao dịch</h4>
                     <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
@@ -398,7 +413,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
           guest={guestWithRevenue}
           open={isRevenueDialogOpen}
           onOpenChange={setIsRevenueDialogOpen}
-          mode="edit"
+          mode={revenueDialogMode}
           roleConfigs={roleConfigs}
         />
       )}

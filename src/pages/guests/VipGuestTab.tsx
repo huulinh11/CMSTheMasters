@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { VipGuest, VipGuestFormValues } from "@/types/vip-guest";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "react-router-dom";
 
 const generateId = (role: string, existingGuests: VipGuest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -46,6 +47,16 @@ const VipGuestTab = () => {
   const [editingGuest, setEditingGuest] = useState<VipGuest | null>(null);
   const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const guestIdToView = searchParams.get('view_vip');
+    if (guestIdToView) {
+        setViewingGuestId(guestIdToView);
+        searchParams.delete('view_vip');
+        setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],

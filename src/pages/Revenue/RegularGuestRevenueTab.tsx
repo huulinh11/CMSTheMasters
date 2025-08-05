@@ -130,7 +130,7 @@ const RegularGuestRevenueTab = () => {
   };
 
   const handleViewGuest = (guest: GuestRevenue) => {
-    navigate(`/guests/regular/${guest.id}`);
+    navigate(`/guests?view_regular=${guest.id}`);
   };
 
   const isLoading = isLoadingGuests || isLoadingRoles || isLoadingHistory;
