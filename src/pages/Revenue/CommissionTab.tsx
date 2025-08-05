@@ -15,14 +15,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CommissionTab = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const isMobile = useIsMobile();
   const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
   const [selectedUpsalePerson, setSelectedUpsalePerson] = useState<{ name: string; hideCommission: boolean } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState<'default' | 'high-to-low' | 'low-to-high'>('default');
   
-  const isSale = useMemo(() => profile?.role === 'Sale', [profile]);
+  const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
+  const isSale = useMemo(() => userRole === 'Sale', [userRole]);
 
   const [commissionType, setCommissionType] = useState<'all' | 'referrer' | 'upsale'>(
     isSale ? 'upsale' : 'all'
@@ -80,7 +81,7 @@ const CommissionTab = () => {
 
   const { currentUserSummary, otherUsersSummary } = useMemo(() => {
     if (!isSale || !profile) {
-        return { currentUserSummary: null, otherUsersSummary: [] };
+        return { currentUserSummary: null, otherUsersSummary: processedUpsaleSummary };
     }
     const currentUser = processedUpsaleSummary.find(item => item.upsale_person_name === profile.full_name);
     const others = processedUpsaleSummary.filter(item => item.upsale_person_name !== profile.full_name);
