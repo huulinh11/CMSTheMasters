@@ -29,40 +29,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Proactively fetch the session on initial load
-    const fetchInitialSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          const { data: userProfile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (error) {
-            console.warn("Could not fetch user profile on initial load:", error.message);
-            setProfile(null);
-          } else {
-            setProfile(userProfile);
-          }
-        } else {
-          setProfile(null);
-        }
-      } catch (e) {
-        console.error("Error fetching initial session:", e);
-        setProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialSession();
-
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -83,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setProfile(null);
       }
+      setLoading(false);
     });
 
     return () => {
