@@ -250,12 +250,12 @@ export const AddGuestDialog = ({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader className="text-left">
+        <DrawerContent className="max-h-[90vh] flex flex-col">
+          <DrawerHeader className="text-left flex-shrink-0">
             <DrawerTitle>{title}</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
           </DrawerHeader>
-          <ScrollArea className="overflow-y-auto">
+          <ScrollArea className="overflow-y-auto flex-grow">
             <GuestForm 
               onSubmit={handleFormSubmit} 
               defaultValues={defaultValues} 
@@ -264,7 +264,7 @@ export const AddGuestDialog = ({
               className="px-4 pb-4"
             />
           </ScrollArea>
-          <DrawerFooter className="pt-2">
+          <DrawerFooter className="pt-2 flex-shrink-0">
             <DrawerClose asChild>
               <Button variant="outline">Hủy</Button>
             </DrawerClose>

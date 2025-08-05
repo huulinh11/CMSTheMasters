@@ -265,15 +265,15 @@ export const AddVipGuestDialog = ({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader className="text-left">
+        <DrawerContent className="max-h-[90vh] flex flex-col">
+          <DrawerHeader className="text-left flex-shrink-0">
             <DrawerTitle>{title}</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
           </DrawerHeader>
-          <ScrollArea className="overflow-y-auto">
+          <ScrollArea className="overflow-y-auto flex-grow">
             <VipGuestForm className="px-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
           </ScrollArea>
-          <DrawerFooter className="pt-2">
+          <DrawerFooter className="pt-2 flex-shrink-0">
             <DrawerClose asChild>
               <Button variant="outline">Hủy</Button>
             </DrawerClose>
