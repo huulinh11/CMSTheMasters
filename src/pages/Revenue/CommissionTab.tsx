@@ -80,13 +80,14 @@ const CommissionTab = () => {
   }, [upsaleSummaryData, searchTerm, sortOrder]);
 
   const { currentUserSummary, otherUsersSummary } = useMemo(() => {
-    if (!isSale || !profile) {
+    const userId = profile?.id || user?.id;
+    if (!isSale || !userId) {
         return { currentUserSummary: null, otherUsersSummary: processedUpsaleSummary };
     }
-    const currentUser = processedUpsaleSummary.find(item => item.user_id === profile.id);
-    const others = processedUpsaleSummary.filter(item => item.user_id !== profile.id);
+    const currentUser = processedUpsaleSummary.find(item => item.user_id === userId);
+    const others = processedUpsaleSummary.filter(item => item.user_id !== userId);
     return { currentUserSummary: currentUser, otherUsersSummary: others };
-  }, [processedUpsaleSummary, isSale, profile]);
+  }, [processedUpsaleSummary, isSale, profile, user]);
 
   const isLoading = isLoadingReferrer || isLoadingUpsale || authLoading;
 
