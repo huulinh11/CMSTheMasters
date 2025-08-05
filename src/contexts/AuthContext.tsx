@@ -28,27 +28,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Handles session changes
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-
-      if (session?.user) {
-        const { data: userProfile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (error) {
-          console.warn("Could not fetch user profile on auth state change:", error.message);
-          setProfile(null);
-        } else {
-          setProfile(userProfile);
-        }
-      } else {
-        setProfile(null);
-      }
       setLoading(false);
     });
 
@@ -56,6 +40,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Handles profile fetching based on user state
+  useEffect(() => {
+    if (user) {
+      const fetchProfile = async () => {
+        const { data: userProfile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.warn("Could not fetch user profile:", error.message);
+          setProfile(null);
+        } else {
+          setProfile(userProfile);
+        }
+      };
+      fetchProfile();
+    } else {
+      setProfile(null);
+    }
+  }, [user]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
