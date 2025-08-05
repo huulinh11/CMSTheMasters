@@ -148,7 +148,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit }: { guestId: string, 
       </header>
 
       <ScrollArea className="h-[calc(80vh-120px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 md:p-6 pt-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-0">
           <div className="space-y-6">
             <Card>
               <CardHeader><CardTitle className="flex items-center"><Info className="mr-2" /> Thông tin cơ bản</CardTitle></CardHeader>
@@ -191,7 +191,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit }: { guestId: string, 
                 )}
               </CardContent>
             </Card>
-
+            
             {revenue && (
               <Card>
                 <CardHeader><CardTitle className="flex items-center"><DollarSign className="mr-2" /> Doanh thu</CardTitle></CardHeader>
@@ -218,7 +218,9 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit }: { guestId: string, 
               <CardHeader><CardTitle className="flex items-center"><Megaphone className="mr-2" /> Quyền lợi truyền thông</CardTitle></CardHeader>
               <CardContent><MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} /></CardContent>
             </Card>
-            
+          </div>
+          
+          <div className="space-y-6">
             <Card>
               <CardHeader><CardTitle className="flex items-center"><ClipboardList className="mr-2" /> Tác vụ sự kiện</CardTitle></CardHeader>
               <CardContent>
@@ -274,7 +276,7 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[90vh] p-0">
+      <DialogContent className="max-w-6xl h-[90vh] p-0">
         {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} />}
       </DialogContent>
     </Dialog>
