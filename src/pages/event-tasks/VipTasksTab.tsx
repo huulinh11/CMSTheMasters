@@ -137,6 +137,17 @@ export const VipTasksTab = () => {
     }
   }, [searchParams, combinedGuests, setSearchParams]);
 
+  useEffect(() => {
+    if (dialogGuest) {
+      const updatedGuestInList = combinedGuests.find(g => g.id === dialogGuest.id);
+      if (updatedGuestInList) {
+        if (JSON.stringify(dialogGuest.tasks) !== JSON.stringify(updatedGuestInList.tasks)) {
+          setDialogGuest(updatedGuestInList);
+        }
+      }
+    }
+  }, [combinedGuests, dialogGuest]);
+
   const filteredGuests = useMemo(() => {
     return combinedGuests.filter(guest => {
       const searchMatch =
