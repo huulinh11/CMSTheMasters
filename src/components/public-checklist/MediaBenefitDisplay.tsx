@@ -48,7 +48,7 @@ const getBenefitStatusAndData = (benefitName: string, mediaBenefit: MediaBenefit
     case "Báo trước sự kiện":
     case "Báo sau sự kiện":
       const newsItems = benefitName === "Báo trước sự kiện" ? mediaBenefit.pre_event_news : mediaBenefit.post_event_news;
-      const finalLinks = newsItems?.map(item => item.post_link).filter(Boolean) as string[];
+      const finalLinks = (newsItems || []).map(item => item.post_link).filter(Boolean) as string[];
       if (finalLinks.length > 0) {
         return {
           status: 'filled',
