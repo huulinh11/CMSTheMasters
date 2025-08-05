@@ -65,6 +65,23 @@ export const RegularTasksTab = () => {
     }
   });
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('guest-tasks-regular-tab')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'guest_tasks' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['guest_tasks'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   const taskMutation = useMutation({
     mutationFn: async (variables: { guestId: string; taskName: string; isCompleted: boolean; updatedBy: string }) => {
       const { guestId, taskName, isCompleted, updatedBy } = variables;
