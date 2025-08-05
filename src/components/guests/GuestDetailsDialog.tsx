@@ -23,7 +23,7 @@ import { ImagePreviewDialog } from "@/components/event-tasks/ImagePreviewDialog"
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
   return (
-    <div className="flex items-start py-2 border-b last:border-b-0">
+    <div className="flex items-start py-1.5 md:py-2 border-b last:border-b-0">
       <Icon className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-slate-500" />
       <div className="flex-1">
         <p className="text-sm text-slate-500">{label}</p>
@@ -129,30 +129,37 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit }: { guestId: string, 
 
   return (
     <>
-      <header className="flex items-center justify-between gap-4 mb-6 p-4 md:p-6">
-        <div className="flex items-center gap-4">
-          <button onClick={() => setIsImagePreviewOpen(true)}>
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={guest.image_url} />
-              <AvatarFallback>{guest.name?.charAt(0)}</AvatarFallback>
-            </Avatar>
-          </button>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">{guest.name}</h1>
-            <p className="text-slate-500">{guest.role} ({guest.id})</p>
-          </div>
+      <header className="p-4 md:p-6">
+        <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+                <button onClick={() => setIsImagePreviewOpen(true)}>
+                    <Avatar className="h-16 w-16 md:h-20 md:w-20">
+                        <AvatarImage src={guest.image_url} />
+                        <AvatarFallback>{guest.name?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                </button>
+                <div className="flex-1 min-w-0">
+                    <h1 className="text-xl md:text-3xl font-bold text-slate-800 truncate">{guest.name}</h1>
+                    <div className="flex items-center gap-x-4 gap-y-1 flex-wrap mt-1">
+                        <p className="text-slate-500">{guest.role} ({guest.id})</p>
+                        <Button size="sm" variant="outline" className="md:hidden" onClick={() => onEdit(guest)}>
+                            <Edit className="mr-1.5 h-3 w-3" /> Sửa
+                        </Button>
+                    </div>
+                </div>
+            </div>
+            <Button className="hidden md:flex flex-shrink-0" onClick={() => onEdit(guest)}>
+                <Edit className="mr-2 h-4 w-4" /> Sửa
+            </Button>
         </div>
-        <Button onClick={() => onEdit(guest)}>
-          <Edit className="mr-2 h-4 w-4" /> Sửa
-        </Button>
       </header>
 
-      <ScrollArea className="h-[calc(80vh-120px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-0">
+      <ScrollArea className="h-[calc(100% - 120px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-2">
           <div className="space-y-6">
             <Card>
-              <CardHeader><CardTitle className="flex items-center"><Info className="mr-2" /> Thông tin cơ bản</CardTitle></CardHeader>
-              <CardContent>
+              <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><Info className="mr-2" /> Thông tin cơ bản</CardTitle></CardHeader>
+              <CardContent className="p-3 md:p-4 pt-0">
                 <InfoRow icon={Phone} label="SĐT" value={guest.phone} />
                 <InfoRow icon={User} label="Người giới thiệu" value={guest.referrer} />
                 {guest.secondaryInfo && <InfoRow icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} />}
@@ -169,8 +176,8 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit }: { guestId: string, 
             </Card>
 
             <Card>
-              <CardHeader><CardTitle className="flex items-center"><LinkIcon className="mr-2" /> Liên kết</CardTitle></CardHeader>
-              <CardContent>
+              <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><LinkIcon className="mr-2" /> Liên kết</CardTitle></CardHeader>
+              <CardContent className="p-3 md:p-4 pt-0">
                 {guest.slug && (
                   <div className="flex items-center justify-between py-2 border-b">
                     <p className="text-sm font-medium text-slate-800">Profile Link</p>
@@ -191,11 +198,13 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit }: { guestId: string, 
                 )}
               </CardContent>
             </Card>
-            
+          </div>
+
+          <div className="space-y-6">
             {revenue && (
               <Card>
-                <CardHeader><CardTitle className="flex items-center"><DollarSign className="mr-2" /> Doanh thu</CardTitle></CardHeader>
-                <CardContent>
+                <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><DollarSign className="mr-2" /> Doanh thu</CardTitle></CardHeader>
+                <CardContent className="p-3 md:p-4 pt-0">
                   <InfoRow icon={DollarSign} label="Tài trợ" value={formatCurrency(revenue.sponsorship)} />
                   <InfoRow icon={CheckCircle} label="Đã thanh toán" value={formatCurrency(revenue.paid)} />
                   <InfoRow icon={AlertCircle} label="Chưa thanh toán" value={formatCurrency(revenue.unpaid)} />
@@ -211,19 +220,16 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit }: { guestId: string, 
                 </CardContent>
               </Card>
             )}
-          </div>
-
-          <div className="space-y-6">
             <Card>
-              <CardHeader><CardTitle className="flex items-center"><Megaphone className="mr-2" /> Quyền lợi truyền thông</CardTitle></CardHeader>
-              <CardContent><MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} /></CardContent>
+              <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><Megaphone className="mr-2" /> Quyền lợi truyền thông</CardTitle></CardHeader>
+              <CardContent className="p-3 md:p-4 pt-0"><MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} /></CardContent>
             </Card>
           </div>
           
           <div className="space-y-6">
             <Card>
-              <CardHeader><CardTitle className="flex items-center"><ClipboardList className="mr-2" /> Tác vụ sự kiện</CardTitle></CardHeader>
-              <CardContent>
+              <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><ClipboardList className="mr-2" /> Tác vụ sự kiện</CardTitle></CardHeader>
+              <CardContent className="p-3 md:p-4 pt-0">
                 <div className="space-y-2">
                   {tasksForRole.map(taskName => (<div key={taskName} className="flex items-center space-x-2"><Checkbox id={taskName} checked={tasks.find(t => t.task_name === taskName)?.is_completed} disabled /><Label htmlFor={taskName}>{taskName}</Label></div>))}
                   {tasksForRole.length === 0 && <p className="text-slate-500">Không có tác vụ nào cho vai trò này.</p>}
@@ -276,7 +282,7 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl h-[90vh] p-0">
+      <DialogContent className="max-w-7xl h-[90vh] p-0">
         {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} />}
       </DialogContent>
     </Dialog>
