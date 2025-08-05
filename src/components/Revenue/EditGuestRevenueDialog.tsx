@@ -94,7 +94,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
   });
 
   const upsaleMutation = useMutation({
-    mutationFn: async (values: { newRole: string; sponsorship: number; paymentSource: string; upsaledBy: string }) => {
+    mutationFn: async (values: { newRole: string; sponsorship: number; paymentSource: string; upsaledBy: string; upsaledByUserId: string }) => {
       if (!guest) throw new Error("Không có khách nào được chọn");
       const { error } = await supabase.rpc('upsale_guest', {
         guest_id_in: guest.id,
@@ -102,6 +102,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
         new_sponsorship_in: values.sponsorship,
         new_payment_source_in: values.paymentSource,
         upsaled_by_in: values.upsaledBy,
+        upsaled_by_user_id_in: values.upsaledByUserId,
       });
       if (error) throw error;
     },
@@ -128,10 +129,15 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
         showError("Vui lòng chọn vai trò mới để upsale.");
         return;
       }
-      const upsaledBy = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown User';
-      upsaleMutation.mutate({ newRole, sponsorship, paymentSource: paymentSource || "Trống", upsaledBy });
+      const upsaledBy = profile?.full_name || user?.user_metadata?.full_name || 'Unknown User';
+      const upsaledByUserId = profile?.id || user?.id;
+      if (!upsaledByUserId) {
+        showError("Không thể xác định người dùng. Vui lòng đăng nhập lại.");
+        return;
+      }
+      upsaleMutation.mutate({ newRole, sponsorship, paymentSource: paymentSource || "Trống", upsaledBy, upsaledByUserId });
     } else {
-      editMutation.mutate({ sponsorship, payment_source: paymentSource, is_upsaled: isUpsaled });
+      editMutation.mutate({ sponsorship, payment_source: paymentSource || "Trống", is_upsaled: isUpsaled });
     }
   };
 

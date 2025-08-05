@@ -111,7 +111,7 @@ const CommissionTab = () => {
       <div className="space-y-6">
         {currentUserSummary && (
           <div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Hoa hồng của bạn</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Hoa hồng của tôi</h2>
             <Card>
               <CardHeader><CardTitle>{currentUserSummary.upsale_person_name}</CardTitle></CardHeader>
               <CardContent className="space-y-2">
