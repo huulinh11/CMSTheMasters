@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit } from "lucide-react";
+import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,6 +27,8 @@ import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { ContentBlock } from "@/types/profile-content";
 import { MediaBenefit } from "@/types/media-benefit";
+import PaymentDialog from "@/components/Revenue/PaymentDialog";
+import GuestPaymentDialog from "@/components/Revenue/GuestPaymentDialog";
 
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
@@ -70,6 +72,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
   const [isTasksDialogOpen, setIsTasksDialogOpen] = useState(false);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isRevenueDialogOpen, setIsRevenueDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { profile, user } = useAuth();
 
@@ -262,9 +265,9 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
                   <div className="flex items-center justify-between py-2 border-b">
                     <p className="text-sm font-medium text-slate-800">Profile Link</p>
                     <div className="flex items-center gap-1 ml-2">
-                      <Button size="sm" variant="outline" onClick={() => setIsProfileDialogOpen(true)}><Edit className="mr-2 h-4 w-4" /> Sửa</Button>
-                      <a href={`/profile/${guest.slug}`} target="_blank" rel="noopener noreferrer"><Button size="sm"><ExternalLink className="mr-2 h-4 w-4" /> Mở</Button></a>
-                      <Button size="sm" variant="outline" onClick={() => handleCopyLink(`/profile/${guest.slug}`)}><Copy className="mr-2 h-4 w-4" /> Sao chép</Button>
+                      <Button size="icon" variant="outline" onClick={() => setIsProfileDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
+                      <a href={`/profile/${guest.slug}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
+                      <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/profile/${guest.slug}`)}><Copy className="h-4 w-4" /></Button>
                     </div>
                   </div>
                 )}
@@ -272,8 +275,8 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
                   <div className="flex items-center justify-between py-2">
                     <p className="text-sm font-medium text-slate-800">Checklist Link</p>
                     <div className="flex items-center gap-1 ml-2">
-                      <a href={`/checklist/${guest.phone}`} target="_blank" rel="noopener noreferrer"><Button size="sm"><ExternalLink className="mr-2 h-4 w-4" /> Mở</Button></a>
-                      <Button size="sm" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.phone}`)}><Copy className="mr-2 h-4 w-4" /> Sao chép</Button>
+                      <a href={`/checklist/${guest.phone}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
+                      <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.phone}`)}><Copy className="h-4 w-4" /></Button>
                     </div>
                   </div>
                 )}
@@ -293,6 +296,13 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
                   <InfoRow icon={CheckCircle} label="Đã thanh toán" value={formatCurrency(revenue.paid)} />
                   <InfoRow icon={AlertCircle} label="Chưa thanh toán" value={formatCurrency(revenue.unpaid)} />
                   <InfoRow icon={Info} label="Nguồn thanh toán" value={revenue.payment_source} />
+                  <Button 
+                    className="w-full mt-4" 
+                    onClick={() => setIsPaymentDialogOpen(true)} 
+                    disabled={!revenue || revenue.unpaid <= 0}
+                  >
+                    <CreditCard className="mr-2 h-4 w-4" /> Thanh toán
+                  </Button>
                   <div className="mt-4">
                     <h4 className="font-semibold mb-2 flex items-center"><History className="mr-2 h-4 w-4" /> Lịch sử giao dịch</h4>
                     <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
@@ -364,6 +374,19 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
         onSave={handleSaveProfile}
         isSaving={profileUpdateMutation.isPending}
       />
+      {guestType === 'vip' ? (
+        <PaymentDialog
+          guest={guestWithRevenue}
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+        />
+      ) : (
+        <GuestPaymentDialog
+          guest={guestWithRevenue}
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+        />
+      )}
       {guestType === 'vip' ? (
         <EditSponsorshipDialog
           guest={guestWithRevenue}
