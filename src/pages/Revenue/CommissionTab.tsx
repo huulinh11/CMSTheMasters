@@ -15,7 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CommissionTab = () => {
-  const { profile, user } = useAuth();
+  const { profile, user, loading: authLoading } = useAuth();
   const isMobile = useIsMobile();
   const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
   const [selectedUpsalePerson, setSelectedUpsalePerson] = useState<{ userId: string; name: string; hideCommission: boolean } | null>(null);
@@ -88,7 +88,7 @@ const CommissionTab = () => {
     return { currentUserSummary: currentUser, otherUsersSummary: others };
   }, [processedUpsaleSummary, isSale, profile]);
 
-  const isLoading = isLoadingReferrer || isLoadingUpsale;
+  const isLoading = isLoadingReferrer || isLoadingUpsale || authLoading;
 
   const handleViewReferrerDetails = (referrerName: string) => setSelectedReferrer(referrerName);
   const handleViewUpsaleDetails = (userId: string, personName: string, hideCommission: boolean = false) => {
