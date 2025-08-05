@@ -94,11 +94,11 @@ export const InformationTable = ({ guests, onEdit, onView }: InformationTablePro
                   </Avatar>
                 </TableCell>
                 <TableCell className="text-right space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => onView(guest)}>
-                    <Eye className="mr-2 h-4 w-4" /> Xem
+                  <Button variant="outline" size="icon" onClick={() => onView(guest)}>
+                    <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="default" size="sm" onClick={() => onEdit(guest)}>
-                    <Edit className="mr-2 h-4 w-4" /> Sửa
+                  <Button variant="default" size="icon" onClick={() => onEdit(guest)}>
+                    <Edit className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>

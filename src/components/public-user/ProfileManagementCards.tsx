@@ -34,7 +34,7 @@ export const ProfileManagementCards = ({ guests, onCopyLink, onEdit, onView }: P
               </div>
               <div className="flex gap-2 pt-2">
                 <Button className="flex-1" variant="secondary" onClick={() => onView(guest)}>
-                  <Eye className="mr-2 h-4 w-4" /> Xem
+                  <Eye className="h-4 w-4" />
                 </Button>
                 {guest.slug && (
                   <Button className="flex-1" variant="outline" onClick={() => onCopyLink(guest.slug!)}>
@@ -42,7 +42,7 @@ export const ProfileManagementCards = ({ guests, onCopyLink, onEdit, onView }: P
                   </Button>
                 )}
                 <Button className="flex-1" onClick={() => onEdit(guest)}>
-                  <Edit className="mr-2 h-4 w-4" /> Sửa
+                  <Edit className="h-4 w-4" />
                 </Button>
               </div>
             </CardContent>

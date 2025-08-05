@@ -77,7 +77,7 @@ const Information = () => {
   }, [guests, searchTerm, roleFilters]);
 
   const handleViewDetails = (guest: VipGuest) => {
-    navigate(`/guests/vip/${guest.id}`);
+    navigate(`/guests?view_vip=${guest.id}`);
   };
 
   const isLoading = isLoadingGuests || isLoadingRoles;

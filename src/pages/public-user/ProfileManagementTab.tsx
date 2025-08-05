@@ -136,8 +136,11 @@ const ProfileManagementTab = () => {
   };
 
   const handleViewDetails = (guest: CombinedGuest) => {
-    const type = guest.type === 'Chức vụ' ? 'vip' : 'regular';
-    navigate(`/guests/${type}/${guest.id}`);
+    if (guest.slug) {
+      window.open(`/profile/${guest.slug}`, '_blank');
+    } else {
+      showError("Khách mời này chưa có link public.");
+    }
   };
 
   const handleSaveProfile = (content: ContentBlock[]) => {
