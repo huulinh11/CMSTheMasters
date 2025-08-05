@@ -15,7 +15,7 @@ import { PlusCircle, ChevronDown, Trash2, Upload, Download, MoreVertical } from 
 import { GuestTable } from "@/components/guests/GuestTable";
 import { GuestCards } from "@/components/guests/GuestCards";
 import { AddGuestDialog } from "@/components/guests/AddGuestDialog";
-import { ViewGuestSheet } from "@/components/guests/ViewGuestSheet";
+import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
 import { showSuccess, showError } from "@/utils/toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +23,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 
 const generateId = (role: string, existingGuests: Guest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -37,7 +36,6 @@ const generateId = (role: string, existingGuests: Guest[]): string => {
 
 const RegularGuestTab = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const { profile } = useAuth();
   const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
 
@@ -46,7 +44,7 @@ const RegularGuestTab = () => {
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
-  const [viewingGuest, setViewingGuest] = useState<Guest | null>(null);
+  const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<Guest[]>({
@@ -165,14 +163,7 @@ const RegularGuestTab = () => {
   };
 
   const handleViewGuest = (guest: Guest) => {
-    navigate(`/guests/regular/${guest.id}`);
-  };
-
-  const handleEditFromView = (guest: Guest) => {
-    setViewingGuest(null);
-    setTimeout(() => {
-      handleOpenEditDialog(guest);
-    }, 150);
+    setViewingGuestId(guest.id);
   };
 
   const isLoading = isLoadingGuests || isLoadingRoles;
@@ -334,12 +325,11 @@ const RegularGuestTab = () => {
         roleConfigs={roleConfigs}
       />
 
-      <ViewGuestSheet
-        guest={viewingGuest}
-        open={!!viewingGuest}
-        onOpenChange={(open) => !open && setViewingGuest(null)}
-        onEdit={handleEditFromView}
-        roleConfigs={roleConfigs}
+      <GuestDetailsDialog
+        guestId={viewingGuestId}
+        guestType="regular"
+        open={!!viewingGuestId}
+        onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
       />
     </div>
   );

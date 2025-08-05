@@ -21,7 +21,6 @@ import Login from "./pages/Login";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleProtectedRoute from "./components/RoleProtectedRoute";
-import GuestDetailsPage from "./pages/GuestDetails";
 
 const queryClient = new QueryClient();
 
@@ -44,7 +43,6 @@ const AppContent = () => {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/guests" element={<Guests />} />
-        <Route path="/guests/:type/:id" element={<GuestDetailsPage />} />
         <Route path="/media-benefits" element={<MediaBenefits />} />
         <Route path="/event-tasks" element={<EventTasks />} />
         <Route path="/information" element={<Information />} />

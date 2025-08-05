@@ -14,7 +14,7 @@ import { PlusCircle, ChevronDown, Trash2, Upload, Download, Edit, MoreVertical }
 import { VipGuestTable } from "@/components/vip-guests/VipGuestTable";
 import { VipGuestCards } from "@/components/vip-guests/VipGuestCards";
 import { AddVipGuestDialog } from "@/components/vip-guests/AddVipGuestDialog";
-import { ViewVipGuestSheet } from "@/components/vip-guests/ViewVipGuestSheet";
+import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
 import { showSuccess, showError } from "@/utils/toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,7 +22,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 
 const generateId = (role: string, existingGuests: VipGuest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -37,7 +36,6 @@ const generateId = (role: string, existingGuests: VipGuest[]): string => {
 
 const VipGuestTab = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const { profile } = useAuth();
   const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
 
@@ -46,7 +44,7 @@ const VipGuestTab = () => {
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState<VipGuest | null>(null);
-  const [viewingGuest, setViewingGuest] = useState<VipGuest | null>(null);
+  const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuest[]>({
@@ -155,14 +153,7 @@ const VipGuestTab = () => {
   };
 
   const handleViewGuest = (guest: VipGuest) => {
-    navigate(`/guests/vip/${guest.id}`);
-  };
-
-  const handleEditFromView = (guest: VipGuest) => {
-    setViewingGuest(null);
-    setTimeout(() => {
-      handleOpenEditDialog(guest);
-    }, 150);
+    setViewingGuestId(guest.id);
   };
 
   const handleDeleteGuest = (id: string) => {
@@ -336,12 +327,11 @@ const VipGuestTab = () => {
         roleConfigs={roleConfigs}
       />
       
-      <ViewVipGuestSheet
-        guest={viewingGuest}
-        open={!!viewingGuest}
-        onOpenChange={(open) => !open && setViewingGuest(null)}
-        onEdit={handleEditFromView}
-        roleConfigs={roleConfigs}
+      <GuestDetailsDialog
+        guestId={viewingGuestId}
+        guestType="vip"
+        open={!!viewingGuestId}
+        onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
       />
     </div>
   );
