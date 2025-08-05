@@ -105,88 +105,6 @@ const CommissionTab = () => {
     </div>
   );
 
-  if (isSale) {
-    return (
-      <div className="space-y-6">
-        {currentUserSummary && (
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 mb-4">Hoa hồng của bạn</h2>
-            {isMobile ? (
-              <Card>
-                <CardHeader><CardTitle>{currentUserSummary.upsale_person_name}</CardTitle></CardHeader>
-                <CardContent className="space-y-2">
-                  <InfoRow label="Số lượt upsale" value={String(currentUserSummary.upsale_count)} />
-                  <InfoRow label="Tổng tiền upsale" value={formatCurrency(currentUserSummary.total_upsale_amount)} />
-                  <InfoRow label="Tổng hoa hồng" value={formatCurrency(currentUserSummary.total_commission)} valueClass="text-green-600 font-bold" />
-                  <Button className="w-full mt-2" onClick={() => handleViewUpsaleDetails(currentUserSummary.upsale_person_name, false)}>Xem chi tiết</Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="rounded-lg border bg-white">
-                <Table>
-                  <TableHeader><TableRow><TableHead>Tên nhân viên</TableHead><TableHead>Số lượt upsale</TableHead><TableHead>Tổng tiền upsale</TableHead><TableHead>Tổng hoa hồng</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">{currentUserSummary.upsale_person_name}</TableCell>
-                      <TableCell>{currentUserSummary.upsale_count}</TableCell>
-                      <TableCell>{formatCurrency(currentUserSummary.total_upsale_amount)}</TableCell>
-                      <TableCell className="font-semibold text-green-600">{formatCurrency(currentUserSummary.total_commission)}</TableCell>
-                      <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => handleViewUpsaleDetails(currentUserSummary.upsale_person_name, false)}>Xem chi tiết</Button></TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {otherUsersSummary.length > 0 && (
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 mb-4">Danh sách saler khác</h2>
-            {isMobile ? (
-              <div className="space-y-4">
-                {otherUsersSummary.map((item, index) => (
-                  <Card key={index}>
-                    <CardHeader><CardTitle>{item.upsale_person_name}</CardTitle></CardHeader>
-                    <CardContent className="space-y-2">
-                      <InfoRow label="Số lượt upsale" value={String(item.upsale_count)} />
-                      <InfoRow label="Tổng tiền upsale" value={formatCurrency(item.total_upsale_amount)} />
-                      <Button className="w-full mt-2" onClick={() => handleViewUpsaleDetails(item.upsale_person_name, true)}>Xem chi tiết</Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-lg border bg-white">
-                <Table>
-                  <TableHeader><TableRow><TableHead>STT</TableHead><TableHead>Tên nhân viên</TableHead><TableHead>Số lượt upsale</TableHead><TableHead>Tổng tiền upsale</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    {otherUsersSummary.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{index + 1}</TableCell>
-                        <TableCell className="font-medium">{item.upsale_person_name}</TableCell>
-                        <TableCell>{item.upsale_count}</TableCell>
-                        <TableCell>{formatCurrency(item.total_upsale_amount)}</TableCell>
-                        <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => handleViewUpsaleDetails(item.upsale_person_name, true)}>Xem chi tiết</Button></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
-        )}
-
-        <UpsaleCommissionDetailsDialog 
-          upsalePersonName={selectedUpsalePerson?.name || null} 
-          open={!!selectedUpsalePerson} 
-          onOpenChange={() => setSelectedUpsalePerson(null)}
-          hideCommission={selectedUpsalePerson?.hideCommission}
-        />
-      </div>
-    );
-  }
-
   const renderReferrerContent = () => (
     <>
       {isMobile ? (
@@ -263,36 +181,38 @@ const CommissionTab = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-2">
-        <Input 
-          placeholder="Tìm kiếm theo tên..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-grow"
-        />
-        <div className="flex gap-2 w-full md:w-auto">
-          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as any)}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Sắp xếp theo..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="default">Mặc định</SelectItem>
-              <SelectItem value="high-to-low">Hoa hồng: Cao đến thấp</SelectItem>
-              <SelectItem value="low-to-high">Hoa hồng: Thấp đến cao</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Loại hoa hồng" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="referrer">Giới thiệu</SelectItem>
-              <SelectItem value="upsale">Upsale</SelectItem>
-            </SelectContent>
-          </Select>
+      {!isSale && (
+        <div className="flex flex-col md:flex-row gap-2">
+          <Input 
+            placeholder="Tìm kiếm theo tên..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-grow"
+          />
+          <div className="flex gap-2 w-full md:w-auto">
+            <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as any)}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Sắp xếp theo..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Mặc định</SelectItem>
+                <SelectItem value="high-to-low">Hoa hồng: Cao đến thấp</SelectItem>
+                <SelectItem value="low-to-high">Hoa hồng: Thấp đến cao</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={commissionType} onValueChange={(value) => setCommissionType(value as any)}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Loại hoa hồng" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="referrer">Giới thiệu</SelectItem>
+                <SelectItem value="upsale">Upsale</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
+      )}
 
       { (commissionType === 'all' || commissionType === 'upsale') && (
         <div className="space-y-2">
@@ -300,7 +220,8 @@ const CommissionTab = () => {
           {renderUpsaleContent()}
         </div>
       )}
-      { (commissionType === 'all' || commissionType === 'referrer') && (
+      
+      { !isSale && (commissionType === 'all' || commissionType === 'referrer') && (
         <div className="space-y-2">
           <h2 className="text-xl font-bold text-slate-800">Hoa hồng giới thiệu</h2>
           {renderReferrerContent()}
