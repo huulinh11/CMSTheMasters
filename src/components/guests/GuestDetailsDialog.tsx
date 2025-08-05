@@ -55,7 +55,7 @@ const MaterialsViewerDialog = ({ open, onOpenChange, content, guestName, onEdit 
   </Dialog>
 );
 
-const GuestDetailsContent = ({ guestId, guestType, onEdit }: { guestId: string, guestType: 'vip' | 'regular', onEdit: (guest: any) => void }) => {
+const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { guestId: string, guestType: 'vip' | 'regular', onEdit: (guest: any) => void, roleConfigs: any[] }) => {
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
 
@@ -265,26 +265,27 @@ interface GuestDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (guest: any) => void;
+  roleConfigs: any[];
 }
 
-export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onEdit }: GuestDetailsDialogProps) => {
+export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onEdit, roleConfigs }: GuestDetailsDialogProps) => {
   const isMobile = useIsMobile();
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[90vh]">
-          {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} />}
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl h-[90vh] p-0">
-        {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} />}
-      </DialogContent>
-    </Dialog>
+    <>
+      {isMobile ? (
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          <DrawerContent className="h-[90vh]">
+            {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} roleConfigs={roleConfigs} />}
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent className="max-w-7xl h-[90vh] p-0">
+            {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} roleConfigs={roleConfigs} />}
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };

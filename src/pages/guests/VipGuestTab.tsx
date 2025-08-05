@@ -340,6 +340,7 @@ const VipGuestTab = () => {
         open={!!viewingGuestId}
         onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
         onEdit={handleEditFromDetails}
+        roleConfigs={roleConfigs}
       />
     </div>
   );

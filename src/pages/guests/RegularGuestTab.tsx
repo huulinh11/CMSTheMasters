@@ -338,6 +338,7 @@ const RegularGuestTab = () => {
         open={!!viewingGuestId}
         onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
         onEdit={handleEditFromDetails}
+        roleConfigs={roleConfigs}
       />
     </div>
   );
