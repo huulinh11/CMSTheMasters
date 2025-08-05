@@ -94,16 +94,81 @@ const CommissionTab = () => {
     setSelectedUpsalePerson({ name: personName, hideCommission });
   };
 
-  if (isLoading) {
-    return <Skeleton className="h-96 w-full rounded-lg" />;
-  }
-
   const InfoRow = ({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) => (
     <div className="flex justify-between items-center text-sm">
       <span className="text-slate-500">{label}</span>
       <span className={`font-medium text-slate-800 ${valueClass}`}>{value}</span>
     </div>
   );
+
+  if (isLoading) {
+    return <Skeleton className="h-96 w-full rounded-lg" />;
+  }
+
+  if (isSale) {
+    return (
+      <div className="space-y-6">
+        {currentUserSummary && (
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Hoa hồng của bạn</h2>
+            <Card>
+              <CardHeader><CardTitle>{currentUserSummary.upsale_person_name}</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                <InfoRow label="Số lượt upsale" value={String(currentUserSummary.upsale_count)} />
+                <InfoRow label="Tổng tiền upsale" value={formatCurrency(currentUserSummary.total_upsale_amount)} />
+                <InfoRow label="Tổng hoa hồng" value={formatCurrency(currentUserSummary.total_commission)} valueClass="text-green-600 font-bold" />
+                <Button className="w-full mt-2" onClick={() => handleViewUpsaleDetails(currentUserSummary.upsale_person_name, false)}>Xem chi tiết</Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+        
+        {otherUsersSummary.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Danh sách saler khác</h2>
+            {isMobile ? (
+              <div className="space-y-4">
+                {otherUsersSummary.map((item, index) => (
+                  <Card key={index}>
+                    <CardHeader><CardTitle>{item.upsale_person_name}</CardTitle></CardHeader>
+                    <CardContent className="space-y-2">
+                      <InfoRow label="Số lượt upsale" value={String(item.upsale_count)} />
+                      <InfoRow label="Tổng tiền upsale" value={formatCurrency(item.total_upsale_amount)} />
+                      <Button className="w-full mt-2" onClick={() => handleViewUpsaleDetails(item.upsale_person_name, true)}>Xem chi tiết</Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border bg-white">
+                <Table>
+                  <TableHeader><TableRow><TableHead>STT</TableHead><TableHead>Tên nhân viên</TableHead><TableHead>Số lượt upsale</TableHead><TableHead>Tổng tiền upsale</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {otherUsersSummary.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell className="font-medium">{item.upsale_person_name}</TableCell>
+                        <TableCell>{item.upsale_count}</TableCell>
+                        <TableCell>{formatCurrency(item.total_upsale_amount)}</TableCell>
+                        <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => handleViewUpsaleDetails(item.upsale_person_name, true)}>Xem chi tiết</Button></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        )}
+        
+        <UpsaleCommissionDetailsDialog 
+          upsalePersonName={selectedUpsalePerson?.name || null} 
+          open={!!selectedUpsalePerson} 
+          onOpenChange={() => setSelectedUpsalePerson(null)}
+          hideCommission={selectedUpsalePerson?.hideCommission}
+        />
+      </div>
+    );
+  }
 
   const renderReferrerContent = () => (
     <>
