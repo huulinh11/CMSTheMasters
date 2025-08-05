@@ -14,7 +14,7 @@ import { TASKS_BY_ROLE } from "@/config/event-tasks";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerHeader } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { showSuccess, showError } from "@/utils/toast";
@@ -109,10 +109,10 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
       return {
         guest: { ...guestData, secondaryInfo: guestData.secondary_info },
         revenue: revenueData ? {
+          ...revenueData,
           sponsorship: revenueData.sponsorship || 0,
           paid: revenueData.paid_amount || 0,
           unpaid: (revenueData.sponsorship || 0) - (revenueData.paid_amount || 0),
-          payment_source: revenueData.payment_source,
         } : null,
         mediaBenefit: mediaBenefitData,
         tasks: tasksData || [],
@@ -122,6 +122,76 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
     },
     enabled: !!guestType && !!guestId,
   });
+
+  const mediaBenefitMutation = useMutation({
+    mutationFn: async ({ guestId, benefits }: { guestId: string, benefits: Partial<MediaBenefit> }) => {
+      const { error } = await supabase.from('media_benefits').upsert(
+        { guest_id: guestId, ...benefits },
+        { onConflict: 'guest_id' }
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guest_details', guestType, guestId] });
+      showSuccess("Cập nhật quyền lợi thành công!");
+      setIsMediaDialogOpen(false);
+    },
+    onError: (error: Error) => showError(error.message),
+  });
+
+  const taskMutation = useMutation({
+    mutationFn: async (variables: { guestId: string; taskName: string; isCompleted: boolean; updatedBy: string }) => {
+      const { guestId, taskName, isCompleted, updatedBy } = variables;
+      const { error } = await supabase.from('guest_tasks').upsert({
+        guest_id: guestId,
+        task_name: taskName,
+        is_completed: isCompleted,
+        updated_at: new Date().toISOString(),
+        updated_by: updatedBy,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guest_details', guestType, guestId] });
+      queryClient.invalidateQueries({ queryKey: ['guest_tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task_history'] });
+      showSuccess("Cập nhật tác vụ thành công!");
+    },
+    onError: (error: any) => showError(error.message),
+  });
+
+  const profileUpdateMutation = useMutation({
+    mutationFn: async ({ guest, content }: { guest: any, content: ContentBlock[] }) => {
+      const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
+      const { error } = await supabase
+        .from(tableName)
+        .update({ profile_content: content })
+        .eq('id', guest.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guest_details', guestType, guestId] });
+      queryClient.invalidateQueries({ queryKey: guestType === 'vip' ? ['vip_guests'] : ['guests'] });
+      showSuccess("Cập nhật profile thành công!");
+      setIsProfileDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      showError(`Lỗi: ${error.message}`);
+    }
+  });
+
+  const handleTaskChange = (payload: { guestId: string; taskName: string; isCompleted: boolean; }) => {
+    const updatedBy = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Unknown User';
+    taskMutation.mutate({
+      ...payload,
+      updatedBy,
+    });
+  };
+
+  const handleSaveProfile = (content: ContentBlock[]) => {
+    if (!data?.guest) return;
+    profileUpdateMutation.mutate({ guest: { ...data.guest, type: guestType === 'vip' ? 'Chức vụ' : 'Khách mời' }, content });
+  };
 
   const handleCopyLink = (path: string) => {
     const url = `${window.location.origin}${path}`;
@@ -140,6 +210,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
   const { guest, revenue, mediaBenefit, tasks, payments, upsaleHistory } = data;
   const benefitsForRole = MEDIA_BENEFITS_BY_ROLE[guest.role] || [];
   const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
+  const guestWithRevenue = { ...guest, ...revenue };
 
   return (
     <>
@@ -154,17 +225,9 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
                 </button>
                 <div className="flex-1 min-w-0">
                     <h1 className="text-xl md:text-3xl font-bold text-slate-800 truncate">{guest.name}</h1>
-                    <div className="flex items-center gap-x-4 gap-y-1 flex-wrap mt-1">
-                        <p className="text-slate-500">{guest.role} ({guest.id})</p>
-                        <Button size="sm" variant="outline" className="md:hidden" onClick={() => onEdit(guest)}>
-                            <Edit className="mr-1.5 h-3 w-3" /> Sửa
-                        </Button>
-                    </div>
+                    <p className="text-slate-500 mt-1">{guest.role} ({guest.id})</p>
                 </div>
             </div>
-            <Button className="hidden md:flex flex-shrink-0" onClick={() => onEdit(guest)}>
-                <Edit className="mr-2 h-4 w-4" /> Sửa
-            </Button>
         </div>
       </header>
 
@@ -172,7 +235,10 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-0">
           <div className="space-y-6">
             <Card>
-              <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><Info className="mr-2" /> Thông tin cơ bản</CardTitle></CardHeader>
+              <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center text-base md:text-lg"><Info className="mr-2" /> Thông tin cơ bản</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}><Edit className="h-4 w-4" /></Button>
+              </CardHeader>
               <CardContent className="p-3 md:p-4 pt-0">
                 <InfoRow icon={Phone} label="SĐT" value={guest.phone} />
                 <InfoRow icon={User} label="Người giới thiệu" value={guest.referrer} />
@@ -196,6 +262,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
                   <div className="flex items-center justify-between py-2 border-b">
                     <p className="text-sm font-medium text-slate-800">Profile Link</p>
                     <div className="flex items-center gap-1 ml-2">
+                      <Button size="sm" variant="outline" onClick={() => setIsProfileDialogOpen(true)}><Edit className="mr-2 h-4 w-4" /> Sửa</Button>
                       <a href={`/profile/${guest.slug}`} target="_blank" rel="noopener noreferrer"><Button size="sm"><ExternalLink className="mr-2 h-4 w-4" /> Mở</Button></a>
                       <Button size="sm" variant="outline" onClick={() => handleCopyLink(`/profile/${guest.slug}`)}><Copy className="mr-2 h-4 w-4" /> Sao chép</Button>
                     </div>
@@ -217,7 +284,10 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
           <div className="space-y-6">
             {revenue && (
               <Card>
-                <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><DollarSign className="mr-2" /> Doanh thu</CardTitle></CardHeader>
+                <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center text-base md:text-lg"><DollarSign className="mr-2" /> Doanh thu</CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setIsRevenueDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
+                </CardHeader>
                 <CardContent className="p-3 md:p-4 pt-0">
                   <InfoRow icon={DollarSign} label="Tài trợ" value={formatCurrency(revenue.sponsorship)} />
                   <InfoRow icon={CheckCircle} label="Đã thanh toán" value={formatCurrency(revenue.paid)} />
@@ -235,14 +305,20 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
               </Card>
             )}
             <Card>
-              <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><Megaphone className="mr-2" /> Quyền lợi truyền thông</CardTitle></CardHeader>
+              <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center text-base md:text-lg"><Megaphone className="mr-2" /> Quyền lợi truyền thông</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setIsMediaDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
+              </CardHeader>
               <CardContent className="p-3 md:p-4 pt-0"><MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} /></CardContent>
             </Card>
           </div>
           
           <div className="space-y-6">
             <Card>
-              <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><ClipboardList className="mr-2" /> Tác vụ sự kiện</CardTitle></CardHeader>
+              <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center text-base md:text-lg"><ClipboardList className="mr-2" /> Tác vụ sự kiện</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setIsTasksDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
+              </CardHeader>
               <CardContent className="p-3 md:p-4 pt-0">
                 <div className="space-y-2">
                   {tasksForRole.map(taskName => (<div key={taskName} className="flex items-center space-x-2"><Checkbox id={taskName} checked={tasks.find(t => t.task_name === taskName)?.is_completed} disabled /><Label htmlFor={taskName}>{taskName}</Label></div>))}
@@ -269,6 +345,40 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
         onOpenChange={setIsImagePreviewOpen}
         guestType={guestType}
       />
+      <EditAllMediaBenefitsDialog
+        open={isMediaDialogOpen}
+        onOpenChange={setIsMediaDialogOpen}
+        guest={{ ...guest, media_benefit: mediaBenefit }}
+        onSave={(guestId, benefits) => mediaBenefitMutation.mutate({ guestId, benefits })}
+      />
+      <TaskChecklistDialog
+        open={isTasksDialogOpen}
+        onOpenChange={setIsTasksDialogOpen}
+        guest={{ ...guest, tasks }}
+        onTaskChange={handleTaskChange}
+      />
+      <EditProfileDialog
+        open={isProfileDialogOpen}
+        onOpenChange={setIsProfileDialogOpen}
+        guest={{ ...guest, type: guestType === 'vip' ? 'Chức vụ' : 'Khách mời' }}
+        onSave={handleSaveProfile}
+        isSaving={profileUpdateMutation.isPending}
+      />
+      {guestType === 'vip' ? (
+        <EditSponsorshipDialog
+          guest={guestWithRevenue}
+          open={isRevenueDialogOpen}
+          onOpenChange={setIsRevenueDialogOpen}
+        />
+      ) : (
+        <EditGuestRevenueDialog
+          guest={guestWithRevenue}
+          open={isRevenueDialogOpen}
+          onOpenChange={setIsRevenueDialogOpen}
+          mode="edit"
+          roleConfigs={roleConfigs}
+        />
+      )}
     </>
   );
 };
