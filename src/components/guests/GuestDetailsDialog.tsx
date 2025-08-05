@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit } from "lucide-react";
@@ -17,8 +17,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { showSuccess } from "@/utils/toast";
+import { showSuccess, showError } from "@/utils/toast";
 import { ImagePreviewDialog } from "@/components/event-tasks/ImagePreviewDialog";
+import { EditAllMediaBenefitsDialog } from "@/components/media-benefits/EditAllMediaBenefitsDialog";
+import { TaskChecklistDialog } from "@/components/event-tasks/TaskChecklistDialog";
+import { EditProfileDialog } from "@/components/public-user/EditProfileDialog";
+import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog";
+import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
+import { useAuth } from "@/contexts/AuthContext";
+import { ContentBlock } from "@/types/profile-content";
+import { MediaBenefit } from "@/types/media-benefit";
 
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
@@ -58,6 +66,12 @@ const MaterialsViewerDialog = ({ open, onOpenChange, content, guestName, onEdit 
 const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { guestId: string, guestType: 'vip' | 'regular', onEdit: (guest: any) => void, roleConfigs: any[] }) => {
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
+  const [isMediaDialogOpen, setIsMediaDialogOpen] = useState(false);
+  const [isTasksDialogOpen, setIsTasksDialogOpen] = useState(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [isRevenueDialogOpen, setIsRevenueDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { profile, user } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ['guest_details', guestType, guestId],
