@@ -14,6 +14,7 @@ export type CommissionDetail = {
 };
 
 export type UpsaleCommissionSummary = {
+  user_id: string;
   upsale_person_name: string;
   upsale_count: number;
   total_upsale_amount: number;
