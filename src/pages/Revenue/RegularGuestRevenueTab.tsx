@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { GuestRevenue } from "@/types/guest-revenue";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,12 @@ import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog"
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
+import { AddGuestDialog } from "@/components/guests/AddGuestDialog";
+import { Guest, GuestFormValues } from "@/types/guest";
+import { VipGuest } from "@/types/vip-guest";
+import { generateGuestSlug } from "@/lib/slug";
+import { showSuccess, showError } from "@/utils/toast";
 
 type UpsaleHistory = {
   guest_id: string;
@@ -31,14 +36,17 @@ type UpsaleHistory = {
 };
 
 const RegularGuestRevenueTab = () => {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [payingGuest, setPayingGuest] = useState<GuestRevenue | null>(null);
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
   const [editingGuest, setEditingGuest] = useState<GuestRevenue | null>(null);
   const [editMode, setEditMode] = useState<'edit' | 'upsale'>('edit');
+  const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingGuestForForm, setEditingGuestForForm] = useState<Guest | null>(null);
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
   const { profile, user } = useAuth();
 
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
@@ -48,6 +56,24 @@ const RegularGuestRevenueTab = () => {
     queryKey: ['guest_revenue_details'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_guest_revenue_details');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const { data: allRegularGuests = [] } = useQuery<Guest[]>({
+    queryKey: ['guests'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('guests').select('*');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: vipGuests = [] } = useQuery<VipGuest[]>({
+    queryKey: ['vip_guests_for_referrer'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('vip_guests').select('id, name');
       if (error) throw new Error(error.message);
       return data || [];
     }
@@ -69,6 +95,21 @@ const RegularGuestRevenueTab = () => {
       if (error) throw new Error(error.message);
       return data || [];
     }
+  });
+
+  const addOrEditMutation = useMutation({
+    mutationFn: async (guest: Guest) => {
+      const { error } = await supabase.from('guests').upsert(guest);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+      showSuccess(editingGuestForForm ? "Cập nhật khách mời thành công!" : "Thêm khách mời thành công!");
+      setIsFormOpen(false);
+      setEditingGuestForForm(null);
+    },
+    onError: (error: any) => showError(error.message),
   });
 
   const guests = useMemo((): GuestRevenue[] => {
@@ -130,7 +171,26 @@ const RegularGuestRevenueTab = () => {
   };
 
   const handleViewGuest = (guest: GuestRevenue) => {
-    navigate(`/guests?view_regular=${guest.id}`);
+    setViewingGuestId(guest.id);
+  };
+
+  const handleEditFromDetails = (guestToEdit: Guest) => {
+    setViewingGuestId(null);
+    setTimeout(() => {
+      const fullGuestData = allRegularGuests.find(g => g.id === guestToEdit.id);
+      setEditingGuestForForm(fullGuestData || guestToEdit);
+      setIsFormOpen(true);
+    }, 150);
+  };
+
+  const handleAddOrEditGuest = (values: GuestFormValues) => {
+    if (!editingGuestForForm) return;
+    const guestToUpsert: Guest = {
+      id: editingGuestForForm.id,
+      slug: editingGuestForForm.slug || generateGuestSlug(values.name),
+      ...values,
+    };
+    addOrEditMutation.mutate(guestToUpsert);
   };
 
   const isLoading = isLoadingGuests || isLoadingRoles || isLoadingHistory;
@@ -209,6 +269,22 @@ const RegularGuestRevenueTab = () => {
         open={!!editingGuest}
         onOpenChange={(open) => !open && setEditingGuest(null)}
         mode={editMode}
+        roleConfigs={roleConfigs}
+      />
+      <GuestDetailsDialog
+        guestId={viewingGuestId}
+        guestType="regular"
+        open={!!viewingGuestId}
+        onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
+        onEdit={handleEditFromDetails}
+        roleConfigs={roleConfigs}
+      />
+      <AddGuestDialog
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSubmit={handleAddOrEditGuest}
+        defaultValues={editingGuestForForm}
+        allVipGuests={vipGuests}
         roleConfigs={roleConfigs}
       />
     </div>
