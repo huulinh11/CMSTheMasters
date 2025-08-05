@@ -28,20 +28,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Handles session changes
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // 1. Perform an initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      // 2. Turn off the loading screen immediately after the check
       setLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    // 3. Set up a listener for future auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Handles profile fetching based on user state
+  // 4. Fetch profile separately, only when the user object is available
   useEffect(() => {
     if (user) {
       const fetchProfile = async () => {
