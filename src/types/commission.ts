@@ -26,4 +26,6 @@ export type UpsaleCommissionDetail = {
   upsale_amount: number;
   commission_earned: number;
   upsale_date: string;
+  from_role: string;
+  to_role: string;
 };

@@ -18,7 +18,7 @@ const CommissionTab = () => {
   const { profile, user } = useAuth();
   const isMobile = useIsMobile();
   const [selectedReferrer, setSelectedReferrer] = useState<string | null>(null);
-  const [selectedUpsalePerson, setSelectedUpsalePerson] = useState<{ name: string; hideCommission: boolean } | null>(null);
+  const [selectedUpsalePerson, setSelectedUpsalePerson] = useState<{ userId: string; name: string; hideCommission: boolean } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState<'default' | 'high-to-low' | 'low-to-high'>('default');
   
@@ -80,19 +80,19 @@ const CommissionTab = () => {
   }, [upsaleSummaryData, searchTerm, sortOrder]);
 
   const { currentUserSummary, otherUsersSummary } = useMemo(() => {
-    if (!isSale || !user) {
+    if (!isSale || !profile) {
         return { currentUserSummary: null, otherUsersSummary: processedUpsaleSummary };
     }
-    const currentUser = processedUpsaleSummary.find(item => item.user_id === user.id);
-    const others = processedUpsaleSummary.filter(item => item.user_id !== user.id);
+    const currentUser = processedUpsaleSummary.find(item => item.user_id === profile.id);
+    const others = processedUpsaleSummary.filter(item => item.user_id !== profile.id);
     return { currentUserSummary: currentUser, otherUsersSummary: others };
-  }, [processedUpsaleSummary, isSale, user]);
+  }, [processedUpsaleSummary, isSale, profile]);
 
   const isLoading = isLoadingReferrer || isLoadingUpsale;
 
   const handleViewReferrerDetails = (referrerName: string) => setSelectedReferrer(referrerName);
-  const handleViewUpsaleDetails = (personName: string, hideCommission: boolean = false) => {
-    setSelectedUpsalePerson({ name: personName, hideCommission });
+  const handleViewUpsaleDetails = (userId: string, personName: string, hideCommission: boolean = false) => {
+    setSelectedUpsalePerson({ userId, name: personName, hideCommission });
   };
 
   const InfoRow = ({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) => (
@@ -118,7 +118,7 @@ const CommissionTab = () => {
                 <InfoRow label="Số lượt upsale" value={String(currentUserSummary.upsale_count)} />
                 <InfoRow label="Tổng tiền upsale" value={formatCurrency(currentUserSummary.total_upsale_amount)} />
                 <InfoRow label="Tổng hoa hồng" value={formatCurrency(currentUserSummary.total_commission)} valueClass="text-green-600 font-bold" />
-                <Button className="w-full mt-2" onClick={() => handleViewUpsaleDetails(currentUserSummary.upsale_person_name, false)}>Xem chi tiết</Button>
+                <Button className="w-full mt-2" onClick={() => handleViewUpsaleDetails(currentUserSummary.user_id, currentUserSummary.upsale_person_name, false)}>Xem chi tiết</Button>
               </CardContent>
             </Card>
           </div>
@@ -135,7 +135,7 @@ const CommissionTab = () => {
                     <CardContent className="space-y-2">
                       <InfoRow label="Số lượt upsale" value={String(item.upsale_count)} />
                       <InfoRow label="Tổng tiền upsale" value={formatCurrency(item.total_upsale_amount)} />
-                      <Button className="w-full mt-2" onClick={() => handleViewUpsaleDetails(item.upsale_person_name, true)}>Xem chi tiết</Button>
+                      <Button className="w-full mt-2" onClick={() => handleViewUpsaleDetails(item.user_id, item.upsale_person_name, true)}>Xem chi tiết</Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -151,7 +151,7 @@ const CommissionTab = () => {
                         <TableCell className="font-medium">{item.upsale_person_name}</TableCell>
                         <TableCell>{item.upsale_count}</TableCell>
                         <TableCell>{formatCurrency(item.total_upsale_amount)}</TableCell>
-                        <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => handleViewUpsaleDetails(item.upsale_person_name, true)}>Xem chi tiết</Button></TableCell>
+                        <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => handleViewUpsaleDetails(item.user_id, item.upsale_person_name, true)}>Xem chi tiết</Button></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -162,10 +162,9 @@ const CommissionTab = () => {
         )}
         
         <UpsaleCommissionDetailsDialog 
-          upsalePersonName={selectedUpsalePerson?.name || null} 
+          person={selectedUpsalePerson} 
           open={!!selectedUpsalePerson} 
           onOpenChange={() => setSelectedUpsalePerson(null)}
-          hideCommission={selectedUpsalePerson?.hideCommission}
         />
       </div>
     );
@@ -218,7 +217,7 @@ const CommissionTab = () => {
                 <InfoRow label="Số lượt upsale" value={String(item.upsale_count)} />
                 <InfoRow label="Tổng tiền upsale" value={formatCurrency(item.total_upsale_amount)} />
                 <InfoRow label="Tổng hoa hồng" value={formatCurrency(item.total_commission)} valueClass="text-green-600 font-bold" />
-                <Button className="w-full mt-2" onClick={() => handleViewUpsaleDetails(item.upsale_person_name)}>Xem chi tiết</Button>
+                <Button className="w-full mt-2" onClick={() => handleViewUpsaleDetails(item.user_id, item.upsale_person_name)}>Xem chi tiết</Button>
               </CardContent>
             </Card>
           ))}
@@ -235,7 +234,7 @@ const CommissionTab = () => {
                   <TableCell>{item.upsale_count}</TableCell>
                   <TableCell>{formatCurrency(item.total_upsale_amount)}</TableCell>
                   <TableCell className="font-semibold text-green-600">{formatCurrency(item.total_commission)}</TableCell>
-                  <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => handleViewUpsaleDetails(item.upsale_person_name)}>Xem chi tiết</Button></TableCell>
+                  <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => handleViewUpsaleDetails(item.user_id, item.upsale_person_name)}>Xem chi tiết</Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -296,10 +295,9 @@ const CommissionTab = () => {
 
       <CommissionDetailsDialog referrerName={selectedReferrer} open={!!selectedReferrer} onOpenChange={(open) => !open && setSelectedReferrer(null)} />
       <UpsaleCommissionDetailsDialog 
-        upsalePersonName={selectedUpsalePerson?.name || null} 
+        person={selectedUpsalePerson} 
         open={!!selectedUpsalePerson} 
         onOpenChange={() => setSelectedUpsalePerson(null)}
-        hideCommission={selectedUpsalePerson?.hideCommission}
       />
     </div>
   );
