@@ -29,8 +29,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Proactively fetch the session on initial load
+    const fetchInitialSession = async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -42,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .single();
           
           if (error) {
-            console.warn("Could not fetch user profile:", error.message);
+            console.warn("Could not fetch user profile on initial load:", error.message);
             setProfile(null);
           } else {
             setProfile(userProfile);
@@ -51,11 +53,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setProfile(null);
         }
       } catch (e) {
-        console.error("Error in onAuthStateChange:", e);
+        console.error("Error fetching initial session:", e);
         setProfile(null);
       } finally {
-        // This is the crucial part. No matter what happens, we are done loading.
         setLoading(false);
+      }
+    };
+
+    fetchInitialSession();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        const { data: userProfile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (error) {
+          console.warn("Could not fetch user profile on auth state change:", error.message);
+          setProfile(null);
+        } else {
+          setProfile(userProfile);
+        }
+      } else {
+        setProfile(null);
       }
     });
 
@@ -82,8 +108,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signOut,
   };
 
-  // We only render children when loading is false to prevent race conditions
-  // with downstream components trying to access user/profile data.
   return (
     <AuthContext.Provider value={value}>
       {children}
