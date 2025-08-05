@@ -7,13 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Copy, Edit } from "lucide-react";
+import { Copy, Edit, Eye } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ProfileManagementCards } from "@/components/public-user/ProfileManagementCards";
 import { generateGuestSlug } from "@/lib/slug";
 import { EditProfileDialog } from "@/components/public-user/EditProfileDialog";
 import { ContentBlock } from "@/types/profile-content";
+import { useNavigate } from "react-router-dom";
 
 type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời' };
 
@@ -22,6 +23,7 @@ const ProfileManagementTab = () => {
   const [editingGuest, setEditingGuest] = useState<CombinedGuest | null>(null);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
@@ -133,6 +135,11 @@ const ProfileManagementTab = () => {
     setEditingGuest(guest);
   };
 
+  const handleViewDetails = (guest: CombinedGuest) => {
+    const type = guest.type === 'Chức vụ' ? 'vip' : 'regular';
+    navigate(`/guests/${type}/${guest.id}`);
+  };
+
   const handleSaveProfile = (content: ContentBlock[]) => {
     if (!editingGuest) return;
     profileUpdateMutation.mutate({ guest: editingGuest, content });
@@ -155,6 +162,7 @@ const ProfileManagementTab = () => {
           guests={filteredGuests}
           onCopyLink={handleCopyLink}
           onEdit={handleEditProfile}
+          onView={handleViewDetails}
         />
       ) : (
         <div className="rounded-lg border bg-white">
@@ -177,6 +185,9 @@ const ProfileManagementTab = () => {
                       {guest.slug ? `/profile/${guest.slug}` : "Đang tạo..."}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button variant="secondary" size="sm" onClick={() => handleViewDetails(guest)}>
+                        <Eye className="mr-2 h-4 w-4" /> Xem
+                      </Button>
                       {guest.slug && (
                         <Button variant="outline" size="sm" onClick={() => handleCopyLink(guest.slug!)}>
                           <Copy className="mr-2 h-4 w-4" /> Sao chép

@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const generateId = (role: string, existingGuests: Guest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -36,6 +37,7 @@ const generateId = (role: string, existingGuests: Guest[]): string => {
 
 const RegularGuestTab = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
 
@@ -163,7 +165,7 @@ const RegularGuestTab = () => {
   };
 
   const handleViewGuest = (guest: Guest) => {
-    setViewingGuest(guest);
+    navigate(`/guests/regular/${guest.id}`);
   };
 
   const handleEditFromView = (guest: Guest) => {

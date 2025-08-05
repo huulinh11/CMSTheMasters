@@ -15,6 +15,7 @@ import { showSuccess } from "@/utils/toast";
 interface InformationTableProps {
   guests: VipGuest[];
   onEdit: (guest: VipGuest) => void;
+  onView: (guest: VipGuest) => void;
 }
 
 const handleCopy = (textToCopy: string | undefined, label: string) => {
@@ -23,7 +24,7 @@ const handleCopy = (textToCopy: string | undefined, label: string) => {
   showSuccess(`Đã sao chép ${label}!`);
 };
 
-export const InformationTable = ({ guests, onEdit }: InformationTableProps) => {
+export const InformationTable = ({ guests, onEdit, onView }: InformationTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -92,8 +93,11 @@ export const InformationTable = ({ guests, onEdit }: InformationTableProps) => {
                     <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                 </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="outline" size="sm" onClick={() => onEdit(guest)}>
+                <TableCell className="text-right space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => onView(guest)}>
+                    <Eye className="mr-2 h-4 w-4" /> Xem
+                  </Button>
+                  <Button variant="default" size="sm" onClick={() => onEdit(guest)}>
                     <Edit className="mr-2 h-4 w-4" /> Sửa
                   </Button>
                 </TableCell>

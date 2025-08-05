@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const generateId = (role: string, existingGuests: VipGuest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -36,6 +37,7 @@ const generateId = (role: string, existingGuests: VipGuest[]): string => {
 
 const VipGuestTab = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
 
@@ -153,7 +155,7 @@ const VipGuestTab = () => {
   };
 
   const handleViewGuest = (guest: VipGuest) => {
-    setViewingGuest(guest);
+    navigate(`/guests/vip/${guest.id}`);
   };
 
   const handleEditFromView = (guest: VipGuest) => {

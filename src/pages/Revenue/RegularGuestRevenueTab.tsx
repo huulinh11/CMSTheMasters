@@ -19,10 +19,9 @@ import GuestPaymentDialog from "@/components/Revenue/GuestPaymentDialog";
 import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ViewGuestSheet } from "@/components/guests/ViewGuestSheet";
-import { Guest } from "@/types/guest";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 type UpsaleHistory = {
   guest_id: string;
@@ -38,8 +37,8 @@ const RegularGuestRevenueTab = () => {
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
   const [editingGuest, setEditingGuest] = useState<GuestRevenue | null>(null);
   const [editMode, setEditMode] = useState<'edit' | 'upsale'>('edit');
-  const [viewingGuest, setViewingGuest] = useState<GuestRevenue | null>(null);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const { profile, user } = useAuth();
 
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
@@ -130,6 +129,10 @@ const RegularGuestRevenueTab = () => {
     setEditingGuest(guest);
   };
 
+  const handleViewGuest = (guest: GuestRevenue) => {
+    navigate(`/guests/regular/${guest.id}`);
+  };
+
   const isLoading = isLoadingGuests || isLoadingRoles || isLoadingHistory;
 
   return (
@@ -176,7 +179,7 @@ const RegularGuestRevenueTab = () => {
           onHistory={setHistoryGuest}
           onEdit={handleOpenEditDialog}
           onUpsale={handleOpenUpsaleDialog}
-          onView={setViewingGuest}
+          onView={handleViewGuest}
           roleConfigs={roleConfigs}
         />
       ) : (
@@ -186,7 +189,7 @@ const RegularGuestRevenueTab = () => {
           onHistory={setHistoryGuest}
           onEdit={handleOpenEditDialog}
           onUpsale={handleOpenUpsaleDialog}
-          onView={setViewingGuest}
+          onView={handleViewGuest}
           roleConfigs={roleConfigs}
         />
       )}
@@ -206,13 +209,6 @@ const RegularGuestRevenueTab = () => {
         open={!!editingGuest}
         onOpenChange={(open) => !open && setEditingGuest(null)}
         mode={editMode}
-        roleConfigs={roleConfigs}
-      />
-       <ViewGuestSheet
-        guest={viewingGuest as Guest | null}
-        open={!!viewingGuest}
-        onOpenChange={(open) => !open && setViewingGuest(null)}
-        onEdit={() => { /* No edit from this view */}}
         roleConfigs={roleConfigs}
       />
     </div>

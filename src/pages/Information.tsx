@@ -12,16 +12,18 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InformationTable } from "@/components/information/InformationTable";
 import { InformationCards } from "@/components/information/InformationCards";
 import { EditInformationDialog } from "@/components/information/EditInformationDialog";
 import { showSuccess, showError } from "@/utils/toast";
+import { useNavigate } from "react-router-dom";
 
 const Information = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [editingGuest, setEditingGuest] = useState<VipGuest | null>(null);
@@ -74,6 +76,10 @@ const Information = () => {
     });
   }, [guests, searchTerm, roleFilters]);
 
+  const handleViewDetails = (guest: VipGuest) => {
+    navigate(`/guests/vip/${guest.id}`);
+  };
+
   const isLoading = isLoadingGuests || isLoadingRoles;
 
   return (
@@ -115,9 +121,9 @@ const Information = () => {
       {isLoading ? (
         <Skeleton className="h-96 w-full rounded-lg" />
       ) : isMobile ? (
-        <InformationCards guests={filteredGuests} onEdit={setEditingGuest} roleConfigs={roleConfigs} />
+        <InformationCards guests={filteredGuests} onEdit={setEditingGuest} onView={handleViewDetails} roleConfigs={roleConfigs} />
       ) : (
-        <InformationTable guests={filteredGuests} onEdit={setEditingGuest} />
+        <InformationTable guests={filteredGuests} onEdit={setEditingGuest} onView={handleViewDetails} />
       )}
 
       <EditInformationDialog

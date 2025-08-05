@@ -8,7 +8,6 @@ import { Guest } from "@/types/guest";
 import { GuestTask, TaskGuest } from "@/types/event-task";
 import { EventTasksTable } from "@/components/event-tasks/EventTasksTable";
 import { EventTasksCards } from "@/components/event-tasks/EventTasksCards";
-import { ViewGuestSheet } from "@/components/guests/ViewGuestSheet";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { showSuccess, showError } from "@/utils/toast";
 import { ImagePreviewDialog } from "@/components/event-tasks/ImagePreviewDialog";
@@ -23,15 +22,15 @@ import { ChevronDown } from "lucide-react";
 import { TaskFilterSheet } from "@/components/event-tasks/TaskFilterSheet";
 import { ALL_TASKS } from "@/config/event-tasks";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { TaskChecklistDialog } from "@/components/event-tasks/TaskChecklistDialog";
 
 export const RegularTasksTab = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const { profile, user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewingGuest, setViewingGuest] = useState<TaskGuest | null>(null);
   const [imagePreviewGuest, setImagePreviewGuest] = useState<TaskGuest | null>(null);
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
@@ -182,6 +181,10 @@ export const RegularTasksTab = () => {
     setAdvancedFilters({});
   };
 
+  const handleViewDetails = (guest: TaskGuest) => {
+    navigate(`/guests/regular/${guest.id}`);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row items-center gap-2">
@@ -227,25 +230,18 @@ export const RegularTasksTab = () => {
       ) : isMobile ? (
         <EventTasksCards
           guests={filteredGuests}
-          onViewDetails={setViewingGuest}
+          onViewDetails={handleViewDetails}
           onImageClick={setImagePreviewGuest}
           onOpenChecklist={setDialogGuest}
         />
       ) : (
         <EventTasksTable
           guests={filteredGuests}
-          onViewDetails={setViewingGuest}
+          onViewDetails={handleViewDetails}
           onImageClick={setImagePreviewGuest}
           onOpenChecklist={setDialogGuest}
         />
       )}
-      <ViewGuestSheet
-        guest={viewingGuest as Guest | null}
-        open={!!viewingGuest}
-        onOpenChange={() => setViewingGuest(null)}
-        onEdit={() => { /* No edit from this view */}}
-        roleConfigs={roleConfigs}
-      />
       <ImagePreviewDialog
         guest={imagePreviewGuest}
         open={!!imagePreviewGuest}

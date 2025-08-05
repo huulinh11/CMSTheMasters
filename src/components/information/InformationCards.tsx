@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 interface InformationCardsProps {
   guests: VipGuest[];
   onEdit: (guest: VipGuest) => void;
+  onView: (guest: VipGuest) => void;
   roleConfigs: RoleConfiguration[];
 }
 
@@ -59,7 +60,7 @@ const InfoItem = ({ icon: Icon, label, value, isLink = false, isCopyable = false
 };
 
 
-export const InformationCards = ({ guests, onEdit, roleConfigs }: InformationCardsProps) => {
+export const InformationCards = ({ guests, onEdit, onView, roleConfigs }: InformationCardsProps) => {
   const getRoleColors = (roleName: string) => {
     const config = roleConfigs.find(rc => rc.name === roleName);
     return {
@@ -83,9 +84,14 @@ export const InformationCards = ({ guests, onEdit, roleConfigs }: InformationCar
                   <CardTitle className="text-lg font-semibold text-slate-800">{guest.name}</CardTitle>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}>
-                <Edit className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center">
+                <Button variant="ghost" size="icon" onClick={() => onView(guest)}>
+                  <Eye className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}>
+                  <Edit className="h-5 w-5" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="flex items-center text-sm">

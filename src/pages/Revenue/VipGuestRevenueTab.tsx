@@ -19,10 +19,10 @@ import { VipRevenueCards } from "@/components/Revenue/VipRevenueCards";
 import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
 import PaymentDialog from "@/components/Revenue/PaymentDialog";
 import HistoryDialog from "@/components/Revenue/HistoryDialog";
-import { ViewVipGuestSheet } from "@/components/vip-guests/ViewVipGuestSheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const VipGuestRevenueTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,8 +30,8 @@ const VipGuestRevenueTab = () => {
   const [editingGuest, setEditingGuest] = useState<VipGuestRevenue | null>(null);
   const [payingGuest, setPayingGuest] = useState<VipGuestRevenue | null>(null);
   const [historyGuest, setHistoryGuest] = useState<VipGuestRevenue | null>(null);
-  const [viewingGuest, setViewingGuest] = useState<VipGuestRevenue | null>(null);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const { profile, user } = useAuth();
 
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
@@ -71,6 +71,10 @@ const VipGuestRevenueTab = () => {
       return searchMatch && roleMatch;
     });
   }, [guests, searchTerm, roleFilters]);
+
+  const handleViewGuest = (guest: VipGuestRevenue) => {
+    navigate(`/guests/vip/${guest.id}`);
+  };
 
   const isLoading = isLoadingGuests || isLoadingRoles;
 
@@ -117,7 +121,7 @@ const VipGuestRevenueTab = () => {
           onPay={setPayingGuest}
           onHistory={setHistoryGuest}
           onEdit={setEditingGuest}
-          onView={setViewingGuest}
+          onView={handleViewGuest}
           roleConfigs={roleConfigs}
         />
       ) : (
@@ -126,7 +130,7 @@ const VipGuestRevenueTab = () => {
           onPay={setPayingGuest}
           onHistory={setHistoryGuest}
           onEdit={setEditingGuest}
-          onView={setViewingGuest}
+          onView={handleViewGuest}
           roleConfigs={roleConfigs}
         />
       )}
@@ -145,12 +149,6 @@ const VipGuestRevenueTab = () => {
         guest={historyGuest}
         open={!!historyGuest}
         onOpenChange={(open) => !open && setHistoryGuest(null)}
-      />
-      <ViewVipGuestSheet
-        guest={viewingGuest as VipGuest | null}
-        open={!!viewingGuest}
-        onOpenChange={(open) => !open && setViewingGuest(null)}
-        roleConfigs={roleConfigs}
       />
     </div>
   );

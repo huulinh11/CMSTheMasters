@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Edit, Phone, User, Info, FileText } from "lucide-react";
+import { MoreVertical, Trash2, Edit, Phone, User, Info, FileText, Eye } from "lucide-react";
 import { VipGuest } from "@/types/vip-guest";
 import { RoleConfiguration } from "@/types/role-configuration";
 
@@ -63,6 +63,10 @@ export const VipGuestCards = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onView(guest)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Xem chi tiết
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onEdit(guest)}>
                       <Edit className="mr-2 h-4 w-4" />
                       Sửa

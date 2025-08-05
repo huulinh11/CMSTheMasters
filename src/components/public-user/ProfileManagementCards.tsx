@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Edit } from "lucide-react";
+import { Copy, Edit, Eye } from "lucide-react";
 import { VipGuest } from "@/types/vip-guest";
 import { Guest } from "@/types/guest";
 
@@ -10,9 +10,10 @@ interface ProfileManagementCardsProps {
   guests: CombinedGuest[];
   onCopyLink: (slug: string) => void;
   onEdit: (guest: CombinedGuest) => void;
+  onView: (guest: CombinedGuest) => void;
 }
 
-export const ProfileManagementCards = ({ guests, onCopyLink, onEdit }: ProfileManagementCardsProps) => {
+export const ProfileManagementCards = ({ guests, onCopyLink, onEdit, onView }: ProfileManagementCardsProps) => {
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
@@ -32,13 +33,16 @@ export const ProfileManagementCards = ({ guests, onCopyLink, onEdit }: ProfileMa
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
+                <Button className="flex-1" variant="secondary" onClick={() => onView(guest)}>
+                  <Eye className="mr-2 h-4 w-4" /> Xem
+                </Button>
                 {guest.slug && (
                   <Button className="flex-1" variant="outline" onClick={() => onCopyLink(guest.slug!)}>
                     <Copy className="mr-2 h-4 w-4" /> Sao chép
                   </Button>
                 )}
                 <Button className="flex-1" onClick={() => onEdit(guest)}>
-                  <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
+                  <Edit className="mr-2 h-4 w-4" /> Sửa
                 </Button>
               </div>
             </CardContent>
