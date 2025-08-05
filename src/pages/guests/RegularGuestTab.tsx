@@ -166,6 +166,13 @@ const RegularGuestTab = () => {
     setViewingGuestId(guest.id);
   };
 
+  const handleEditFromDetails = (guestToEdit: Guest) => {
+    setViewingGuestId(null);
+    setTimeout(() => {
+      handleOpenEditDialog(guestToEdit);
+    }, 150);
+  };
+
   const isLoading = isLoadingGuests || isLoadingRoles;
 
   return (
@@ -330,6 +337,7 @@ const RegularGuestTab = () => {
         guestType="regular"
         open={!!viewingGuestId}
         onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
+        onEdit={handleEditFromDetails}
       />
     </div>
   );

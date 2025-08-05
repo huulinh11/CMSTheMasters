@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy } from "lucide-react";
+import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,11 +13,12 @@ import { MEDIA_BENEFITS_BY_ROLE } from "@/config/media-benefits-by-role";
 import { TASKS_BY_ROLE } from "@/config/event-tasks";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { showSuccess } from "@/utils/toast";
+import { ImagePreviewDialog } from "@/components/event-tasks/ImagePreviewDialog";
 
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
@@ -33,7 +34,7 @@ const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementTy
   );
 };
 
-const MaterialsViewerDialog = ({ open, onOpenChange, content, guestName }: { open: boolean, onOpenChange: (open: boolean) => void, content: string, guestName: string }) => (
+const MaterialsViewerDialog = ({ open, onOpenChange, content, guestName, onEdit }: { open: boolean, onOpenChange: (open: boolean) => void, content: string, guestName: string, onEdit: () => void }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent>
       <DialogHeader>
@@ -42,12 +43,21 @@ const MaterialsViewerDialog = ({ open, onOpenChange, content, guestName }: { ope
       <ScrollArea className="max-h-[60vh] mt-4">
         <div className="whitespace-pre-wrap p-1">{content}</div>
       </ScrollArea>
+      <DialogFooter>
+        <Button variant="outline" onClick={() => { navigator.clipboard.writeText(content); showSuccess("Đã sao chép tư liệu!"); }}>
+          <Copy className="mr-2 h-4 w-4" /> Sao chép
+        </Button>
+        <Button onClick={onEdit}>
+          <Edit className="mr-2 h-4 w-4" /> Sửa
+        </Button>
+      </DialogFooter>
     </DialogContent>
   </Dialog>
 );
 
-const GuestDetailsContent = ({ guestId, guestType }: { guestId: string, guestType: 'vip' | 'regular' }) => {
+const GuestDetailsContent = ({ guestId, guestType, onEdit }: { guestId: string, guestType: 'vip' | 'regular', onEdit: (guest: any) => void }) => {
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['guest_details', guestType, guestId],
@@ -119,15 +129,22 @@ const GuestDetailsContent = ({ guestId, guestType }: { guestId: string, guestTyp
 
   return (
     <>
-      <header className="flex items-center gap-4 mb-6 p-4 md:p-6">
-        <Avatar className="h-20 w-20">
-          <AvatarImage src={guest.image_url} />
-          <AvatarFallback>{guest.name?.charAt(0)}</AvatarFallback>
-        </Avatar>
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800">{guest.name}</h1>
-          <p className="text-slate-500">{guest.role} ({guest.id})</p>
+      <header className="flex items-center justify-between gap-4 mb-6 p-4 md:p-6">
+        <div className="flex items-center gap-4">
+          <button onClick={() => setIsImagePreviewOpen(true)}>
+            <Avatar className="h-20 w-20">
+              <AvatarImage src={guest.image_url} />
+              <AvatarFallback>{guest.name?.charAt(0)}</AvatarFallback>
+            </Avatar>
+          </button>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">{guest.name}</h1>
+            <p className="text-slate-500">{guest.role} ({guest.id})</p>
+          </div>
         </div>
+        <Button onClick={() => onEdit(guest)}>
+          <Edit className="mr-2 h-4 w-4" /> Sửa
+        </Button>
       </header>
 
       <ScrollArea className="h-[calc(80vh-120px)]">
@@ -156,32 +173,25 @@ const GuestDetailsContent = ({ guestId, guestType }: { guestId: string, guestTyp
               <CardContent>
                 {guest.slug && (
                   <div className="flex items-center justify-between py-2 border-b">
-                    <div className="flex-1 overflow-hidden"><p className="text-sm text-slate-500">Profile Link</p><p className="font-mono text-xs text-slate-600 truncate">{`/profile/${guest.slug}`}</p></div>
+                    <p className="text-sm font-medium text-slate-800">Profile Link</p>
                     <div className="flex items-center gap-1 ml-2">
-                      <a href={`/profile/${guest.slug}`} target="_blank" rel="noopener noreferrer"><Button variant="ghost" size="icon"><ExternalLink className="h-4 w-4" /></Button></a>
-                      <Button variant="ghost" size="icon" onClick={() => handleCopyLink(`/profile/${guest.slug}`)}><Copy className="h-4 w-4" /></Button>
+                      <a href={`/profile/${guest.slug}`} target="_blank" rel="noopener noreferrer"><Button size="sm"><ExternalLink className="mr-2 h-4 w-4" /> Mở</Button></a>
+                      <Button size="sm" variant="outline" onClick={() => handleCopyLink(`/profile/${guest.slug}`)}><Copy className="mr-2 h-4 w-4" /> Sao chép</Button>
                     </div>
                   </div>
                 )}
                 {guest.phone && (
                   <div className="flex items-center justify-between py-2">
-                    <div className="flex-1 overflow-hidden"><p className="text-sm text-slate-500">Checklist Link</p><p className="font-mono text-xs text-slate-600 truncate">{`/checklist/${guest.phone}`}</p></div>
+                    <p className="text-sm font-medium text-slate-800">Checklist Link</p>
                     <div className="flex items-center gap-1 ml-2">
-                      <a href={`/checklist/${guest.phone}`} target="_blank" rel="noopener noreferrer"><Button variant="ghost" size="icon"><ExternalLink className="h-4 w-4" /></Button></a>
-                      <Button variant="ghost" size="icon" onClick={() => handleCopyLink(`/checklist/${guest.phone}`)}><Copy className="h-4 w-4" /></Button>
+                      <a href={`/checklist/${guest.phone}`} target="_blank" rel="noopener noreferrer"><Button size="sm"><ExternalLink className="mr-2 h-4 w-4" /> Mở</Button></a>
+                      <Button size="sm" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.phone}`)}><Copy className="mr-2 h-4 w-4" /> Sao chép</Button>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader><CardTitle className="flex items-center"><Megaphone className="mr-2" /> Quyền lợi truyền thông</CardTitle></CardHeader>
-              <CardContent><MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} /></CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
             {revenue && (
               <Card>
                 <CardHeader><CardTitle className="flex items-center"><DollarSign className="mr-2" /> Doanh thu</CardTitle></CardHeader>
@@ -201,6 +211,14 @@ const GuestDetailsContent = ({ guestId, guestType }: { guestId: string, guestTyp
                 </CardContent>
               </Card>
             )}
+          </div>
+
+          <div className="space-y-6">
+            <Card>
+              <CardHeader><CardTitle className="flex items-center"><Megaphone className="mr-2" /> Quyền lợi truyền thông</CardTitle></CardHeader>
+              <CardContent><MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} /></CardContent>
+            </Card>
+            
             <Card>
               <CardHeader><CardTitle className="flex items-center"><ClipboardList className="mr-2" /> Tác vụ sự kiện</CardTitle></CardHeader>
               <CardContent>
@@ -213,7 +231,22 @@ const GuestDetailsContent = ({ guestId, guestType }: { guestId: string, guestTyp
           </div>
         </div>
       </ScrollArea>
-      <MaterialsViewerDialog open={isMaterialsOpen} onOpenChange={setIsMaterialsOpen} content={guest.materials} guestName={guest.name} />
+      <MaterialsViewerDialog 
+        open={isMaterialsOpen} 
+        onOpenChange={setIsMaterialsOpen} 
+        content={guest.materials} 
+        guestName={guest.name}
+        onEdit={() => {
+          setIsMaterialsOpen(false);
+          onEdit(guest);
+        }}
+      />
+      <ImagePreviewDialog
+        guest={guest}
+        open={isImagePreviewOpen}
+        onOpenChange={setIsImagePreviewOpen}
+        guestType={guestType}
+      />
     </>
   );
 };
@@ -223,16 +256,17 @@ interface GuestDetailsDialogProps {
   guestType: 'vip' | 'regular' | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit: (guest: any) => void;
 }
 
-export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange }: GuestDetailsDialogProps) => {
+export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onEdit }: GuestDetailsDialogProps) => {
   const isMobile = useIsMobile();
 
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="h-[90vh]">
-          {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} />}
+          {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} />}
         </DrawerContent>
       </Drawer>
     );
@@ -241,7 +275,7 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange }: G
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] p-0">
-        {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} />}
+        {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} />}
       </DialogContent>
     </Dialog>
   );

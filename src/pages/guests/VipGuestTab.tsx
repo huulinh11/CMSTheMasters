@@ -156,6 +156,13 @@ const VipGuestTab = () => {
     setViewingGuestId(guest.id);
   };
 
+  const handleEditFromDetails = (guestToEdit: VipGuest) => {
+    setViewingGuestId(null);
+    setTimeout(() => {
+      handleOpenEditDialog(guestToEdit);
+    }, 150);
+  };
+
   const handleDeleteGuest = (id: string) => {
     deleteMutation.mutate([id]);
   };
@@ -332,6 +339,7 @@ const VipGuestTab = () => {
         guestType="vip"
         open={!!viewingGuestId}
         onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
+        onEdit={handleEditFromDetails}
       />
     </div>
   );
