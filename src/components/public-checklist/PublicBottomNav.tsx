@@ -13,7 +13,7 @@ const PublicBottomNav = () => {
   const { phone } = useParams();
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)]">
+    <footer className="md:relative fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:shadow-none flex-shrink-0">
       <nav className="flex justify-around items-center h-16">
         {navItems.map((item) => (
           <NavItem
