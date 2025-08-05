@@ -127,7 +127,10 @@ const CommissionTab = () => {
         
         {otherUsersSummary.length > 0 && (
           <div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Danh sách saler khác</h2>
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-bold text-slate-800">Danh sách saler khác</h2>
+              <h3 className="text-lg font-semibold text-slate-600">Tổng: {otherUsersSummary.length}</h3>
+            </div>
             {isMobile ? (
               <div className="space-y-4">
                 {otherUsersSummary.map((item, index) => (
@@ -282,14 +285,20 @@ const CommissionTab = () => {
 
       { (commissionType === 'all' || commissionType === 'upsale') && (
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-slate-800">Hoa hồng Upsale</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-slate-800">Hoa hồng Upsale</h2>
+            <h3 className="text-lg font-semibold text-slate-600">Tổng: {processedUpsaleSummary.length}</h3>
+          </div>
           {renderUpsaleContent()}
         </div>
       )}
       
       { !isSale && (commissionType === 'all' || commissionType === 'referrer') && (
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-slate-800">Hoa hồng giới thiệu</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-slate-800">Hoa hồng giới thiệu</h2>
+            <h3 className="text-lg font-semibold text-slate-600">Tổng: {processedReferrerSummary.length}</h3>
+          </div>
           {renderReferrerContent()}
         </div>
       )}

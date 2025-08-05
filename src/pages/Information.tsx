@@ -86,6 +86,7 @@ const Information = () => {
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800">Thông tin</h1>
+        <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
       </div>
       <div className="flex items-center gap-2">
         <Input

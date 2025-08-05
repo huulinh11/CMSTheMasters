@@ -137,7 +137,7 @@ const VipGuestRevenueTab = () => {
     <div className="space-y-4">
       {canViewSummaryStats && <VipRevenueStats guests={filteredGuests} />}
       
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col md:flex-row items-center gap-2">
         <Input
           placeholder="Tìm kiếm theo tên, ID..."
           value={searchTerm}
@@ -146,7 +146,7 @@ const VipGuestRevenueTab = () => {
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-auto justify-between bg-white/80 flex-shrink-0">
+            <Button variant="outline" className="w-full md:w-auto justify-between bg-white/80 flex-shrink-0">
               Lọc <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -167,6 +167,7 @@ const VipGuestRevenueTab = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
 
       {isLoading ? (
         <Skeleton className="h-96 w-full rounded-lg" />

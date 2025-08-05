@@ -225,6 +225,7 @@ export const RegularTasksTab = () => {
           />
         </div>
       </div>
+      <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
       {isLoading ? (
         <Skeleton className="h-96 w-full" />
       ) : isMobile ? (

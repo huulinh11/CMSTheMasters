@@ -1,29 +1,29 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { VipGuest } from "@/types/vip-guest";
+import { VipGuest, ProfileStatus, PROFILE_STATUSES } from "@/types/vip-guest";
 import { Guest } from "@/types/guest";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Copy, Edit, Eye } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ProfileManagementCards } from "@/components/public-user/ProfileManagementCards";
+import { ProfileManagementTable } from "@/components/public-user/ProfileManagementTable";
 import { generateGuestSlug } from "@/lib/slug";
 import { EditProfileDialog } from "@/components/public-user/EditProfileDialog";
 import { ContentBlock } from "@/types/profile-content";
-import { useNavigate } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời' };
+type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời', profile_status?: ProfileStatus };
 
 const ProfileManagementTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [editingGuest, setEditingGuest] = useState<CombinedGuest | null>(null);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
@@ -76,9 +76,15 @@ const ProfileManagementTab = () => {
   const profileUpdateMutation = useMutation({
     mutationFn: async ({ guest, content }: { guest: CombinedGuest, content: ContentBlock[] }) => {
       const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
+      const updatePayload: { profile_content: ContentBlock[], profile_status?: ProfileStatus } = {
+        profile_content: content,
+      };
+      if (guest.profile_status === 'Trống') {
+        updatePayload.profile_status = 'Đang chỉnh sửa';
+      }
       const { error } = await supabase
         .from(tableName)
-        .update({ profile_content: content })
+        .update(updatePayload)
         .eq('id', guest.id);
       if (error) throw error;
     },
@@ -92,6 +98,20 @@ const ProfileManagementTab = () => {
     onError: (error: Error) => {
       showError(`Lỗi: ${error.message}`);
     }
+  });
+
+  const statusUpdateMutation = useMutation({
+    mutationFn: async ({ guest, status }: { guest: CombinedGuest, status: ProfileStatus }) => {
+      const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
+      const { error } = await supabase.from(tableName).update({ profile_status: status }).eq('id', guest.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      showSuccess("Cập nhật trạng thái thành công!");
+    },
+    onError: (error: Error) => showError(error.message),
   });
 
   useEffect(() => {
@@ -119,11 +139,14 @@ const ProfileManagementTab = () => {
   }, [vipGuests, regularGuests]);
 
   const filteredGuests = useMemo(() => {
-    return allGuests.filter(guest => 
-      guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      guest.role.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [allGuests, searchTerm]);
+    return allGuests.filter(guest => {
+      const searchMatch = 
+        guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        guest.role.toLowerCase().includes(searchTerm.toLowerCase());
+      const statusMatch = statusFilter === 'all' || (guest.profile_status || 'Trống') === statusFilter;
+      return searchMatch && statusMatch;
+    });
+  }, [allGuests, searchTerm, statusFilter]);
 
   const handleCopyLink = (slug: string) => {
     const url = `${window.location.origin}/profile/${slug}`;
@@ -148,16 +171,34 @@ const ProfileManagementTab = () => {
     profileUpdateMutation.mutate({ guest: editingGuest, content });
   };
 
+  const handleStatusChange = (guest: CombinedGuest, status: ProfileStatus) => {
+    statusUpdateMutation.mutate({ guest, status });
+  };
+
   const isLoading = isLoadingVip || isLoadingRegular;
 
   return (
     <div className="space-y-4">
-      <Input
-        placeholder="Tìm kiếm khách mời..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex flex-col md:flex-row gap-2">
+        <Input
+          placeholder="Tìm kiếm khách mời..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-grow"
+        />
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue placeholder="Lọc trạng thái" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả trạng thái</SelectItem>
+            {PROFILE_STATUSES.map(status => (
+              <SelectItem key={status} value={status}>{status}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
       {isLoading || backfillSlugsMutation.isPending ? (
         <Skeleton className="h-96 w-full" />
       ) : isMobile ? (
@@ -166,52 +207,16 @@ const ProfileManagementTab = () => {
           onCopyLink={handleCopyLink}
           onEdit={handleEditProfile}
           onView={handleViewDetails}
+          onStatusChange={handleStatusChange}
         />
       ) : (
-        <div className="rounded-lg border bg-white">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tên</TableHead>
-                <TableHead>Vai trò</TableHead>
-                <TableHead>Link Public</TableHead>
-                <TableHead className="text-right">Tác vụ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredGuests.length > 0 ? (
-                filteredGuests.map(guest => (
-                  <TableRow key={guest.id}>
-                    <TableCell className="font-medium">{guest.name}</TableCell>
-                    <TableCell>{guest.role}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {guest.slug ? `/profile/${guest.slug}` : "Đang tạo..."}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button variant="secondary" size="sm" onClick={() => handleViewDetails(guest)}>
-                        <Eye className="mr-2 h-4 w-4" /> Xem
-                      </Button>
-                      {guest.slug && (
-                        <Button variant="outline" size="sm" onClick={() => handleCopyLink(guest.slug!)}>
-                          <Copy className="mr-2 h-4 w-4" /> Sao chép
-                        </Button>
-                      )}
-                      <Button variant="default" size="sm" onClick={() => handleEditProfile(guest)}>
-                        <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    Không tìm thấy khách mời.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <ProfileManagementTable
+          guests={filteredGuests}
+          onCopyLink={handleCopyLink}
+          onEdit={handleEditProfile}
+          onView={handleViewDetails}
+          onStatusChange={handleStatusChange}
+        />
       )}
       <EditProfileDialog
         open={!!editingGuest}

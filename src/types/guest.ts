@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProfileStatus } from './vip-guest';
 
 export const guestFormSchema = z.object({
   name: z.string().min(1, { message: "Tên không được để trống." }),
@@ -17,4 +18,5 @@ export type Guest = GuestFormValues & {
   slug?: string;
   profile_content?: any;
   materials?: string;
+  profile_status?: ProfileStatus;
 };

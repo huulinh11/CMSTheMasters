@@ -68,6 +68,7 @@ const ChecklistTab = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="max-w-sm"
       />
+      <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
       {isLoading ? (
         <Skeleton className="h-96 w-full" />
       ) : isMobile ? (

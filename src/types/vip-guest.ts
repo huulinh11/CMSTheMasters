@@ -13,6 +13,9 @@ export const vipGuestFormSchema = z.object({
 
 export type VipGuestFormValues = z.infer<typeof vipGuestFormSchema>;
 
+export const PROFILE_STATUSES = ['Trống', 'Đang chỉnh sửa', 'Hoàn tất'] as const;
+export type ProfileStatus = (typeof PROFILE_STATUSES)[number];
+
 export type VipGuest = VipGuestFormValues & {
   id: string;
   slug?: string;
@@ -20,4 +23,5 @@ export type VipGuest = VipGuestFormValues & {
   facebook_link?: string;
   profile_content?: any;
   image_url?: string;
+  profile_status?: ProfileStatus;
 };

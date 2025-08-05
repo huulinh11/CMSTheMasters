@@ -1,19 +1,32 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, Edit, Eye } from "lucide-react";
-import { VipGuest } from "@/types/vip-guest";
+import { VipGuest, ProfileStatus, PROFILE_STATUSES } from "@/types/vip-guest";
 import { Guest } from "@/types/guest";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
-type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời' };
+type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời', profile_status?: ProfileStatus };
 
 interface ProfileManagementCardsProps {
   guests: CombinedGuest[];
   onCopyLink: (slug: string) => void;
   onEdit: (guest: CombinedGuest) => void;
   onView: (guest: CombinedGuest) => void;
+  onStatusChange: (guest: CombinedGuest, status: ProfileStatus) => void;
 }
 
-export const ProfileManagementCards = ({ guests, onCopyLink, onEdit, onView }: ProfileManagementCardsProps) => {
+const getStatusColor = (status: ProfileStatus) => {
+  switch (status) {
+    case 'Hoàn tất': return 'bg-green-100 text-green-800';
+    case 'Đang chỉnh sửa': return 'bg-yellow-100 text-yellow-800';
+    case 'Trống':
+    default:
+      return 'bg-slate-100 text-slate-800';
+  }
+};
+
+export const ProfileManagementCards = ({ guests, onCopyLink, onEdit, onView, onStatusChange }: ProfileManagementCardsProps) => {
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
@@ -26,10 +39,17 @@ export const ProfileManagementCards = ({ guests, onCopyLink, onEdit, onView }: P
             <CardContent className="space-y-3 pt-2">
               <div className="border-t border-slate-100 pt-3 space-y-2">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500">Link Public</span>
-                  <span className="font-medium text-slate-800 truncate max-w-[150px]">
-                    {guest.slug ? `/profile/${guest.slug.substring(0, 15)}...` : "Chưa có"}
-                  </span>
+                  <span className="text-slate-500">Trạng thái Profile</span>
+                  <Select value={guest.profile_status || 'Trống'} onValueChange={(v) => onStatusChange(guest, v as ProfileStatus)}>
+                    <SelectTrigger className={cn("w-[150px] h-8 text-xs", getStatusColor(guest.profile_status || 'Trống'))}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROFILE_STATUSES.map(status => (
+                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
@@ -38,7 +58,7 @@ export const ProfileManagementCards = ({ guests, onCopyLink, onEdit, onView }: P
                 </Button>
                 {guest.slug && (
                   <Button className="flex-1" variant="outline" onClick={() => onCopyLink(guest.slug!)}>
-                    <Copy className="mr-2 h-4 w-4" /> Sao chép
+                    <Copy className="h-4 w-4" />
                   </Button>
                 )}
                 <Button className="flex-1" onClick={() => onEdit(guest)}>
