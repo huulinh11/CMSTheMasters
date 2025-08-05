@@ -155,7 +155,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit }: { guestId: string, 
       </header>
 
       <ScrollArea className="h-[calc(100% - 120px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-0">
           <div className="space-y-6">
             <Card>
               <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><Info className="mr-2" /> Thông tin cơ bản</CardTitle></CardHeader>

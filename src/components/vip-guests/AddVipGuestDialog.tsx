@@ -53,6 +53,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AddVipGuestDialogProps {
   open: boolean;
@@ -264,12 +265,14 @@ export const AddVipGuestDialog = ({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent className="max-h-[90vh]">
           <DrawerHeader className="text-left">
             <DrawerTitle>{title}</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
           </DrawerHeader>
-          <VipGuestForm className="px-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
+          <ScrollArea className="overflow-y-auto">
+            <VipGuestForm className="px-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
+          </ScrollArea>
           <DrawerFooter className="pt-2">
             <DrawerClose asChild>
               <Button variant="outline">Hủy</Button>
