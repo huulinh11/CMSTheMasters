@@ -8,10 +8,9 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlusCircle, ChevronDown, Trash2, Upload, Download, MoreVertical } from "lucide-react";
+import { PlusCircle, ChevronDown, Trash2 } from "lucide-react";
 import { GuestTable } from "@/components/guests/GuestTable";
 import { GuestCards } from "@/components/guests/GuestCards";
 import { AddGuestDialog } from "@/components/guests/AddGuestDialog";
@@ -192,26 +191,9 @@ const RegularGuestTab = () => {
         <>
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                    <Download className="mr-2 h-4 w-4" /> Export
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Upload className="mr-2 h-4 w-4" /> Import
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button onClick={() => { setEditingGuest(null); setIsDialogOpen(true); }} size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" /> Thêm
-              </Button>
-            </div>
+            <Button onClick={() => { setEditingGuest(null); setIsDialogOpen(true); }} size="sm">
+              <PlusCircle className="mr-2 h-4 w-4" /> Thêm
+            </Button>
           </div>
           <div className="flex items-center gap-2">
             <Input
@@ -253,13 +235,9 @@ const RegularGuestTab = () => {
         <>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
-            <div className="flex items-center gap-2">
-              <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export</Button>
-              <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button>
-              <Button onClick={() => { setEditingGuest(null); setIsDialogOpen(true); }}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Thêm
-              </Button>
-            </div>
+            <Button onClick={() => { setEditingGuest(null); setIsDialogOpen(true); }}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Thêm
+            </Button>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-2">
             <Input

@@ -3,6 +3,7 @@ import VipGuestTab from "./guests/VipGuestTab";
 import RegularGuestTab from "./guests/RegularGuestTab";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { ImportExportActions } from "@/components/guests/ImportExportActions";
 
 const GuestsPage = () => {
   const [searchParams] = useSearchParams();
@@ -24,7 +25,10 @@ const GuestsPage = () => {
 
   return (
     <div className="p-4 md:p-6">
-      <h1 className="text-2xl font-bold text-slate-800 mb-4">Quản lý khách mời</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+        <h1 className="text-2xl font-bold text-slate-800">Quản lý khách mời</h1>
+        <ImportExportActions />
+      </div>
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:w-[400px] bg-primary/10 p-1 h-12 rounded-xl">
           <TabsTrigger value="vip" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Chức vụ</TabsTrigger>
