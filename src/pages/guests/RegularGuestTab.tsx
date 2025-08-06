@@ -321,7 +321,7 @@ const RegularGuestTab = () => {
           onDelete={handleDeleteGuest}
           onView={handleViewGuest}
           roleConfigs={roleConfigs}
-          canDelete={canDelete}
+          canDelete={!!canDelete}
         />
       ) : (
         <GuestTable
@@ -333,7 +333,7 @@ const RegularGuestTab = () => {
           onDelete={handleDeleteGuest}
           onView={handleViewGuest}
           roleConfigs={roleConfigs}
-          canDelete={canDelete}
+          canDelete={!!canDelete}
         />
       )}
 

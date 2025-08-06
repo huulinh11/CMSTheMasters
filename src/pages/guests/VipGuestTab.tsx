@@ -319,7 +319,7 @@ const VipGuestTab = () => {
           onDelete={handleDeleteGuest}
           onView={handleViewGuest}
           roleConfigs={roleConfigs}
-          canDelete={canDelete}
+          canDelete={!!canDelete}
         />
       ) : (
         <VipGuestTable
@@ -331,7 +331,7 @@ const VipGuestTab = () => {
           onDelete={handleDeleteGuest}
           onView={handleViewGuest}
           roleConfigs={roleConfigs}
-          canDelete={canDelete}
+          canDelete={!!canDelete}
         />
       )}
 
