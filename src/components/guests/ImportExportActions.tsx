@@ -36,16 +36,70 @@ export const ImportExportActions = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const handleDownloadTemplate = () => {
-    const csv = CSV_HEADERS.join(',');
-    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "mau-import-khach-moi.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadTemplate = async () => {
+    setIsProcessing(true);
+    const toastId = showLoading("Đang tạo file mẫu...");
+    try {
+      let sampleData = null;
+
+      // Try to get the latest VIP guest
+      const { data: latestVip } = await supabase.from('vip_guests').select('*').order('created_at', { ascending: false }).limit(1).single();
+      if (latestVip) {
+        const { data: revenue } = await supabase.from('vip_guest_revenue').select('sponsorship').eq('guest_id', latestVip.id).single();
+        sampleData = {
+          ...latestVip,
+          type: 'Chức vụ',
+          secondary_info: latestVip.secondary_info,
+          sponsorship: revenue?.sponsorship || 0,
+          payment_source: '',
+        };
+      } else {
+        // If no VIP, try the latest regular guest
+        const { data: latestGuest } = await supabase.from('guests').select('*').order('created_at', { ascending: false }).limit(1).single();
+        if (latestGuest) {
+          const { data: revenue } = await supabase.from('guest_revenue').select('sponsorship, payment_source').eq('guest_id', latestGuest.id).single();
+          sampleData = {
+            ...latestGuest,
+            type: 'Khách mời',
+            secondary_info: '',
+            sponsorship: revenue?.sponsorship || 0,
+            payment_source: revenue?.payment_source || '',
+          };
+        }
+      }
+
+      const headerRow = CSV_HEADERS.join(',');
+      let csvContent = [headerRow];
+
+      if (sampleData) {
+        // Clear the ID for the template, as it should be auto-generated on import if empty
+        (sampleData as any).id = ''; 
+        const sampleRow = CSV_HEADERS.map(header => {
+          const value = (sampleData as any)[header];
+          if (value === null || value === undefined) return '';
+          return `"${String(value).replace(/"/g, '""')}"`;
+        }).join(',');
+        csvContent.push(sampleRow);
+      }
+
+      const csv = csvContent.join('\n');
+      const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "mau-import-khach-moi.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      dismissToast(toastId);
+      showSuccess("Tải file mẫu thành công!");
+    } catch (error: any) {
+      dismissToast(toastId);
+      showError(`Lỗi khi tạo file mẫu: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleExport = async () => {
