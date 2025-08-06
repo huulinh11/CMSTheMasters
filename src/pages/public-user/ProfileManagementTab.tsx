@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { VipGuest, ProfileStatus, PROFILE_STATUSES } from "@/types/vip-guest";
+import { VipGuest, ProfileStatus } from "@/types/vip-guest";
 import { Guest } from "@/types/guest";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -15,12 +15,15 @@ import { generateGuestSlug } from "@/lib/slug";
 import { EditProfileDialog } from "@/components/public-user/EditProfileDialog";
 import { ContentBlock } from "@/types/profile-content";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời', profile_status?: ProfileStatus };
 
 const ProfileManagementTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
   const [editingGuest, setEditingGuest] = useState<CombinedGuest | null>(null);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
@@ -38,6 +41,15 @@ const ProfileManagementTab = () => {
     queryKey: ['guests'],
     queryFn: async () => {
       const { data, error } = await supabase.from('guests').select('*');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: roleConfigs = [], isLoading: isLoadingRoles } = useQuery<RoleConfiguration[]>({
+    queryKey: ['role_configurations'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('role_configurations').select('*');
       if (error) throw error;
       return data || [];
     }
@@ -101,9 +113,9 @@ const ProfileManagementTab = () => {
   });
 
   const statusUpdateMutation = useMutation({
-    mutationFn: async ({ guest, status }: { guest: CombinedGuest, status: ProfileStatus }) => {
+    mutationFn: async ({ guest, newStatus }: { guest: CombinedGuest, newStatus: ProfileStatus }) => {
       const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
-      const { error } = await supabase.from(tableName).update({ profile_status: status }).eq('id', guest.id);
+      const { error } = await supabase.from(tableName).update({ profile_status: newStatus }).eq('id', guest.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -138,15 +150,30 @@ const ProfileManagementTab = () => {
     return combined.filter(g => g.role !== 'Super Vip');
   }, [vipGuests, regularGuests]);
 
+  const getEffectiveStatus = (guest: CombinedGuest): ProfileStatus => {
+    if (guest.profile_status === 'Hoàn tất') {
+      return 'Hoàn tất';
+    }
+    if (!guest.profile_content || (Array.isArray(guest.profile_content) && guest.profile_content.length === 0)) {
+      return 'Trống';
+    }
+    return 'Đang chỉnh sửa';
+  };
+
   const filteredGuests = useMemo(() => {
     return allGuests.filter(guest => {
       const searchMatch = 
         guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         guest.role.toLowerCase().includes(searchTerm.toLowerCase());
-      const statusMatch = statusFilter === 'all' || (guest.profile_status || 'Trống') === statusFilter;
-      return searchMatch && statusMatch;
+      
+      const effectiveStatus = getEffectiveStatus(guest);
+      const statusMatch = statusFilter === 'all' || effectiveStatus === statusFilter;
+      const typeMatch = typeFilter === 'all' || guest.type === typeFilter;
+      const roleMatch = roleFilter === 'all' || guest.role === roleFilter;
+
+      return searchMatch && statusMatch && typeMatch && roleMatch;
     });
-  }, [allGuests, searchTerm, statusFilter]);
+  }, [allGuests, searchTerm, statusFilter, typeFilter, roleFilter]);
 
   const handleCopyLink = (slug: string) => {
     const url = `${window.location.origin}/profile/${slug}`;
@@ -171,11 +198,25 @@ const ProfileManagementTab = () => {
     profileUpdateMutation.mutate({ guest: editingGuest, content });
   };
 
-  const handleStatusChange = (guest: CombinedGuest, status: ProfileStatus) => {
-    statusUpdateMutation.mutate({ guest, status });
+  const handleStatusChange = (guest: CombinedGuest, isCompleted: boolean) => {
+    let newStatus: ProfileStatus;
+    if (isCompleted) {
+      newStatus = 'Hoàn tất';
+    } else {
+      if (!guest.profile_content || (Array.isArray(guest.profile_content) && guest.profile_content.length === 0)) {
+        newStatus = 'Trống';
+      } else {
+        newStatus = 'Đang chỉnh sửa';
+      }
+    }
+    statusUpdateMutation.mutate({ guest, newStatus });
   };
 
-  const isLoading = isLoadingVip || isLoadingRegular;
+  const isLoading = isLoadingVip || isLoadingRegular || isLoadingRoles;
+
+  const allRoleOptions = useMemo(() => {
+    return [...new Set(roleConfigs.map(r => r.name))].sort();
+  }, [roleConfigs]);
 
   return (
     <div className="space-y-4">
@@ -186,13 +227,34 @@ const ProfileManagementTab = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow"
         />
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="Lọc loại" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả loại</SelectItem>
+            <SelectItem value="Chức vụ">Chức vụ</SelectItem>
+            <SelectItem value="Khách mời">Khách mời</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="Lọc vai trò" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả vai trò</SelectItem>
+            {allRoleOptions.map(role => (
+              <SelectItem key={role} value={role}>{role}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full md:w-[200px]">
             <SelectValue placeholder="Lọc trạng thái" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả trạng thái</SelectItem>
-            {PROFILE_STATUSES.map(status => (
+            {['Trống', 'Đang chỉnh sửa', 'Hoàn tất'].map(status => (
               <SelectItem key={status} value={status}>{status}</SelectItem>
             ))}
           </SelectContent>
@@ -203,7 +265,7 @@ const ProfileManagementTab = () => {
         <Skeleton className="h-96 w-full" />
       ) : isMobile ? (
         <ProfileManagementCards 
-          guests={filteredGuests}
+          guests={filteredGuests.map(g => ({ ...g, effectiveStatus: getEffectiveStatus(g) }))}
           onCopyLink={handleCopyLink}
           onEdit={handleEditProfile}
           onView={handleViewDetails}
@@ -211,7 +273,7 @@ const ProfileManagementTab = () => {
         />
       ) : (
         <ProfileManagementTable
-          guests={filteredGuests}
+          guests={filteredGuests.map(g => ({ ...g, effectiveStatus: getEffectiveStatus(g) }))}
           onCopyLink={handleCopyLink}
           onEdit={handleEditProfile}
           onView={handleViewDetails}

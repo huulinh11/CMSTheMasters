@@ -1,19 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, Edit, Eye } from "lucide-react";
-import { VipGuest, ProfileStatus, PROFILE_STATUSES } from "@/types/vip-guest";
+import { VipGuest, ProfileStatus } from "@/types/vip-guest";
 import { Guest } from "@/types/guest";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời', profile_status?: ProfileStatus };
+type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời', profile_status?: ProfileStatus, effectiveStatus: ProfileStatus };
 
 interface ProfileManagementCardsProps {
   guests: CombinedGuest[];
   onCopyLink: (slug: string) => void;
   onEdit: (guest: CombinedGuest) => void;
   onView: (guest: CombinedGuest) => void;
-  onStatusChange: (guest: CombinedGuest, status: ProfileStatus) => void;
+  onStatusChange: (guest: CombinedGuest, isCompleted: boolean) => void;
 }
 
 const getStatusColor = (status: ProfileStatus) => {
@@ -40,16 +41,17 @@ export const ProfileManagementCards = ({ guests, onCopyLink, onEdit, onView, onS
               <div className="border-t border-slate-100 pt-3 space-y-2">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500">Trạng thái Profile</span>
-                  <Select value={guest.profile_status || 'Trống'} onValueChange={(v) => onStatusChange(guest, v as ProfileStatus)}>
-                    <SelectTrigger className={cn("w-[150px] h-8 text-xs", getStatusColor(guest.profile_status || 'Trống'))}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PROFILE_STATUSES.map(status => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Badge className={cn(getStatusColor(guest.effectiveStatus))}>{guest.effectiveStatus}</Badge>
+                </div>
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox
+                    id={`completed-card-${guest.id}`}
+                    checked={guest.profile_status === 'Hoàn tất'}
+                    onCheckedChange={(checked) => onStatusChange(guest, !!checked)}
+                  />
+                  <label htmlFor={`completed-card-${guest.id}`} className="text-sm font-medium leading-none">
+                    Đánh dấu hoàn tất
+                  </label>
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
