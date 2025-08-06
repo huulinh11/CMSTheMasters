@@ -15,6 +15,11 @@ const CSV_HEADERS = [
   "secondary_info", "sponsorship", "payment_source", "materials"
 ];
 
+const CSV_DISPLAY_HEADERS = [
+  "ID (để trống nếu tạo mới)", "Tên", "Vai trò", "SĐT", "Loại (Chức vụ/Khách mời)", "Người giới thiệu", "Ghi chú", 
+  "Thông tin phụ (cho Chức vụ)", "Tài trợ", "Nguồn thanh toán (cho Khách mời)", "Tư liệu"
+];
+
 // Helper to generate a unique ID for new guests
 const generateNewId = (role: string, type: 'Chức vụ' | 'Khách mời', existingGuests: (VipGuest | Guest)[]): string => {
     const prefixMap: Record<string, string> = {
@@ -68,8 +73,9 @@ export const ImportExportActions = () => {
         }
       }
 
+      const displayHeaderRow = CSV_DISPLAY_HEADERS.join(',');
       const headerRow = CSV_HEADERS.join(',');
-      let csvContent = [headerRow];
+      let csvContent = [displayHeaderRow, headerRow];
 
       if (sampleData) {
         // Clear the ID for the template, as it should be auto-generated on import if empty
@@ -145,7 +151,7 @@ export const ImportExportActions = () => {
         }).join(',');
       });
 
-      const csv = [CSV_HEADERS.join(','), ...csvData].join('\n');
+      const csv = [CSV_DISPLAY_HEADERS.join(','), CSV_HEADERS.join(','), ...csvData].join('\n');
       const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Excel
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
@@ -177,11 +183,30 @@ export const ImportExportActions = () => {
     const toastId = showLoading("Đang xử lý file import...");
 
     Papa.parse(file, {
-      header: true,
       skipEmptyLines: true,
       complete: async (results) => {
         try {
-          const rows = results.data as any[];
+          const data = results.data as string[][];
+          if (data.length < 2) throw new Error("File không có dữ liệu hoặc thiếu header.");
+
+          // Check if the first row is the display header, and if so, remove it.
+          if (data[0][0].includes("ID")) {
+              data.shift();
+          }
+          
+          const headers = data.shift();
+          if (!headers || headers.join(',') !== CSV_HEADERS.join(',')) {
+            throw new Error("Headers của file không khớp với mẫu. Vui lòng tải lại file mẫu.");
+          }
+
+          const rows = data.map(rowArray => {
+              const obj: { [key: string]: string } = {};
+              headers.forEach((header, i) => {
+                  obj[header] = rowArray[i];
+              });
+              return obj;
+          });
+
           if (rows.length === 0) throw new Error("File không có dữ liệu.");
 
           const { data: existingVipGuests } = await supabase.from('vip_guests').select('id, role');
