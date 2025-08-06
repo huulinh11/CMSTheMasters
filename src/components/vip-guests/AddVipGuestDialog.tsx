@@ -4,7 +4,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -48,7 +47,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { VipGuest, VipGuestFormValues, vipGuestFormSchema } from "@/types/vip-guest";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -59,199 +58,78 @@ interface AddVipGuestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: VipGuestFormValues) => void;
-  defaultValues?: VipGuest | null;
+  defaultValues?: (VipGuest & { sponsorship_amount?: number, paid_amount?: number }) | null;
   allGuests: VipGuest[];
   roleConfigs: RoleConfiguration[];
 }
 
-const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfigs }: { className?: string, onSubmit: (values: VipGuestFormValues) => void, defaultValues?: VipGuest | null, allGuests: VipGuest[], roleConfigs: RoleConfiguration[] }) => {
+const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfigs }: { className?: string, onSubmit: (values: VipGuestFormValues) => void, defaultValues?: (VipGuest & { sponsorship_amount?: number, paid_amount?: number }) | null, allGuests: VipGuest[], roleConfigs: RoleConfiguration[] }) => {
   const form = useForm<VipGuestFormValues>({
     resolver: zodResolver(vipGuestFormSchema),
-    defaultValues: defaultValues || {},
   });
+
+  const { watch, setValue } = form;
+  const selectedRole = watch("role");
+  const sponsorshipAmount = watch("sponsorship_amount");
+
+  const [formattedSponsorship, setFormattedSponsorship] = useState("0");
+  const [formattedPaid, setFormattedPaid] = useState("0");
+
+  useEffect(() => {
+    if (selectedRole) {
+      const roleConfig = roleConfigs.find(rc => rc.name === selectedRole);
+      if (roleConfig) {
+        const newAmount = roleConfig.sponsorship_amount;
+        setValue("sponsorship_amount", newAmount);
+        setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newAmount));
+      }
+    }
+  }, [selectedRole, roleConfigs, setValue]);
 
   useEffect(() => {
     if (defaultValues) {
       form.reset(defaultValues);
+      const sponsorship = defaultValues.sponsorship_amount || 0;
+      setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(sponsorship));
     } else {
       form.reset({
-        name: "",
-        role: undefined,
-        secondaryInfo: "",
-        phone: "",
-        referrer: "",
-        notes: "",
+        name: "", role: undefined, secondaryInfo: "", phone: "", referrer: "", notes: "",
+        sponsorship_amount: 0, paid_amount: 0,
       });
+      setFormattedSponsorship("0");
+      setFormattedPaid("0");
     }
   }, [defaultValues, form]);
 
-  const referrerOptions = allGuests.filter(g => g.id !== defaultValues?.id);
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, field: "sponsorship_amount" | "paid_amount", formatter: React.Dispatch<React.SetStateAction<string>>) => {
+    const rawValue = e.target.value;
+    const numericValue = parseInt(rawValue.replace(/[^0-9]/g, ''), 10) || 0;
+    setValue(field, numericValue);
+    formatter(new Intl.NumberFormat('vi-VN').format(numericValue));
+  };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-4", className)}>
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tên</FormLabel>
-              <FormControl>
-                <Input placeholder="Nhập tên khách mời" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+        <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-4">
+          <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Tên</FormLabel><FormControl><Input placeholder="Nhập tên khách mời" {...field} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Số điện thoại</FormLabel><FormControl><Input placeholder="Nhập số điện thoại" {...field} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Vai trò</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Chọn vai trò" /></SelectTrigger></FormControl><SelectContent>{roleConfigs.map((role) => (<SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="secondaryInfo" render={({ field }) => (<FormItem><FormLabel>Thông tin phụ</FormLabel><FormControl><Input placeholder="Nhập thông tin phụ" {...field} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="sponsorship_amount" render={() => (<FormItem><FormLabel>Số tiền tài trợ (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedSponsorship} onChange={(e) => handleAmountChange(e, "sponsorship_amount", setFormattedSponsorship)} /></FormControl><FormMessage /></FormItem>)} />
+          {!defaultValues && (
+            <FormField control={form.control} name="paid_amount" render={() => (<FormItem><FormLabel>Số tiền đã thanh toán (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedPaid} onChange={(e) => handleAmountChange(e, "paid_amount", setFormattedPaid)} /></FormControl><Button size="sm" variant="link" className="p-0 h-auto mt-1" onClick={() => { const amount = sponsorshipAmount || 0; setValue("paid_amount", amount); setFormattedPaid(new Intl.NumberFormat('vi-VN').format(amount)); }}>Thanh toán đủ</Button><FormMessage /></FormItem>)} />
           )}
-        />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Vai trò</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn vai trò" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {roleConfigs.map((role) => (
-                    <SelectItem key={role.id} value={role.name}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Số điện thoại</FormLabel>
-              <FormControl>
-                <Input placeholder="Nhập số điện thoại" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="secondaryInfo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Thông tin phụ</FormLabel>
-              <FormControl>
-                <Input placeholder="Nhập thông tin phụ" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="referrer"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Người giới thiệu</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        "w-full justify-between",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value
-                        ? referrerOptions.find(
-                            (guest) => guest.name === field.value
-                          )?.name
-                        : "Chọn người giới thiệu"}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                  <Command>
-                    <CommandInput placeholder="Tìm kiếm khách..." />
-                    <CommandEmpty>Không tìm thấy khách.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value=""
-                        onSelect={() => {
-                          form.setValue("referrer", "");
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            !field.value ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        (Không có)
-                      </CommandItem>
-                      {referrerOptions.map((guest) => (
-                        <CommandItem
-                          value={guest.name}
-                          key={guest.id}
-                          onSelect={() => {
-                            form.setValue("referrer", guest.name);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              guest.name === field.value
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                          {guest.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ghi chú</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Nhập ghi chú" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField control={form.control} name="referrer" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Người giới thiệu</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value && "text-muted-foreground")}>{field.value ? allGuests.find((guest) => guest.name === field.value)?.name : "Chọn người giới thiệu"}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Tìm kiếm khách..." /><CommandEmpty>Không tìm thấy khách.</CommandEmpty><CommandGroup><CommandItem value="" onSelect={() => { form.setValue("referrer", ""); }}><Check className={cn("mr-2 h-4 w-4", !field.value ? "opacity-100" : "opacity-0")} />(Không có)</CommandItem>{allGuests.filter(g => g.id !== defaultValues?.id).map((guest) => (<CommandItem value={guest.name} key={guest.id} onSelect={() => { form.setValue("referrer", guest.name); }}><Check className={cn("mr-2 h-4 w-4", guest.name === field.value ? "opacity-100" : "opacity-0")} />{guest.name}</CommandItem>))}</CommandGroup></Command></PopoverContent></Popover><FormMessage /></FormItem>)} />
+        </div>
+        <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Ghi chú</FormLabel><FormControl><Textarea placeholder="Nhập ghi chú" {...field} /></FormControl><FormMessage /></FormItem>)} />
         <Button type="submit" className="w-full">Lưu</Button>
       </form>
     </Form>
   );
 }
 
-export const AddVipGuestDialog = ({
-  open,
-  onOpenChange,
-  onSubmit,
-  defaultValues,
-  allGuests,
-  roleConfigs,
-}: AddVipGuestDialogProps) => {
+export const AddVipGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, allGuests, roleConfigs }: AddVipGuestDialogProps) => {
   const isMobile = useIsMobile();
   
   const handleFormSubmit = (values: VipGuestFormValues) => {
@@ -266,18 +144,9 @@ export const AddVipGuestDialog = ({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[90vh] flex flex-col">
-          <DrawerHeader className="text-left flex-shrink-0">
-            <DrawerTitle>{title}</DrawerTitle>
-            <DrawerDescription>{description}</DrawerDescription>
-          </DrawerHeader>
-          <ScrollArea className="overflow-y-auto flex-grow">
-            <VipGuestForm className="px-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
-          </ScrollArea>
-          <DrawerFooter className="pt-2 flex-shrink-0">
-            <DrawerClose asChild>
-              <Button variant="outline">Hủy</Button>
-            </DrawerClose>
-          </DrawerFooter>
+          <DrawerHeader className="text-left flex-shrink-0"><DrawerTitle>{title}</DrawerTitle><DrawerDescription>{description}</DrawerDescription></DrawerHeader>
+          <ScrollArea className="overflow-y-auto flex-grow"><VipGuestForm className="px-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} /></ScrollArea>
+          <DrawerFooter className="pt-2 flex-shrink-0"><DrawerClose asChild><Button variant="outline">Hủy</Button></DrawerClose></DrawerFooter>
         </DrawerContent>
       </Drawer>
     );
@@ -285,13 +154,7 @@ export const AddVipGuestDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <VipGuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
-      </DialogContent>
+      <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader><VipGuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} /></DialogContent>
     </Dialog>
   );
 };

@@ -43,7 +43,7 @@ const VipGuestTab = () => {
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingGuest, setEditingGuest] = useState<VipGuest | null>(null);
+  const [editingGuest, setEditingGuest] = useState<(VipGuest & { sponsorship_amount?: number }) | null>(null);
   const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -69,6 +69,15 @@ const VipGuestTab = () => {
     }
   });
 
+  const { data: revenueData = [] } = useQuery<{guest_id: string, sponsorship: number}[]>({
+    queryKey: ['vip_guest_revenue_for_guests_tab'],
+    queryFn: async () => {
+        const { data, error } = await supabase.from('vip_guest_revenue').select('guest_id, sponsorship');
+        if (error) throw error;
+        return data || [];
+    }
+  });
+
   const { data: roleConfigs = [], isLoading: isLoadingRoles } = useQuery<RoleConfiguration[]>({
     queryKey: ['role_configurations', 'Chức vụ'],
     queryFn: async () => {
@@ -79,27 +88,36 @@ const VipGuestTab = () => {
   });
 
   const addOrEditMutation = useMutation({
-    mutationFn: async (guest: VipGuest) => {
-      const { secondaryInfo, ...rest } = guest;
-      const guestForDb = { ...rest, secondary_info: secondaryInfo };
+    mutationFn: async (data: { values: VipGuestFormValues, isEditing: boolean, guestId: string, slug: string }) => {
+      const { values, isEditing, guestId, slug } = data;
+      const { sponsorship_amount, paid_amount, ...guestValues } = values;
+
+      const { secondaryInfo, ...rest } = guestValues;
+      const guestForDb = { ...rest, id: guestId, slug, secondary_info: secondaryInfo };
       
       const { error: guestError } = await supabase.from('vip_guests').upsert(guestForDb);
       if (guestError) throw guestError;
       
-      if (!editingGuest) {
-        const roleConfig = roleConfigs.find(rc => rc.name === guest.role);
-        if (roleConfig) {
-          const { error: revenueError } = await supabase.from('vip_guest_revenue').upsert({
-            guest_id: guest.id,
-            sponsorship: roleConfig.sponsorship_amount
-          }, { onConflict: 'guest_id' });
-          if (revenueError) throw revenueError;
-        }
+      if (sponsorship_amount !== undefined) {
+        const { error: revenueError } = await supabase.from('vip_guest_revenue').upsert({
+          guest_id: guestId,
+          sponsorship: sponsorship_amount,
+        }, { onConflict: 'guest_id' });
+        if (revenueError) throw revenueError;
+      }
+
+      if (!isEditing && paid_amount && paid_amount > 0) {
+        const { error: paymentError } = await supabase.from('vip_payments').insert({
+          guest_id: guestId,
+          amount: paid_amount,
+        });
+        if (paymentError) throw paymentError;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
       queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+      queryClient.invalidateQueries({ queryKey: ['vip_guest_revenue_for_guests_tab'] });
       showSuccess(editingGuest ? "Cập nhật khách thành công!" : "Thêm khách thành công!");
       setIsFormOpen(false);
       setEditingGuest(null);
@@ -116,6 +134,7 @@ const VipGuestTab = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
       queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+      queryClient.invalidateQueries({ queryKey: ['vip_guest_revenue_for_guests_tab'] });
       showSuccess(`Đã xóa ${variables.length} khách.`);
       setSelectedGuests([]);
     },
@@ -144,16 +163,18 @@ const VipGuestTab = () => {
   };
 
   const handleAddOrEditGuest = (values: VipGuestFormValues) => {
-    const guestToUpsert: VipGuest = {
-      id: editingGuest ? editingGuest.id : generateId(values.role, guests),
-      slug: editingGuest?.slug || generateGuestSlug(values.name),
-      ...values,
-    };
-    addOrEditMutation.mutate(guestToUpsert);
+    const isEditing = !!editingGuest;
+    const guestId = editingGuest ? editingGuest.id : generateId(values.role, guests);
+    const slug = editingGuest?.slug || generateGuestSlug(values.name);
+    addOrEditMutation.mutate({ values, isEditing, guestId, slug });
   };
 
   const handleOpenEditDialog = (guest: VipGuest) => {
-    setEditingGuest(guest);
+    const revenue = revenueData.find(r => r.guest_id === guest.id);
+    setEditingGuest({
+        ...guest,
+        sponsorship_amount: revenue?.sponsorship,
+    });
     setIsFormOpen(true);
   };
   

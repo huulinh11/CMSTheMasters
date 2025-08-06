@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ProfileStatus } from './vip-guest';
+import { PAYMENT_SOURCES } from './guest-revenue';
 
 export const guestFormSchema = z.object({
   name: z.string().min(1, { message: "Tên không được để trống." }),
@@ -9,6 +10,9 @@ export const guestFormSchema = z.object({
   phone: z.string().refine(val => val.length === 0 || val.length >= 10, { message: "Số điện thoại phải có ít nhất 10 ký tự hoặc để trống." }),
   referrer: z.string().optional(),
   notes: z.string().optional(),
+  sponsorship_amount: z.number().min(0, "Số tiền không được âm.").optional(),
+  paid_amount: z.number().min(0, "Số tiền không được âm.").optional(),
+  payment_source: z.enum(PAYMENT_SOURCES).optional(),
 });
 
 export type GuestFormValues = z.infer<typeof guestFormSchema>;

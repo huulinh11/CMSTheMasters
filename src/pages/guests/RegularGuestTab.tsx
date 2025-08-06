@@ -23,6 +23,7 @@ import { RoleConfiguration } from "@/types/role-configuration";
 import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
+import { PaymentSource } from "@/types/guest-revenue";
 
 const generateId = (role: string, existingGuests: Guest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -43,7 +44,7 @@ const RegularGuestTab = () => {
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
+  const [editingGuest, setEditingGuest] = useState<(Guest & { sponsorship_amount?: number, payment_source?: PaymentSource }) | null>(null);
   const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,6 +67,15 @@ const RegularGuestTab = () => {
     }
   });
 
+  const { data: revenueData = [] } = useQuery<{guest_id: string, sponsorship: number, payment_source: PaymentSource}[]>({
+    queryKey: ['guest_revenue_for_guests_tab'],
+    queryFn: async () => {
+        const { data, error } = await supabase.from('guest_revenue').select('guest_id, sponsorship, payment_source');
+        if (error) throw error;
+        return data || [];
+    }
+  });
+
   const { data: vipGuests = [] } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests_for_referrer'],
     queryFn: async () => {
@@ -85,24 +95,35 @@ const RegularGuestTab = () => {
   });
 
   const addOrEditMutation = useMutation({
-    mutationFn: async (guest: Guest) => {
-      const { error: guestError } = await supabase.from('guests').upsert(guest);
+    mutationFn: async (data: { values: GuestFormValues, isEditing: boolean, guestId: string, slug: string }) => {
+      const { values, isEditing, guestId, slug } = data;
+      const { sponsorship_amount, paid_amount, payment_source, ...guestValues } = values;
+
+      const guestForDb = { ...guestValues, id: guestId, slug };
+      const { error: guestError } = await supabase.from('guests').upsert(guestForDb);
       if (guestError) throw guestError;
 
-      if (!editingGuest) {
-        const roleConfig = roleConfigs.find(rc => rc.name === guest.role);
-        if (roleConfig) {
-          const { error: revenueError } = await supabase.from('guest_revenue').upsert({
-            guest_id: guest.id,
-            sponsorship: roleConfig.sponsorship_amount
-          }, { onConflict: 'guest_id' });
-          if (revenueError) throw revenueError;
-        }
+      if (sponsorship_amount !== undefined || payment_source) {
+        const { error: revenueError } = await supabase.from('guest_revenue').upsert({
+          guest_id: guestId,
+          sponsorship: sponsorship_amount || 0,
+          payment_source: payment_source || 'Trống',
+        }, { onConflict: 'guest_id' });
+        if (revenueError) throw revenueError;
+      }
+
+      if (!isEditing && paid_amount && paid_amount > 0) {
+        const { error: paymentError } = await supabase.from('guest_payments').insert({
+          guest_id: guestId,
+          amount: paid_amount,
+        });
+        if (paymentError) throw paymentError;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guests'] });
-      queryClient.invalidateQueries({ queryKey: ['guest_revenue'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_for_guests_tab'] });
       showSuccess(editingGuest ? "Cập nhật khách mời thành công!" : "Thêm khách mời thành công!");
       setIsDialogOpen(false);
       setEditingGuest(null);
@@ -118,7 +139,8 @@ const RegularGuestTab = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['guests'] });
-      queryClient.invalidateQueries({ queryKey: ['guest_revenue'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_for_guests_tab'] });
       showSuccess(`Đã xóa ${variables.length} khách mời.`);
       setSelectedGuests([]);
     },
@@ -147,16 +169,19 @@ const RegularGuestTab = () => {
   };
 
   const handleAddOrEditGuest = (values: GuestFormValues) => {
-    const guestToUpsert: Guest = {
-      id: editingGuest ? editingGuest.id : generateId(values.role, guests),
-      slug: editingGuest?.slug || generateGuestSlug(values.name),
-      ...values,
-    };
-    addOrEditMutation.mutate(guestToUpsert);
+    const isEditing = !!editingGuest;
+    const guestId = editingGuest ? editingGuest.id : generateId(values.role, guests);
+    const slug = editingGuest?.slug || generateGuestSlug(values.name);
+    addOrEditMutation.mutate({ values, isEditing, guestId, slug });
   };
 
   const handleOpenEditDialog = (guest: Guest) => {
-    setEditingGuest(guest);
+    const revenue = revenueData.find(r => r.guest_id === guest.id);
+    setEditingGuest({
+        ...guest,
+        sponsorship_amount: revenue?.sponsorship,
+        payment_source: revenue?.payment_source,
+    });
     setIsDialogOpen(true);
   };
 

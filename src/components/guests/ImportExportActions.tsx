@@ -233,7 +233,7 @@ export const ImportExportActions = () => {
             }
 
             const isVip = type === 'Chức vụ';
-            const guestId = row.id || generateNewId(row.role, type, isVip ? (existingVipGuests || []) : (existingGuests || []));
+            const guestId = row.id || generateNewId(row.role, type as 'Chức vụ' | 'Khách mời', isVip ? (existingVipGuests || []) : (existingGuests || []));
 
             const commonData = {
               id: guestId,
