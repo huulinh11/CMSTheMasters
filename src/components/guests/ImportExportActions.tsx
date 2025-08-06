@@ -186,6 +186,10 @@ export const ImportExportActions = () => {
 
           const { data: existingVipGuests } = await supabase.from('vip_guests').select('id, role');
           const { data: existingGuests } = await supabase.from('guests').select('id, role');
+          const { data: roleConfigs, error: roleError } = await supabase.from('role_configurations').select('name, type');
+          if (roleError) throw new Error(`Không thể tải cấu hình vai trò: ${roleError.message}`);
+
+          const roleTypeMap = new Map(roleConfigs.map(rc => [rc.name, rc.type]));
 
           const vipGuestsToUpsert: any[] = [];
           const guestsToUpsert: any[] = [];
@@ -193,8 +197,15 @@ export const ImportExportActions = () => {
           const guestRevenueToUpsert: any[] = [];
 
           for (const row of rows) {
-            const type = row.type;
-            if (!['Chức vụ', 'Khách mời'].includes(type)) continue;
+            let type = row.type;
+            if (!type && row.role) {
+              type = roleTypeMap.get(row.role);
+            }
+
+            if (!['Chức vụ', 'Khách mời'].includes(type)) {
+              console.warn(`Bỏ qua dòng do không xác định được loại khách mời cho vai trò "${row.role}":`, row);
+              continue;
+            }
 
             const isVip = type === 'Chức vụ';
             const guestId = row.id || generateNewId(row.role, type, isVip ? (existingVipGuests || []) : (existingGuests || []));
