@@ -38,7 +38,7 @@ const BottomNav = () => {
   const isMorePageActive = moreLinks.some(link => location.pathname.startsWith(link.to));
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:hidden">
+    <footer className="bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:hidden flex-shrink-0">
       <nav className="flex justify-around items-center h-16">
         {mainNavItems.map((item) => (
           <NavItem

@@ -13,10 +13,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="flex h-screen bg-transparent">
       {!isMobile && <Sidebar />}
-      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
-        {children}
-      </main>
-      {isMobile && <BottomNav />}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+        {isMobile && <BottomNav />}
+      </div>
     </div>
   );
 };
