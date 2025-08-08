@@ -31,31 +31,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // This listener is the single source of truth for auth state.
-    // It fires once on initial load, and again whenever auth state changes.
+    const initializeAuth = async () => {
+      try {
+        // Bước 1: Lấy session hiện tại một cách an toàn khi ứng dụng khởi động.
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+
+        setSession(session);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        // Bước 2: Nếu có người dùng, lấy profile của họ.
+        if (currentUser) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+          
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error("Error fetching profile on init:", profileError);
+            setProfile(null);
+          } else {
+            setProfile(profileData);
+          }
+        } else {
+          setProfile(null);
+        }
+      } catch (e) {
+        console.error("Error during auth initialization:", e);
+        setProfile(null);
+        setSession(null);
+        setUser(null);
+      } finally {
+        // Bước 3: Chỉ sau khi tất cả các bước trên hoàn tất, mới tắt màn hình tải.
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Lắng nghe các thay đổi sau này (đăng nhập/đăng xuất)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
-      let userProfile: Profile | null = null;
       if (currentUser) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
-        
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error fetching profile:", error);
-        } else {
-          userProfile = data;
-        }
+        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+        setProfile(profileData);
+      } else {
+        setProfile(null);
       }
-      setProfile(userProfile);
-      
-      // Crucially, set loading to false only after all async operations are complete.
-      setLoading(false);
     });
 
     return () => {
@@ -71,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error signing out:", error);
       showError(`Sign out error: ${error.message}`);
     } else {
-      setProfile(null); // Clear profile on sign out
+      setProfile(null);
       navigate('/login');
     }
   };
