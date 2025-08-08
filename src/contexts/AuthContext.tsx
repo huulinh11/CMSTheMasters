@@ -28,46 +28,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Effect for session management (initial check + listener)
   useEffect(() => {
-    // 1. Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      // 2. Remove loading state immediately
-      setLoading(false);
-    });
+    const fetchSessionAndProfile = async () => {
+      // 1. Get session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Error getting session:", sessionError);
+        setLoading(false);
+        return;
+      }
 
-    // 3. Set up listener for future changes
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      // 2. If user exists, get profile
+      if (currentUser) {
+        try {
+          const { data: userProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+          
+          if (profileError && profileError.code !== 'PGRST116') {
+            throw profileError;
+          }
+          setProfile(userProfile);
+        } catch (error) {
+          console.warn("Could not fetch user profile:", (error as Error).message);
+          setProfile(null);
+        }
+      } else {
+        setProfile(null);
+      }
+
+      // 3. Set loading to false ONLY after all checks are done
+      setLoading(false);
+    };
+
+    fetchSessionAndProfile();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setSession(session);
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        if (currentUser) {
+          try {
+            const { data: userProfile, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', currentUser.id)
+              .single();
+            if (profileError && profileError.code !== 'PGRST116') throw profileError;
+            setProfile(userProfile);
+          } catch (error) {
+            console.warn("Could not fetch user profile on auth change:", (error as Error).message);
+            setProfile(null);
+          }
+        } else {
+          setProfile(null);
+        }
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
-
-  // 4. Effect for fetching profile, depends on user state
-  useEffect(() => {
-    if (user) {
-      setProfile(null); // Reset profile before fetching
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-        .then(({ data, error }) => {
-          if (error && error.code !== 'PGRST116') {
-            console.warn("Could not fetch user profile:", error.message);
-          }
-          setProfile(data);
-        });
-    } else {
-      setProfile(null);
-    }
-  }, [user]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
