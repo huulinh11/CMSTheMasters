@@ -31,65 +31,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
+    // 1. Kiểm tra phiên ban đầu một lần duy nhất.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      // 2. Gỡ bỏ trạng thái tải ngay sau khi kiểm tra xong.
+      setLoading(false);
 
+      // 3. Thiết lập trình lắng nghe cho các thay đổi trong tương lai.
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         setSession(session);
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
+        setUser(session?.user ?? null);
+      });
 
-        if (currentUser) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-          
-          if (profileError && profileError.code !== 'PGRST116') {
-            console.error("Error fetching profile on init:", profileError);
+      return () => {
+        subscription.unsubscribe();
+      };
+    });
+  }, []);
+
+  // 4. Tải profile một cách riêng biệt khi có user.
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error && error.code !== 'PGRST116') {
+            console.error("Error fetching profile:", error);
             setProfile(null);
           } else {
-            setProfile(profileData);
+            setProfile(data);
           }
-        } else {
-          setProfile(null);
-        }
-      } catch (e) {
-        console.error("Error during auth initialization:", e);
-        setProfile(null);
-        setSession(null);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      if (currentUser) {
-        const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-        if (profileError && profileError.code !== 'PGRST116') {
-            console.error("Error fetching profile on auth change:", profileError);
-            setProfile(null);
-        } else {
-            setProfile(profileData);
-        }
-      } else {
-        setProfile(null);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+        });
+    } else {
+      setProfile(null);
+    }
+  }, [user]);
 
   const permissions = useMemo(() => {
     const role = profile?.role || user?.user_metadata?.role;
@@ -102,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error signing out:", error);
       showError(`Sign out error: ${error.message}`);
     } else {
-      setProfile(null);
+      // onAuthStateChange sẽ xử lý việc xóa user và profile
       navigate('/login');
     }
   };
