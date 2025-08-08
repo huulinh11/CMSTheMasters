@@ -31,45 +31,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 1. Kiểm tra phiên ban đầu một lần duy nhất.
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const fetchUserAndProfile = async (session: Session | null) => {
+      const currentUser = session?.user ?? null;
       setSession(session);
-      setUser(session?.user ?? null);
-      // 2. Gỡ bỏ trạng thái tải ngay sau khi kiểm tra xong.
-      setLoading(false);
+      setUser(currentUser);
 
-      // 3. Thiết lập trình lắng nghe cho các thay đổi trong tương lai.
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-      });
+      if (currentUser) {
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
 
-      return () => {
-        subscription.unsubscribe();
-      };
-    });
-  }, []);
-
-  // 4. Tải profile một cách riêng biệt khi có user.
-  useEffect(() => {
-    if (user) {
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-        .then(({ data, error }) => {
-          if (error && error.code !== 'PGRST116') {
-            console.error("Error fetching profile:", error);
-            setProfile(null);
-          } else {
-            setProfile(data);
+          if (profileError && profileError.code !== 'PGRST116') {
+            throw profileError;
           }
-        });
-    } else {
-      setProfile(null);
-    }
-  }, [user]);
+          setProfile(profileData);
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+          setProfile(null);
+        }
+      } else {
+        setProfile(null);
+      }
+    };
+
+    // 1. Lắng nghe các thay đổi trạng thái xác thực
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      await fetchUserAndProfile(session);
+      // Chỉ set loading false sau khi đã xử lý xong session đầu tiên
+      if (_event === 'INITIAL_SESSION' || _event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const permissions = useMemo(() => {
     const role = profile?.role || user?.user_metadata?.role;
@@ -82,7 +82,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error signing out:", error);
       showError(`Sign out error: ${error.message}`);
     } else {
-      // onAuthStateChange sẽ xử lý việc xóa user và profile
       navigate('/login');
     }
   };
