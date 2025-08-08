@@ -1,8 +1,9 @@
-import { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
+import { createContext, useState, useEffect, useContext, ReactNode, useMemo } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { showError } from '@/utils/toast';
+import { getPermissionsForRole } from '@/config/permissions';
 
 export type Profile = {
   id: string;
@@ -15,7 +16,7 @@ type AuthContextType = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
-  permissions: string[] | null;
+  permissions: string[];
   loading: boolean;
   signOut: () => void;
 };
@@ -26,79 +27,71 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [permissions, setPermissions] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const processSession = useCallback(async (session: Session | null) => {
-    setSession(session);
-    const currentUser = session?.user ?? null;
-    setUser(currentUser);
-
-    if (currentUser) {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error("Lỗi khi lấy profile người dùng:", profileError.message);
-        setProfile(null);
-        setPermissions(null);
+  useEffect(() => {
+    const initializeSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Error getting session:", error);
+        setLoading(false);
         return;
       }
-      
-      setProfile(profileData);
 
-      if (profileData?.role) {
-        const { data: permData, error: permError } = await supabase
-          .from('role_permissions')
-          .select('permissions')
-          .eq('role', profileData.role)
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
           .single();
         
-        if (permError) {
-          console.error("Lỗi khi lấy quyền:", permError.message);
-          setPermissions([]);
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("Error fetching profile:", profileError);
+          setProfile(null);
         } else {
-          setPermissions(permData?.permissions || []);
+          setProfile(profileData);
         }
       } else {
-        setPermissions([]);
+        setProfile(null);
       }
-    } else {
-      setProfile(null);
-      setPermissions(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    const initializeAuth = async () => {
-      // Lấy session ban đầu một cách an toàn
-      const { data: { session } } = await supabase.auth.getSession();
-      await processSession(session);
-      // Chỉ tắt màn hình tải sau khi mọi thứ đã sẵn sàng
       setLoading(false);
     };
 
-    initializeAuth();
+    initializeSession();
 
-    // Lắng nghe các thay đổi sau này (đăng nhập/đăng xuất)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      processSession(session);
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        supabase.from('profiles').select('*').eq('id', currentUser.id).single()
+          .then(({ data, error }) => {
+            if (error && error.code !== 'PGRST116') setProfile(null);
+            else setProfile(data);
+          });
+      } else {
+        setProfile(null);
+      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [processSession]);
+  }, []);
+
+  const permissions = useMemo(() => getPermissionsForRole(profile?.role), [profile]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error("Lỗi khi đăng xuất:", error);
-      showError(`Lỗi đăng xuất: ${error.message}`);
+      console.error("Error signing out:", error);
+      showError(`Sign out error: ${error.message}`);
     } else {
       navigate('/login');
     }
