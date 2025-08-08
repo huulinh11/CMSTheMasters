@@ -28,44 +28,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Effect for session management (initial check + listener)
   useEffect(() => {
-    const fetchUserAndProfile = async (session: Session | null) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      setProfile(null); // Reset profile before fetching
-
-      if (currentUser) {
-        try {
-          const { data: userProfile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-          if (error && error.code !== 'PGRST116') throw error;
-          setProfile(userProfile);
-        } catch (error) {
-          console.warn("Could not fetch user profile:", (error as Error).message);
-        }
-      }
-    };
-
-    // Initial load
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    // 1. Initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      await fetchUserAndProfile(session);
+      setUser(session?.user ?? null);
+      // 2. Remove loading state immediately
       setLoading(false);
     });
 
-    // Listen for changes
+    // 3. Set up listener for future changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         setSession(session);
-        await fetchUserAndProfile(session);
+        setUser(session?.user ?? null);
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // 4. Effect for fetching profile, depends on user state
+  useEffect(() => {
+    if (user) {
+      setProfile(null); // Reset profile before fetching
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error && error.code !== 'PGRST116') {
+            console.warn("Could not fetch user profile:", error.message);
+          }
+          setProfile(data);
+        });
+    } else {
+      setProfile(null);
+    }
+  }, [user]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
