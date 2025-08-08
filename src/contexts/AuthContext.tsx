@@ -91,7 +91,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const permissions = useMemo(() => getPermissionsForRole(profile?.role), [profile]);
+  const permissions = useMemo(() => {
+    const role = profile?.role || user?.user_metadata?.role;
+    return getPermissionsForRole(role);
+  }, [profile, user]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
