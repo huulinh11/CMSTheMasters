@@ -29,72 +29,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchSessionAndProfile = async () => {
-      // 1. Get session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error("Error getting session:", sessionError);
-        setLoading(false);
-        return;
-      }
+    setLoading(true);
 
-      setSession(session);
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      // 2. If user exists, get profile
-      if (currentUser) {
-        try {
-          const { data: userProfile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-          
-          if (profileError && profileError.code !== 'PGRST116') {
-            throw profileError;
-          }
-          setProfile(userProfile);
-        } catch (error) {
-          console.warn("Could not fetch user profile:", (error as Error).message);
-          setProfile(null);
-        }
-      } else {
-        setProfile(null);
-      }
-
-      // 3. Set loading to false ONLY after all checks are done
-      setLoading(false);
-    };
-
-    fetchSessionAndProfile();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        setSession(session);
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
+        try {
+          setSession(session);
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
 
-        if (currentUser) {
-          try {
-            const { data: userProfile, error: profileError } = await supabase
+          if (currentUser) {
+            const { data: profileData, error } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', currentUser.id)
               .single();
-            if (profileError && profileError.code !== 'PGRST116') throw profileError;
-            setProfile(userProfile);
-          } catch (error) {
-            console.warn("Could not fetch user profile on auth change:", (error as Error).message);
+            if (error && error.code !== 'PGRST116') throw error;
+            setProfile(profileData);
+          } else {
             setProfile(null);
           }
-        } else {
-          setProfile(null);
+        } catch (error) {
+            console.error("Error in onAuthStateChange:", error);
+            setProfile(null); // Ensure profile is cleared on error
+        } finally {
+            // This will run regardless of success or failure in the try block.
+            setLoading(false);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
