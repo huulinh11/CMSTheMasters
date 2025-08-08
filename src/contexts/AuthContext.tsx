@@ -33,7 +33,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Bước 1: Lấy session hiện tại một cách an toàn khi ứng dụng khởi động.
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
 
@@ -41,7 +40,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
-        // Bước 2: Nếu có người dùng, lấy profile của họ.
         if (currentUser) {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
@@ -64,22 +62,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(null);
         setUser(null);
       } finally {
-        // Bước 3: Chỉ sau khi tất cả các bước trên hoàn tất, mới tắt màn hình tải.
         setLoading(false);
       }
     };
 
     initializeAuth();
 
-    // Lắng nghe các thay đổi sau này (đăng nhập/đăng xuất)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
       if (currentUser) {
-        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-        setProfile(profileData);
+        const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+        if (profileError && profileError.code !== 'PGRST116') {
+            console.error("Error fetching profile on auth change:", profileError);
+            setProfile(null);
+        } else {
+            setProfile(profileData);
+        }
       } else {
         setProfile(null);
       }

@@ -9,19 +9,15 @@ const PermissionProtectedRoute = ({ permissionId }: PermissionProtectedRouteProp
   const { permissions, loading } = useAuth();
 
   if (loading) {
-    return null; // Chờ AuthContext xác định xong
+    return null; // Wait for auth state to be determined
   }
 
-  if (!permissions) {
-    // Nếu không có quyền (có thể là lỗi hoặc đang tải), chuyển hướng an toàn
-    return <Navigate to="/" replace />;
-  }
-
+  // permissions is guaranteed to be an array by useAuth
   if (permissions.includes(permissionId)) {
     return <Outlet />;
   }
 
-  // Chuyển hướng về trang chủ nếu người dùng không có quyền
+  // If user does not have permission, redirect to dashboard
   return <Navigate to="/" replace />;
 };
 
