@@ -28,41 +28,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Effect for session management (initial check + listener)
   useEffect(() => {
-    setLoading(true);
+    // 1. Initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      // 2. Remove loading state immediately
+      setLoading(false);
+    });
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        try {
-          setSession(session);
-          const currentUser = session?.user ?? null;
-          setUser(currentUser);
-
-          if (currentUser) {
-            const { data: profileData, error } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', currentUser.id)
-              .single();
-            if (error && error.code !== 'PGRST116') throw error;
-            setProfile(profileData);
-          } else {
-            setProfile(null);
-          }
-        } catch (error) {
-            console.error("Error in onAuthStateChange:", error);
-            setProfile(null); // Ensure profile is cleared on error
-        } finally {
-            // This will run regardless of success or failure in the try block.
-            setLoading(false);
-        }
+    // 3. Set up listener for future changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
       }
     );
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
+
+  // 4. Effect for fetching profile, depends on user state
+  useEffect(() => {
+    // If there's a user, fetch their profile.
+    if (user) {
+      setProfile(null); // Reset profile before fetching to avoid showing stale data
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error && error.code !== 'PGRST116') {
+            console.warn("Could not fetch user profile:", error.message);
+          }
+          setProfile(data);
+        });
+    } else {
+      // If there's no user, ensure profile is null.
+      setProfile(null);
+    }
+  }, [user]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
