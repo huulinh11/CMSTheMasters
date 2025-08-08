@@ -29,7 +29,9 @@ const queryClient = new QueryClient();
 // Loader cho các route được bảo vệ
 const protectedLoader = async () => {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  
+  // SỬA LỖI: Kiểm tra chặt chẽ cả session và session.user
+  if (!session || !session.user) {
     return redirect('/login');
   }
   
@@ -41,7 +43,6 @@ const protectedLoader = async () => {
 
   if (error && error.code !== 'PGRST116') {
     console.error("Loader error fetching profile:", error);
-    // Có thể chuyển hướng đến trang lỗi hoặc đăng xuất người dùng
     await supabase.auth.signOut();
     return redirect('/login');
   }
