@@ -31,53 +31,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const initializeSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Error getting session:", error);
-        setLoading(false);
-        return;
-      }
-
+    // This listener is the single source of truth for auth state.
+    // It fires once on initial load, and again whenever auth state changes.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
+      let userProfile: Profile | null = null;
       if (currentUser) {
-        const { data: profileData, error: profileError } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', currentUser.id)
           .single();
         
-        if (profileError && profileError.code !== 'PGRST116') {
-          console.error("Error fetching profile:", profileError);
-          setProfile(null);
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error fetching profile:", error);
         } else {
-          setProfile(profileData);
+          userProfile = data;
         }
-      } else {
-        setProfile(null);
       }
+      setProfile(userProfile);
+      
+      // Crucially, set loading to false only after all async operations are complete.
       setLoading(false);
-    };
-
-    initializeSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      if (currentUser) {
-        supabase.from('profiles').select('*').eq('id', currentUser.id).single()
-          .then(({ data, error }) => {
-            if (error && error.code !== 'PGRST116') setProfile(null);
-            else setProfile(data);
-          });
-      } else {
-        setProfile(null);
-      }
     });
 
     return () => {
@@ -93,6 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error signing out:", error);
       showError(`Sign out error: ${error.message}`);
     } else {
+      setProfile(null); // Clear profile on sign out
       navigate('/login');
     }
   };
