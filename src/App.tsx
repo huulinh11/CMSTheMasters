@@ -31,12 +31,8 @@ const protectedLoader = async () => {
   try {
     const { data, error: sessionError } = await supabase.auth.getSession();
 
-    if (sessionError) {
-      console.error("Lỗi khi lấy session:", sessionError);
-      return redirect('/login');
-    }
-
-    if (!data?.session?.user) {
+    if (sessionError || !data?.session?.user) {
+      console.error("Lỗi khi lấy session hoặc không có session:", sessionError);
       return redirect('/login');
     }
 
@@ -49,16 +45,17 @@ const protectedLoader = async () => {
       .eq('id', user.id)
       .single();
 
+    // NEW LOGIC: If there's an error fetching the profile, log it but DON'T redirect.
+    // The app can function with a null profile by using user_metadata for permissions.
     if (profileError && profileError.code !== 'PGRST116') {
-      console.error("Lỗi khi tải profile:", profileError);
-      // Không đăng xuất người dùng, chỉ chuyển hướng để họ có thể thử lại
-      return redirect('/login');
+      console.error("Lỗi khi tải profile, nhưng vẫn tiếp tục:", profileError);
+      // Proceed with a null profile.
+      return { session, user, profile: null };
     }
 
     return { session, user, profile: profile || null };
   } catch (e) {
     console.error("Lỗi nghiêm trọng trong loader:", e);
-    // Không đăng xuất ở đây để tránh mất session hợp lệ
     return redirect('/login');
   }
 };
