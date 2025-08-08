@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Form, redirect, useActionData, useNavigation, ActionFunctionArgs } from 'react-router-dom';
+import { redirect, useActionData, useNavigation, ActionFunctionArgs, useSubmit } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Login = () => {
   const actionData = useActionData() as { error: string } | undefined;
   const navigation = useNavigation();
+  const submit = useSubmit();
   const loading = navigation.state === 'submitting';
 
   useEffect(() => {
@@ -40,6 +41,11 @@ const Login = () => {
       showError(actionData.error);
     }
   }, [actionData]);
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submit(event.currentTarget, { method: 'post' });
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fff5ea] to-[#e5b899] p-4">
@@ -49,7 +55,7 @@ const Login = () => {
           <CardDescription>Nhập thông tin tài khoản của bạn để tiếp tục.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form method="post" className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -72,7 +78,7 @@ const Login = () => {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </Button>
-          </Form>
+          </form>
         </CardContent>
       </Card>
     </div>
