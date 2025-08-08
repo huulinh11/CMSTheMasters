@@ -23,23 +23,29 @@ export type ChecklistDataContext = {
 };
 
 const PublicChecklist = () => {
-  const { phone } = useParams<{ phone: string }>();
+  const { identifier } = useParams<{ identifier: string }>();
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery<ChecklistDataContext | null>({
-    queryKey: ['public_checklist', phone],
+    queryKey: ['public_checklist', identifier],
     queryFn: async () => {
-      if (!phone) return null;
+      if (!identifier) return null;
+
+      const isPhoneNumber = /^\d+$/.test(identifier);
+      const queryColumn = isPhoneNumber ? 'phone' : 'id';
 
       let guest: CombinedGuest | null = null;
-      const { data: vipGuest } = await supabase.from('vip_guests').select('*').eq('phone', phone).single();
+      
+      // Try vip_guests first
+      const { data: vipGuest } = await supabase.from('vip_guests').select('*').eq(queryColumn, identifier).single();
       if (vipGuest) {
-        guest = { ...vipGuest, type: 'Chức vụ', secondaryInfo: vipGuest.secondary_info, materials: vipGuest.materials };
+          guest = { ...vipGuest, type: 'Chức vụ', secondaryInfo: vipGuest.secondary_info, materials: vipGuest.materials };
       } else {
-        const { data: regularGuest } = await supabase.from('guests').select('*').eq('phone', phone).single();
-        if (regularGuest) {
-          guest = { ...regularGuest, type: 'Khách mời', materials: regularGuest.materials };
-        }
+          // If not found, try guests
+          const { data: regularGuest } = await supabase.from('guests').select('*').eq(queryColumn, identifier).single();
+          if (regularGuest) {
+              guest = { ...regularGuest, type: 'Khách mời', materials: regularGuest.materials };
+          }
       }
 
       if (!guest) return null;
@@ -55,7 +61,7 @@ const PublicChecklist = () => {
         timelineEvents: timelineEvents || [],
       };
     },
-    enabled: !!phone,
+    enabled: !!identifier,
   });
 
   useEffect(() => {
@@ -67,7 +73,7 @@ const PublicChecklist = () => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'guest_tasks', filter: `guest_id=eq.${data.guest.id}` },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['public_checklist', phone] });
+          queryClient.invalidateQueries({ queryKey: ['public_checklist', identifier] });
         }
       )
       .subscribe();
@@ -75,7 +81,7 @@ const PublicChecklist = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [data?.guest.id, phone, queryClient]);
+  }, [data?.guest.id, identifier, queryClient]);
 
   if (isLoading) {
     return (
@@ -91,7 +97,7 @@ const PublicChecklist = () => {
     return (
       <div className="max-w-4xl mx-auto my-8 p-4 text-center">
         <h1 className="text-2xl font-bold text-red-600">Lỗi</h1>
-        <p className="mt-2 text-slate-600">{error ? error.message : "Không tìm thấy thông tin cho số điện thoại này."}</p>
+        <p className="mt-2 text-slate-600">{error ? error.message : "Không tìm thấy thông tin cho số điện thoại hoặc ID này."}</p>
       </div>
     );
   }

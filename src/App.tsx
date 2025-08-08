@@ -94,7 +94,7 @@ const router = createBrowserRouter([
     loader: loginLoader,
   },
   { path: "/profile/:slug", element: <PublicProfile /> },
-  { path: "/checklist/:phone/*", element: <PublicChecklist /> },
+  { path: "/checklist/:identifier/*", element: <PublicChecklist /> },
   { path: "/timeline/public", element: <PublicTimelinePreview /> },
 
   // Protected routes

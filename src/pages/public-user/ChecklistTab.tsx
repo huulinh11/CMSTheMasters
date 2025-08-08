@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
-import { showSuccess } from "@/utils/toast";
+import { showSuccess, showError } from "@/utils/toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -52,10 +52,14 @@ const ChecklistTab = () => {
     );
   }, [allGuests, searchTerm]);
 
-  const handleCopyLink = (phone: string) => {
-    const url = `${window.location.origin}/checklist/${phone}`;
+  const handleCopyLink = (type: 'id' | 'phone', value: string) => {
+    if (!value) {
+      showError(`Khách mời này không có ${type === 'id' ? 'ID' : 'SĐT'}.`);
+      return;
+    }
+    const url = `${window.location.origin}/checklist/${value}`;
     navigator.clipboard.writeText(url);
-    showSuccess("Đã sao chép link checklist!");
+    showSuccess(`Đã sao chép link checklist theo ${type === 'id' ? 'ID' : 'SĐT'}!`);
   };
 
   const isLoading = isLoadingVip || isLoadingRegular;
@@ -81,9 +85,14 @@ const ChecklistTab = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm">SĐT: {guest.phone}</p>
-                <Button className="w-full mt-4" onClick={() => handleCopyLink(guest.phone)}>
-                  <Copy className="mr-2 h-4 w-4" /> Sao chép link
-                </Button>
+                <div className="flex gap-2 mt-4">
+                  <Button className="flex-1" variant="outline" onClick={() => handleCopyLink('id', guest.id)}>
+                    <Copy className="mr-2 h-4 w-4" /> Link ID
+                  </Button>
+                  <Button className="flex-1" onClick={() => handleCopyLink('phone', guest.phone)}>
+                    <Copy className="mr-2 h-4 w-4" /> Link SĐT
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -107,9 +116,14 @@ const ChecklistTab = () => {
                     <TableCell>{guest.phone}</TableCell>
                     <TableCell>{guest.role}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" onClick={() => handleCopyLink(guest.phone)}>
-                        <Copy className="mr-2 h-4 w-4" /> Sao chép
-                      </Button>
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="outline" size="sm" onClick={() => handleCopyLink('id', guest.id)}>
+                          <Copy className="mr-2 h-4 w-4" /> ID
+                        </Button>
+                        <Button variant="default" size="sm" onClick={() => handleCopyLink('phone', guest.phone)}>
+                          <Copy className="mr-2 h-4 w-4" /> SĐT
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

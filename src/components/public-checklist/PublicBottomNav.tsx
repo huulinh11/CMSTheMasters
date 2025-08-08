@@ -10,7 +10,7 @@ const navItems = [
 ];
 
 const PublicBottomNav = () => {
-  const { phone } = useParams();
+  const { identifier } = useParams();
 
   return (
     <footer className="md:relative fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:shadow-none flex-shrink-0">
@@ -18,7 +18,7 @@ const PublicBottomNav = () => {
         {navItems.map((item) => (
           <NavItem
             key={item.to}
-            to={`/checklist/${phone}${item.to}`}
+            to={`/checklist/${identifier}${item.to}`}
             icon={item.icon}
             label={item.label}
             end={item.end}
