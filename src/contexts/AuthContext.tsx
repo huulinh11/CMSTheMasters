@@ -30,38 +30,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // useEffect này CHỈ chịu trách nhiệm về trạng thái xác thực (session, user) và trạng thái tải ban đầu.
   useEffect(() => {
-    const fetchUserAndProfile = async (session: Session | null) => {
-      const currentUser = session?.user ?? null;
+    setLoading(true);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      setUser(currentUser);
+      setUser(session?.user ?? null);
 
-      if (currentUser) {
-        try {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-
-          if (profileError && profileError.code !== 'PGRST116') {
-            throw profileError;
-          }
-          setProfile(profileData);
-        } catch (error) {
-          console.error("Error fetching profile:", error);
-          setProfile(null);
-        }
-      } else {
-        setProfile(null);
-      }
-    };
-
-    // 1. Lắng nghe các thay đổi trạng thái xác thực
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      await fetchUserAndProfile(session);
-      // Chỉ set loading false sau khi đã xử lý xong session đầu tiên
-      if (_event === 'INITIAL_SESSION' || _event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
+      // Quan trọng: Gỡ bỏ màn hình tải ngay khi có phiên ban đầu, bất kể có user hay không.
+      if (event === 'INITIAL_SESSION') {
         setLoading(false);
       }
     });
@@ -70,6 +47,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       subscription.unsubscribe();
     };
   }, []);
+
+  // useEffect này CHỈ chịu trách nhiệm tải profile khi user thay đổi.
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error && error.code !== 'PGRST116') {
+            console.error("Error fetching profile:", error);
+            setProfile(null);
+          } else {
+            setProfile(data);
+          }
+        });
+    } else {
+      setProfile(null);
+    }
+  }, [user]);
 
   const permissions = useMemo(() => {
     const role = profile?.role || user?.user_metadata?.role;
