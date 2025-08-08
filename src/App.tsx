@@ -65,11 +65,21 @@ const protectedLoader = async () => {
 
 // Loader cho trang login để tự động chuyển hướng nếu đã đăng nhập
 const loginLoader = async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    return redirect('/');
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Lỗi trong login loader:", error);
+      return null; // Cho phép render trang login nếu có lỗi
+    }
+    // Kiểm tra an toàn: chỉ chuyển hướng nếu có session hợp lệ
+    if (data && data.session) {
+      return redirect('/');
+    }
+    return null; // Không có session, hiển thị trang login
+  } catch (e) {
+    console.error("Lỗi nghiêm trọng trong login loader:", e);
+    return null;
   }
-  return null;
 };
 
 // Component gốc cho các route được bảo vệ, cung cấp Context
