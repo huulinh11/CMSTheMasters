@@ -28,47 +28,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Effect for session management
   useEffect(() => {
-    // onAuthStateChange fires on initial load and subsequent changes.
-    // This is the recommended way to handle auth state and avoids race conditions.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false); // The loading state is removed once the initial session is fetched.
+    const handleAuthStateChange = async (_event: string, session: Session | null) => {
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        // Nếu có người dùng, fetch profile của họ ngay lập tức
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error("Lỗi khi lấy profile người dùng:", error.message);
+          setProfile(null);
+        } else {
+          setProfile(profileData);
+        }
+      } else {
+        // Nếu không có người dùng (đã đăng xuất), xóa profile
+        setProfile(null);
       }
-    );
+      
+      // Chỉ kết thúc trạng thái tải sau khi đã xử lý xong cả session và profile
+      setLoading(false);
+    };
 
-    return () => subscription.unsubscribe();
+    // onAuthStateChange sẽ kích hoạt khi tải trang lần đầu và mỗi khi trạng thái đăng nhập thay đổi
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
-
-  // Effect for fetching profile, depends on user state
-  useEffect(() => {
-    // If there's a user, fetch their profile.
-    if (user) {
-      setProfile(null); // Reset profile before fetching to avoid showing stale data
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-        .then(({ data, error }) => {
-          if (error && error.code !== 'PGRST116') {
-            console.warn("Could not fetch user profile:", error.message);
-          }
-          setProfile(data);
-        });
-    } else {
-      // If there's no user, ensure profile is null.
-      setProfile(null);
-    }
-  }, [user]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error("Error signing out:", error);
+      console.error("Lỗi khi đăng xuất:", error);
       showError(`Lỗi đăng xuất: ${error.message}`);
     } else {
       navigate('/login');

@@ -11,7 +11,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AppUser, USER_ROLES } from "@/types/app-user";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { allNavItems } from "@/config/nav";
+import { Badge } from "@/components/ui/badge";
+
+const getPermissionsForRole = (role: AppUser['role']): string[] => {
+  return allNavItems
+    .filter(item => item.roles?.includes(role))
+    .map(item => item.label);
+};
 
 interface AddEditUserDialogProps {
   open: boolean;
@@ -43,6 +51,8 @@ export const AddEditUserDialog = ({ open, onOpenChange, onSave, isSaving, user }
       setRole('Nhân viên');
     }
   }, [user, open]);
+
+  const permissions = useMemo(() => getPermissionsForRole(role), [role]);
 
   const handleSave = () => {
     const userData: Partial<AppUser> & { password?: string } = {
@@ -94,6 +104,14 @@ export const AddEditUserDialog = ({ open, onOpenChange, onSave, isSaving, user }
                 {USER_ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Các quyền truy cập</Label>
+            <div className="flex flex-wrap gap-1 p-2 border rounded-md min-h-[40px]">
+              {permissions.map(permission => (
+                <Badge key={permission} variant="secondary">{permission}</Badge>
+              ))}
+            </div>
           </div>
         </div>
         <DialogFooter>

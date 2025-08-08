@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppUser } from "@/types/app-user";
@@ -18,6 +18,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { allNavItems } from "@/config/nav";
+
+const getPermissionsForRole = (role: AppUser['role']): string[] => {
+  return allNavItems
+    .filter(item => item.roles?.includes(role))
+    .map(item => item.label);
+};
 
 const AccountPage = () => {
   const queryClient = useQueryClient();
@@ -106,11 +114,18 @@ const AccountPage = () => {
             <Card key={user.id}>
               <CardHeader>
                 <CardTitle>{user.full_name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{user.username}</p>
+                <p className="text-sm text-muted-foreground">{user.username} - {user.role}</p>
               </CardHeader>
               <CardContent className="space-y-2">
                 <p><strong>Bộ phận:</strong> {user.department}</p>
-                <p><strong>Quyền:</strong> {user.role}</p>
+                <div>
+                  <strong>Quyền:</strong>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {getPermissionsForRole(user.role).map(permission => (
+                      <Badge key={permission} variant="secondary">{permission}</Badge>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex gap-2 pt-2">
                   <Button variant="outline" size="sm" onClick={() => handleOpenDialog(user)}><Edit className="mr-2 h-4 w-4" /> Sửa</Button>
                   <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user.id)}><Trash2 className="mr-2 h-4 w-4" /> Xóa</Button>
@@ -124,22 +139,28 @@ const AccountPage = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>STT</TableHead>
-                <TableHead>Username</TableHead>
                 <TableHead>Họ và tên</TableHead>
+                <TableHead>Username</TableHead>
                 <TableHead>Bộ phận</TableHead>
                 <TableHead>Loại phân quyền</TableHead>
+                <TableHead>Quyền truy cập</TableHead>
                 <TableHead className="text-right">Tác vụ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user, index) => (
+              {users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{user.username}</TableCell>
                   <TableCell>{user.full_name}</TableCell>
+                  <TableCell>{user.username}</TableCell>
                   <TableCell>{user.department}</TableCell>
-                  <TableCell>{user.role}</TableCell>
+                  <TableCell><Badge>{user.role}</Badge></TableCell>
+                  <TableCell className="max-w-xs">
+                    <div className="flex flex-wrap gap-1">
+                      {getPermissionsForRole(user.role).map(permission => (
+                        <Badge key={permission} variant="secondary">{permission}</Badge>
+                      ))}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="sm" onClick={() => handleOpenDialog(user)}>Sửa</Button>
                     <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user.id)}>Xóa</Button>
