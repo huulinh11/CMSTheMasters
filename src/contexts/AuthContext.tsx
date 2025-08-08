@@ -28,28 +28,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Effect for session management (initial check + listener)
+  // Effect for session management
   useEffect(() => {
-    // 1. Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      // 2. Remove loading state immediately
-      setLoading(false);
-    });
-
-    // 3. Set up listener for future changes
+    // onAuthStateChange fires on initial load and subsequent changes.
+    // This is the recommended way to handle auth state and avoids race conditions.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setLoading(false); // The loading state is removed once the initial session is fetched.
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // 4. Effect for fetching profile, depends on user state
+  // Effect for fetching profile, depends on user state
   useEffect(() => {
     // If there's a user, fetch their profile.
     if (user) {
