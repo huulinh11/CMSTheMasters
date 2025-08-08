@@ -28,26 +28,42 @@ const queryClient = new QueryClient();
 
 // Loader cho các route được bảo vệ
 const protectedLoader = async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  // SỬA LỖI: Kiểm tra chặt chẽ cả session và session.user
-  if (!session || !session.user) {
-    return redirect('/login');
-  }
-  
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
+  try {
+    const { data, error: sessionError } = await supabase.auth.getSession();
 
-  if (error && error.code !== 'PGRST116') {
-    console.error("Loader error fetching profile:", error);
+    // Xử lý lỗi từ Supabase trước
+    if (sessionError) {
+      console.error("Lỗi khi lấy session:", sessionError);
+      return redirect('/login');
+    }
+
+    // Kiểm tra phòng thủ từng bước để tránh crash
+    if (!data || !data.session || !data.session.user) {
+      return redirect('/login');
+    }
+
+    const session = data.session;
+    const user = data.session.user;
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error("Lỗi khi tải profile:", profileError);
+      await supabase.auth.signOut();
+      return redirect('/login');
+    }
+
+    return { session, user, profile };
+  } catch (e) {
+    console.error("Lỗi nghiêm trọng trong loader:", e);
+    // Đảm bảo đăng xuất và chuyển hướng nếu có lỗi không mong muốn
     await supabase.auth.signOut();
     return redirect('/login');
   }
-
-  return { session, user: session.user, profile };
 };
 
 // Component gốc cho các route được bảo vệ, cung cấp Context
