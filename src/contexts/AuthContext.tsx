@@ -29,47 +29,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 1. Perform an initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const fetchUserAndProfile = async (session: Session | null) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      setProfile(null); // Reset profile before fetching
+
+      if (currentUser) {
+        try {
+          const { data: userProfile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+          if (error && error.code !== 'PGRST116') throw error;
+          setProfile(userProfile);
+        } catch (error) {
+          console.warn("Could not fetch user profile:", (error as Error).message);
+        }
+      }
+    };
+
+    // Initial load
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      // 2. Turn off the loading screen immediately after the check
+      await fetchUserAndProfile(session);
       setLoading(false);
     });
 
-    // 3. Set up a listener for future auth changes
+    // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setSession(session);
-        setUser(session?.user ?? null);
+        await fetchUserAndProfile(session);
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
-
-  // 4. Fetch profile separately, only when the user object is available
-  useEffect(() => {
-    if (user) {
-      const fetchProfile = async () => {
-        const { data: userProfile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (error) {
-          console.warn("Could not fetch user profile:", error.message);
-          setProfile(null);
-        } else {
-          setProfile(userProfile);
-        }
-      };
-      fetchProfile();
-    } else {
-      setProfile(null);
-    }
-  }, [user]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
