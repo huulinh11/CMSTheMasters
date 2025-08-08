@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider, Outlet, redirect, useLoaderData } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet, redirect, useLoaderData, ActionFunctionArgs } from "react-router-dom";
 import { Session, User } from "@supabase/supabase-js";
 import Dashboard from "./pages/Dashboard";
 import Guests from "./pages/Guests";
@@ -18,7 +18,7 @@ import PublicUser from "./pages/PublicUser";
 import PublicProfile from "./pages/public/PublicProfile";
 import PublicChecklist from "./pages/public/PublicChecklist";
 import PublicTimelinePreview from "./pages/public/PublicTimelinePreview";
-import Login from "./pages/Login";
+import Login, { action as loginAction } from "./pages/Login";
 import { AuthProvider, Profile } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PermissionProtectedRoute from "./components/PermissionProtectedRoute";
@@ -31,13 +31,11 @@ const protectedLoader = async () => {
   try {
     const { data, error: sessionError } = await supabase.auth.getSession();
 
-    // Xử lý lỗi từ Supabase trước
     if (sessionError) {
       console.error("Lỗi khi lấy session:", sessionError);
       return redirect('/login');
     }
 
-    // Kiểm tra phòng thủ từng bước để tránh crash
     if (!data || !data.session || !data.session.user) {
       return redirect('/login');
     }
@@ -60,10 +58,18 @@ const protectedLoader = async () => {
     return { session, user, profile };
   } catch (e) {
     console.error("Lỗi nghiêm trọng trong loader:", e);
-    // Đảm bảo đăng xuất và chuyển hướng nếu có lỗi không mong muốn
     await supabase.auth.signOut();
     return redirect('/login');
   }
+};
+
+// Loader cho trang login để tự động chuyển hướng nếu đã đăng nhập
+const loginLoader = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    return redirect('/');
+  }
+  return null;
 };
 
 // Component gốc cho các route được bảo vệ, cung cấp Context
@@ -79,7 +85,12 @@ const ProtectedRoot = () => {
 
 const router = createBrowserRouter([
   // Public routes
-  { path: "/login", element: <Login /> },
+  { 
+    path: "/login", 
+    element: <Login />,
+    action: loginAction,
+    loader: loginLoader,
+  },
   { path: "/profile/:slug", element: <PublicProfile /> },
   { path: "/checklist/:phone/*", element: <PublicChecklist /> },
   { path: "/timeline/public", element: <PublicTimelinePreview /> },
