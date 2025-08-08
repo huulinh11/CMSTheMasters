@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider, Outlet, redirect, useLoaderData, ActionFunctionArgs } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet, redirect, useLoaderData } from "react-router-dom";
 import { Session, User } from "@supabase/supabase-js";
 import Dashboard from "./pages/Dashboard";
 import Guests from "./pages/Guests";
@@ -36,12 +36,12 @@ const protectedLoader = async () => {
       return redirect('/login');
     }
 
-    if (!data || !data.session || !data.session.user) {
+    if (!data?.session?.user) {
       return redirect('/login');
     }
 
-    const session = data.session;
-    const user = data.session.user;
+    const { session } = data;
+    const user = session.user;
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -55,7 +55,7 @@ const protectedLoader = async () => {
       return redirect('/login');
     }
 
-    return { session, user, profile };
+    return { session, user, profile: profile || null };
   } catch (e) {
     console.error("Lỗi nghiêm trọng trong loader:", e);
     await supabase.auth.signOut();
@@ -66,16 +66,11 @@ const protectedLoader = async () => {
 // Loader cho trang login để tự động chuyển hướng nếu đã đăng nhập
 const loginLoader = async () => {
   try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      console.error("Lỗi trong login loader:", error);
-      return null; // Cho phép render trang login nếu có lỗi
-    }
-    // Kiểm tra an toàn: chỉ chuyển hướng nếu có session hợp lệ
-    if (data && data.session) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
       return redirect('/');
     }
-    return null; // Không có session, hiển thị trang login
+    return null;
   } catch (e) {
     console.error("Lỗi nghiêm trọng trong login loader:", e);
     return null;
@@ -111,22 +106,46 @@ const router = createBrowserRouter([
     element: <ProtectedRoot />,
     loader: protectedLoader,
     children: [
-      { index: true, element: <Dashboard /> },
-      { path: "guests", element: <Guests /> },
-      { path: "media-benefits", element: <MediaBenefits /> },
-      { path: "event-tasks", element: <EventTasks /> },
-      { path: "information", element: <Information /> },
+      {
+        element: <PermissionProtectedRoute permissionId="dashboard" />,
+        children: [{ index: true, element: <Dashboard /> }],
+      },
+      {
+        element: <PermissionProtectedRoute permissionId="guests" />,
+        children: [{ path: "guests", element: <Guests /> }],
+      },
+      {
+        element: <PermissionProtectedRoute permissionId="media-benefits" />,
+        children: [{ path: "media-benefits", element: <MediaBenefits /> }],
+      },
+      {
+        element: <PermissionProtectedRoute permissionId="event-tasks" />,
+        children: [{ path: "event-tasks", element: <EventTasks /> }],
+      },
+      {
+        element: <PermissionProtectedRoute permissionId="information" />,
+        children: [{ path: "information", element: <Information /> }],
+      },
       {
         element: <PermissionProtectedRoute permissionId="revenue" />,
         children: [{ path: "revenue", element: <Revenue /> }],
       },
-      { path: "timeline", element: <Timeline /> },
-      { path: "public-user", element: <PublicUser /> },
+      {
+        element: <PermissionProtectedRoute permissionId="timeline" />,
+        children: [{ path: "timeline", element: <Timeline /> }],
+      },
+      {
+        element: <PermissionProtectedRoute permissionId="public-user" />,
+        children: [{ path: "public-user", element: <PublicUser /> }],
+      },
       {
         element: <PermissionProtectedRoute permissionId="account" />,
         children: [{ path: "account", element: <Account /> }],
       },
-      { path: "settings", element: <Settings /> },
+      {
+        element: <PermissionProtectedRoute permissionId="settings" />,
+        children: [{ path: "settings", element: <Settings /> }],
+      },
     ],
   },
   { path: "*", element: <NotFound /> },

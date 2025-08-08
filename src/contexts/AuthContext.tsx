@@ -17,7 +17,6 @@ type AuthContextType = {
   user: User | null;
   profile: Profile | null;
   permissions: string[];
-  // loading state is no longer needed here, React Router handles it.
   signOut: () => void;
 };
 
@@ -37,17 +36,39 @@ export const AuthProvider = ({ children, initialSession, initialUser, initialPro
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    setSession(initialSession);
+    setUser(initialUser);
+    setProfile(initialProfile);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      if (_event === 'SIGNED_OUT') {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        const { data: userProfile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          showError("Không thể tải thông tin người dùng. Đang đăng xuất.");
+          await supabase.auth.signOut();
+        } else {
+          setProfile(userProfile);
+        }
+      } else {
         setProfile(null);
+      }
+
+      if (_event === 'SIGNED_OUT') {
         navigate('/login');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, initialSession, initialUser, initialProfile]);
 
   const permissions = useMemo(() => {
     const role = profile?.role || user?.user_metadata?.role;
@@ -66,7 +87,6 @@ export const AuthProvider = ({ children, initialSession, initialUser, initialPro
     user,
     profile,
     permissions,
-    loading: false, // No longer managed here
     signOut,
   };
 
