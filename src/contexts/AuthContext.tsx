@@ -30,22 +30,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // useEffect này CHỈ chịu trách nhiệm về trạng thái xác thực (session, user) và trạng thái tải ban đầu.
   useEffect(() => {
-    setLoading(true);
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const initializeAndListen = async () => {
+      // 1. Lấy phiên ban đầu từ cookie/storage.
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      setSession(initialSession);
+      setUser(initialSession?.user ?? null);
 
-      // Quan trọng: Gỡ bỏ màn hình tải ngay khi có phiên ban đầu, bất kể có user hay không.
-      if (event === 'INITIAL_SESSION') {
-        setLoading(false);
-      }
-    });
+      // 2. Gỡ bỏ màn hình tải ngay lập tức sau khi kiểm tra xong.
+      setLoading(false);
 
-    return () => {
-      subscription.unsubscribe();
+      // 3. Lắng nghe các thay đổi trong tương lai.
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
     };
+
+    initializeAndListen();
   }, []);
 
   // useEffect này CHỈ chịu trách nhiệm tải profile khi user thay đổi.
