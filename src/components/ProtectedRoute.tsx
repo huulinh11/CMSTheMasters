@@ -1,20 +1,9 @@
-import { useAuth } from '../contexts/AuthContext';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Layout from './Layout';
 
 const ProtectedRoute = () => {
-  const { user, loading } = useAuth();
-
-  // The main loading state is handled in App.tsx.
-  // If we reach this component, loading is already false.
-  if (loading) {
-    return null; // Render nothing while the auth state is being determined at the top level.
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
+  // The loader in App.tsx now handles the redirection.
+  // This component's only job is to provide the main layout.
   return (
     <Layout>
       <Outlet />

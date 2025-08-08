@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet, redirect, useLoaderData } from "react-router-dom";
+import { Session, User } from "@supabase/supabase-js";
 import Dashboard from "./pages/Dashboard";
 import Guests from "./pages/Guests";
 import MediaBenefits from "./pages/MediaBenefits";
@@ -18,60 +19,87 @@ import PublicProfile from "./pages/public/PublicProfile";
 import PublicChecklist from "./pages/public/PublicChecklist";
 import PublicTimelinePreview from "./pages/public/PublicTimelinePreview";
 import Login from "./pages/Login";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider, Profile } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PermissionProtectedRoute from "./components/PermissionProtectedRoute";
+import { supabase } from "./integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
-const AppContent = () => {
-  const { user, loading } = useAuth();
+// Loader cho các route được bảo vệ
+const protectedLoader = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    return redirect('/login');
+  }
+  
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single();
 
-  if (loading) {
-    return <div className="flex h-screen items-center justify-center">Đang tải ứng dụng...</div>;
+  if (error && error.code !== 'PGRST116') {
+    console.error("Loader error fetching profile:", error);
+    // Có thể chuyển hướng đến trang lỗi hoặc đăng xuất người dùng
+    await supabase.auth.signOut();
+    return redirect('/login');
   }
 
+  return { session, user: session.user, profile };
+};
+
+// Component gốc cho các route được bảo vệ, cung cấp Context
+const ProtectedRoot = () => {
+  const { session, user, profile } = useLoaderData() as { session: Session; user: User; profile: Profile | null };
+  
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
-      <Route path="/profile/:slug" element={<PublicProfile />} />
-      <Route path="/checklist/:phone/*" element={<PublicChecklist />} />
-      <Route path="/timeline/public" element={<PublicTimelinePreview />} />
-
-      {/* Protected Routes */}
-      <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/guests" element={<Guests />} />
-        <Route path="/media-benefits" element={<MediaBenefits />} />
-        <Route path="/event-tasks" element={<EventTasks />} />
-        <Route path="/information" element={<Information />} />
-        <Route element={<PermissionProtectedRoute permissionId="revenue" />}>
-          <Route path="/revenue" element={<Revenue />} />
-        </Route>
-        <Route path="/timeline" element={<Timeline />} />
-        <Route path="/public-user" element={<PublicUser />} />
-        <Route element={<PermissionProtectedRoute permissionId="account" />}>
-          <Route path="/account" element={<Account />} />
-        </Route>
-        <Route path="/settings" element={<Settings />} />
-      </Route>
-
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <AuthProvider initialSession={session} initialUser={user} initialProfile={profile}>
+      <ProtectedRoute />
+    </AuthProvider>
   );
 };
+
+const router = createBrowserRouter([
+  // Public routes
+  { path: "/login", element: <Login /> },
+  { path: "/profile/:slug", element: <PublicProfile /> },
+  { path: "/checklist/:phone/*", element: <PublicChecklist /> },
+  { path: "/timeline/public", element: <PublicTimelinePreview /> },
+
+  // Protected routes
+  {
+    path: "/",
+    element: <ProtectedRoot />,
+    loader: protectedLoader,
+    children: [
+      { index: true, element: <Dashboard /> },
+      { path: "guests", element: <Guests /> },
+      { path: "media-benefits", element: <MediaBenefits /> },
+      { path: "event-tasks", element: <EventTasks /> },
+      { path: "information", element: <Information /> },
+      {
+        element: <PermissionProtectedRoute permissionId="revenue" />,
+        children: [{ path: "revenue", element: <Revenue /> }],
+      },
+      { path: "timeline", element: <Timeline /> },
+      { path: "public-user", element: <PublicUser /> },
+      {
+        element: <PermissionProtectedRoute permissionId="account" />,
+        children: [{ path: "account", element: <Account /> }],
+      },
+      { path: "settings", element: <Settings /> },
+    ],
+  },
+  { path: "*", element: <NotFound /> },
+]);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </BrowserRouter>
+      <RouterProvider router={router} />
     </TooltipProvider>
   </QueryClientProvider>
 );
