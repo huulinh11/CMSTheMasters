@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -30,61 +30,69 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    setLoading(true);
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      try {
-        setSession(session);
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
+  const processSession = useCallback(async (session: Session | null) => {
+    setSession(session);
+    const currentUser = session?.user ?? null;
+    setUser(currentUser);
 
-        if (currentUser) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
+    if (currentUser) {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
 
-          if (profileError && profileError.code !== 'PGRST116') {
-            console.error("Lỗi khi lấy profile người dùng:", profileError.message);
-            setProfile(null);
-            setPermissions(null);
-          } else {
-            setProfile(profileData);
-            if (profileData?.role) {
-              const { data: permData, error: permError } = await supabase
-                .from('role_permissions')
-                .select('permissions')
-                .eq('role', profileData.role)
-                .single();
-              
-              if (permError) {
-                console.error("Lỗi khi lấy quyền:", permError.message);
-                setPermissions([]);
-              } else {
-                setPermissions(permData?.permissions || []);
-              }
-            } else {
-              setPermissions([]);
-            }
-          }
-        } else {
-          setProfile(null);
-          setPermissions(null);
-        }
-      } catch (e) {
-        console.error("Lỗi trong quá trình xử lý xác thực:", e);
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error("Lỗi khi lấy profile người dùng:", profileError.message);
         setProfile(null);
         setPermissions(null);
-      } finally {
-        setLoading(false);
+        return;
       }
+      
+      setProfile(profileData);
+
+      if (profileData?.role) {
+        const { data: permData, error: permError } = await supabase
+          .from('role_permissions')
+          .select('permissions')
+          .eq('role', profileData.role)
+          .single();
+        
+        if (permError) {
+          console.error("Lỗi khi lấy quyền:", permError.message);
+          setPermissions([]);
+        } else {
+          setPermissions(permData?.permissions || []);
+        }
+      } else {
+        setPermissions([]);
+      }
+    } else {
+      setProfile(null);
+      setPermissions(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      // Lấy session ban đầu một cách an toàn
+      const { data: { session } } = await supabase.auth.getSession();
+      await processSession(session);
+      // Chỉ tắt màn hình tải sau khi mọi thứ đã sẵn sàng
+      setLoading(false);
+    };
+
+    initializeAuth();
+
+    // Lắng nghe các thay đổi sau này (đăng nhập/đăng xuất)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      processSession(session);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [processSession]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
