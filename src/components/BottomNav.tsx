@@ -19,7 +19,7 @@ import { allNavItems } from "@/config/nav";
 const BottomNav = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const location = useLocation();
-  const { signOut, user, profile } = useAuth();
+  const { signOut, permissions } = useAuth();
 
   useEffect(() => {
     if (isSheetOpen) {
@@ -27,29 +27,13 @@ const BottomNav = () => {
     }
   }, [location.pathname]);
 
-  const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
+  const visibleNavItems = useMemo(() => {
+    if (!permissions) return [];
+    return allNavItems.filter(item => permissions.includes(item.id));
+  }, [permissions]);
 
-  const mainNavItems = useMemo(() => {
-    if (!userRole) return [];
-    return allNavItems.filter(item => {
-      if (item.isMoreLink) return false;
-      if (item.roles) {
-        return item.roles.includes(userRole);
-      }
-      return true;
-    });
-  }, [userRole]);
-
-  const moreLinks = useMemo(() => {
-    if (!userRole) return [];
-    return allNavItems.filter(item => {
-      if (!item.isMoreLink) return false;
-      if (item.roles) {
-        return item.roles.includes(userRole);
-      }
-      return true;
-    });
-  }, [userRole]);
+  const mainNavItems = useMemo(() => visibleNavItems.filter(item => !item.isMoreLink), [visibleNavItems]);
+  const moreLinks = useMemo(() => visibleNavItems.filter(item => item.isMoreLink), [visibleNavItems]);
 
   const isMorePageActive = moreLinks.some(link => location.pathname.startsWith(link.to));
 

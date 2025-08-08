@@ -15,6 +15,7 @@ type AuthContextType = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  permissions: string[] | null;
   loading: boolean;
   signOut: () => void;
 };
@@ -25,40 +26,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [permissions, setPermissions] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleAuthStateChange = async (_event: string, session: Session | null) => {
-      setSession(session);
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
+    setLoading(true);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      try {
+        setSession(session);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
 
-      if (currentUser) {
-        // Nếu có người dùng, fetch profile của họ ngay lập tức
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
+        if (currentUser) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
 
-        if (error && error.code !== 'PGRST116') {
-          console.error("Lỗi khi lấy profile người dùng:", error.message);
-          setProfile(null);
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error("Lỗi khi lấy profile người dùng:", profileError.message);
+            setProfile(null);
+            setPermissions(null);
+          } else {
+            setProfile(profileData);
+            if (profileData?.role) {
+              const { data: permData, error: permError } = await supabase
+                .from('role_permissions')
+                .select('permissions')
+                .eq('role', profileData.role)
+                .single();
+              
+              if (permError) {
+                console.error("Lỗi khi lấy quyền:", permError.message);
+                setPermissions([]);
+              } else {
+                setPermissions(permData?.permissions || []);
+              }
+            } else {
+              setPermissions([]);
+            }
+          }
         } else {
-          setProfile(profileData);
+          setProfile(null);
+          setPermissions(null);
         }
-      } else {
-        // Nếu không có người dùng (đã đăng xuất), xóa profile
+      } catch (e) {
+        console.error("Lỗi trong quá trình xử lý xác thực:", e);
         setProfile(null);
+        setPermissions(null);
+      } finally {
+        setLoading(false);
       }
-      
-      // Chỉ kết thúc trạng thái tải sau khi đã xử lý xong cả session và profile
-      setLoading(false);
-    };
-
-    // onAuthStateChange sẽ kích hoạt khi tải trang lần đầu và mỗi khi trạng thái đăng nhập thay đổi
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+    });
 
     return () => {
       subscription.unsubscribe();
@@ -79,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     session,
     user,
     profile,
+    permissions,
     loading,
     signOut,
   };

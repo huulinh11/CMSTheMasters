@@ -5,19 +5,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { allNavItems } from "@/config/nav";
 
 const Sidebar = () => {
-  const { signOut, user, profile } = useAuth();
-
-  const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
+  const { signOut, permissions } = useAuth();
 
   const navItems = useMemo(() => {
-    if (!userRole) return [];
-    return allNavItems.filter(item => {
-      if (item.roles) {
-        return item.roles.includes(userRole);
-      }
-      return true;
-    });
-  }, [userRole]);
+    if (!permissions) return [];
+    return allNavItems.filter(item => permissions.includes(item.id));
+  }, [permissions]);
 
   return (
     <aside className="w-64 flex-shrink-0 bg-white border-r border-slate-200 p-4 hidden md:flex flex-col">

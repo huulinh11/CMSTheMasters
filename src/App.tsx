@@ -20,7 +20,7 @@ import PublicTimelinePreview from "./pages/public/PublicTimelinePreview";
 import Login from "./pages/Login";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import RoleProtectedRoute from "./components/RoleProtectedRoute";
+import PermissionProtectedRoute from "./components/PermissionProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -46,12 +46,12 @@ const AppContent = () => {
         <Route path="/media-benefits" element={<MediaBenefits />} />
         <Route path="/event-tasks" element={<EventTasks />} />
         <Route path="/information" element={<Information />} />
-        <Route element={<RoleProtectedRoute allowedRoles={['Admin', 'Quản lý', 'Sale']} />}>
+        <Route element={<PermissionProtectedRoute permissionId="revenue" />}>
           <Route path="/revenue" element={<Revenue />} />
         </Route>
         <Route path="/timeline" element={<Timeline />} />
         <Route path="/public-user" element={<PublicUser />} />
-        <Route element={<RoleProtectedRoute allowedRoles={['Admin', 'Quản lý']} />}>
+        <Route element={<PermissionProtectedRoute permissionId="account" />}>
           <Route path="/account" element={<Account />} />
         </Route>
         <Route path="/settings" element={<Settings />} />
