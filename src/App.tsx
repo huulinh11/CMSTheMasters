@@ -51,14 +51,14 @@ const protectedLoader = async () => {
 
     if (profileError && profileError.code !== 'PGRST116') {
       console.error("Lỗi khi tải profile:", profileError);
-      await supabase.auth.signOut();
+      // Không đăng xuất người dùng, chỉ chuyển hướng để họ có thể thử lại
       return redirect('/login');
     }
 
     return { session, user, profile: profile || null };
   } catch (e) {
     console.error("Lỗi nghiêm trọng trong loader:", e);
-    await supabase.auth.signOut();
+    // Không đăng xuất ở đây để tránh mất session hợp lệ
     return redirect('/login');
   }
 };
