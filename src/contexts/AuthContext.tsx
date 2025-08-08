@@ -53,10 +53,11 @@ export const AuthProvider = ({ children, initialSession, initialUser, initialPro
           .single();
         
         if (error && error.code !== 'PGRST116') {
-          showError("Không thể tải thông tin người dùng. Đang đăng xuất.");
-          await supabase.auth.signOut();
+          showError(`Lỗi tải thông tin người dùng: ${error.message}`);
+          // Don't sign out, just clear the profile to prevent a broken state
+          setProfile(null);
         } else {
-          setProfile(userProfile);
+          setProfile(userProfile || null);
         }
       } else {
         setProfile(null);
