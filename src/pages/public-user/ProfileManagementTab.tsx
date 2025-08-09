@@ -160,13 +160,11 @@ const ProfileManagementTab = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile_templates'] });
       showSuccess("Lưu template thành công!");
+      setIsEditTemplateOpen(false);
+      setEditingTemplate(null);
     },
     onError: (error: Error) => {
       showError(error.message);
-    },
-    onSettled: () => {
-      setIsEditTemplateOpen(false);
-      setEditingTemplate(null);
     },
   });
 
@@ -438,6 +436,7 @@ const ProfileManagementTab = () => {
         onSave={(template) => templateMutation.mutate(template)}
         isSaving={templateMutation.isPending}
         allRoles={roleConfigs}
+        templates={templates}
       />
       <AssignTemplateDialog
         open={isAssignTemplateOpen}

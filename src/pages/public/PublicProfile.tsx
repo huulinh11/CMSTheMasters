@@ -7,34 +7,111 @@ import { useMemo } from "react";
 import { ContentBlock, TextBlock } from "@/types/profile-content";
 import { getVideoEmbedUrl } from "@/lib/video";
 import { Loader2 } from "lucide-react";
+import { ProfileTemplate } from "@/types/profile-template";
 
-type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: any };
+type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: ContentBlock[] | null };
 
 const PublicProfile = () => {
   const { slug } = useParams();
 
-  const { data: guest, isLoading } = useQuery<CombinedGuest | null>({
-    queryKey: ['public_profile', slug],
+  const { data: guest, isLoading: isLoadingGuest } = useQuery<CombinedGuest | null>({
+    queryKey: ['public_profile_guest', slug],
     queryFn: async () => {
         if (!slug) return null;
-
         const { data: vipGuest } = await supabase.from('vip_guests').select('*').eq('slug', slug).single();
         if (vipGuest) return vipGuest as VipGuest;
-
         const { data: regularGuest } = await supabase.from('guests').select('*').eq('slug', slug).single();
         if (regularGuest) return regularGuest as Guest;
-
         return null;
     },
     enabled: !!slug,
   });
 
-  const contentBlocks: ContentBlock[] = useMemo(() => {
-    if (!guest || !guest.profile_content || !Array.isArray(guest.profile_content)) {
-      return [];
+  const { data: templates = [], isLoading: isLoadingTemplates } = useQuery<ProfileTemplate[]>({
+    queryKey: ['profile_templates'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profile_templates').select('*');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { contentBlocks, activeTemplate } = useMemo(() => {
+    if (!guest) {
+      return { contentBlocks: [], activeTemplate: null };
     }
-    return guest.profile_content;
-  }, [guest]);
+
+    let content: ContentBlock[] | null = null;
+    let template: ProfileTemplate | null = null;
+
+    // Priority 1: Custom content on the guest record (if it has content)
+    if (guest.profile_content && guest.profile_content.length > 0) {
+      content = guest.profile_content;
+    } 
+    // Priority 2: Directly assigned template
+    else if (guest.template_id) {
+      template = templates.find(t => t.id === guest.template_id) || null;
+      if (template) {
+        content = template.content;
+      }
+    } 
+    // Priority 3: Default template for the role
+    else {
+      template = templates.find(t => t.assigned_role === guest.role) || null;
+      if (template) {
+        content = template.content;
+      }
+    }
+
+    // If a template is active, merge guest data into it
+    if (template && content) {
+        const userContentMap = new Map((guest.profile_content || []).map((b) => [b.id, b]));
+        const mergedContent = (content || []).map((templateBlock): ContentBlock => {
+            const userBlock = userContentMap.get(templateBlock.id);
+            if (!userBlock || userBlock.type !== templateBlock.type) {
+                return templateBlock;
+            }
+    
+            switch (templateBlock.type) {
+                case 'image':
+                    if (userBlock.type === 'image') {
+                        return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
+                    }
+                    break;
+                case 'video':
+                    if (userBlock.type === 'video') {
+                        return { ...templateBlock, videoUrl: userBlock.videoUrl };
+                    }
+                    break;
+                case 'text':
+                    if (userBlock.type === 'text') {
+                        const userItemsMap = new Map((userBlock.items || []).map(item => [item.id, item]));
+                        const mergedItems = templateBlock.items.map(templateItem => {
+                            const userItem = userItemsMap.get(templateItem.id);
+                            if (!userItem || userItem.type !== templateItem.type) {
+                                return templateItem;
+                            }
+                            if (templateItem.type === 'text' && userItem.type === 'text') {
+                                return { ...templateItem, text: userItem.text };
+                            }
+                            if (templateItem.type === 'image' && userItem.type === 'image') {
+                                return { ...templateItem, imageUrl: userItem.imageUrl };
+                            }
+                            return templateItem;
+                        });
+                        return { ...templateBlock, items: mergedItems };
+                    }
+                    break;
+            }
+            return templateBlock;
+        });
+        return { contentBlocks: mergedContent, activeTemplate: template };
+    }
+
+    return { contentBlocks: content || [], activeTemplate: null };
+  }, [guest, templates]);
+
+  const isLoading = isLoadingGuest || isLoadingTemplates;
 
   if (isLoading) {
     return (
@@ -57,7 +134,7 @@ const PublicProfile = () => {
 
   return (
     <div className="w-full min-h-screen bg-black flex justify-center">
-      <div className="w-full max-w-md bg-white min-h-screen shadow-lg">
+      <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
         <div className="flex flex-col">
           {contentBlocks.length > 0 ? (
             contentBlocks.map((block) => {
@@ -147,6 +224,11 @@ const PublicProfile = () => {
             </div>
           )}
         </div>
+        {activeTemplate && (
+          <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+            Template: {activeTemplate.name}
+          </div>
+        )}
       </div>
     </div>
   );
