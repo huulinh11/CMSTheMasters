@@ -36,6 +36,7 @@ type UpsaleHistoryItem = {
   to_role: string;
   to_sponsorship: number;
   upsaled_by?: string | null;
+  bill_image_url?: string | null;
 };
 
 type CombinedHistoryItem = PaymentHistoryItem | UpsaleHistoryItem;
@@ -53,7 +54,7 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
         
       const upsaleHistoryPromise = supabase
         .from('guest_upsale_history')
-        .select('id, created_at, from_role, to_role, from_sponsorship, to_sponsorship, upsaled_by')
+        .select('id, created_at, from_role, to_role, from_sponsorship, to_sponsorship, upsaled_by, bill_image_url')
         .eq('guest_id', guest.id);
 
       const [{ data: payments, error: paymentsError }, { data: upsaleEvents, error: upsaleError }] = await Promise.all([paymentsPromise, upsaleHistoryPromise]);
@@ -77,6 +78,7 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
         to_role: u.to_role,
         to_sponsorship: u.to_sponsorship,
         upsaled_by: u.upsaled_by,
+        bill_image_url: u.bill_image_url,
       }));
 
       const combined = [...paymentHistory, ...upsaleHistory];
@@ -138,6 +140,11 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
                               <div className="text-xs text-muted-foreground mt-1">
                                 bởi {item.upsaled_by}
                               </div>
+                            )}
+                            {item.bill_image_url && (
+                              <a href={item.bill_image_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-1 inline-block">
+                                Xem bill
+                              </a>
                             )}
                           </div>
                         )}

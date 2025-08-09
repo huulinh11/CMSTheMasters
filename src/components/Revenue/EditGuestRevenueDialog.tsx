@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { formatCurrency } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { v4 as uuidv4 } from 'uuid';
 
 interface EditGuestRevenueDialogProps {
   guest: GuestRevenue | null;
@@ -42,6 +43,8 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
   const [paymentSource, setPaymentSource] = useState<PaymentSource | "">("");
   const [isUpsaled, setIsUpsaled] = useState(false);
   const [newRole, setNewRole] = useState("");
+  const [billFile, setBillFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const upsaleRoleOptions = useMemo(() => {
     if (!guest) return [];
@@ -58,6 +61,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
       setPaymentSource(guest.payment_source || "");
       setIsUpsaled(mode === 'upsale' || guest.is_upsaled);
       setNewRole(mode === 'upsale' ? "" : guest.role);
+      setBillFile(null);
     }
   }, [guest, open, mode]);
 
@@ -94,8 +98,34 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
   });
 
   const upsaleMutation = useMutation({
-    mutationFn: async (values: { newRole: string; sponsorship: number; paymentSource: string; upsaledBy: string; upsaledByUserId: string }) => {
+    mutationFn: async (values: { newRole: string; sponsorship: number; paymentSource: string; upsaledBy: string; upsaledByUserId: string; billFile: File | null }) => {
       if (!guest) throw new Error("Không có khách nào được chọn");
+
+      let billImageUrl: string | null = null;
+
+      if (values.billFile) {
+        setIsUploading(true);
+        const fileExt = values.billFile.name.split('.').pop();
+        const fileName = `${guest.id}-upsale-${uuidv4()}.${fileExt}`;
+        const filePath = `public/bills/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, values.billFile);
+
+        if (uploadError) {
+          setIsUploading(false);
+          throw new Error(`Lỗi tải bill lên: ${uploadError.message}`);
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+        
+        billImageUrl = publicUrl;
+        setIsUploading(false);
+      }
+
       const { error } = await supabase.rpc('upsale_guest', {
         guest_id_in: guest.id,
         new_role_in: values.newRole,
@@ -103,6 +133,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
         new_payment_source_in: values.paymentSource,
         upsaled_by_in: values.upsaledBy,
         upsaled_by_user_id_in: values.upsaledByUserId,
+        bill_image_url_in: billImageUrl,
       });
       if (error) throw error;
     },
@@ -113,7 +144,10 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
       showSuccess("Upsale thành công!");
       onOpenChange(false);
     },
-    onError: (error) => showError(`Lỗi: ${error.message}`),
+    onError: (error) => {
+      setIsUploading(false);
+      showError(`Lỗi: ${error.message}`);
+    },
   });
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,7 +169,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
         showError("Không thể xác định người dùng. Vui lòng đăng nhập lại.");
         return;
       }
-      upsaleMutation.mutate({ newRole, sponsorship, paymentSource: paymentSource || "Trống", upsaledBy, upsaledByUserId });
+      upsaleMutation.mutate({ newRole, sponsorship, paymentSource: paymentSource || "Trống", upsaledBy, upsaledByUserId, billFile });
     } else {
       editMutation.mutate({ sponsorship, payment_source: paymentSource || "Trống", is_upsaled: isUpsaled });
     }
@@ -193,6 +227,19 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
               </SelectContent>
             </Select>
           </div>
+          {mode === 'upsale' && (
+            <div>
+              <Label htmlFor="bill-upload">Bill thanh toán</Label>
+              <Input
+                id="bill-upload"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setBillFile(e.target.files?.[0] || null)}
+                disabled={isUploading}
+              />
+              {billFile && <p className="text-sm text-muted-foreground mt-1">Đã chọn: {billFile.name}</p>}
+            </div>
+          )}
           <div className="flex items-center space-x-2">
             <Switch id="is-upsaled" checked={isUpsaled} onCheckedChange={setIsUpsaled} disabled={mode === 'upsale'} />
             <Label htmlFor="is-upsaled">Đánh dấu là Upsale</Label>
@@ -200,8 +247,8 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
-          <Button onClick={handleSubmit} disabled={editMutation.isPending || upsaleMutation.isPending}>
-            {editMutation.isPending || upsaleMutation.isPending ? "Đang lưu..." : "Lưu"}
+          <Button onClick={handleSubmit} disabled={editMutation.isPending || upsaleMutation.isPending || isUploading}>
+            {isUploading ? "Đang tải bill..." : (editMutation.isPending || upsaleMutation.isPending ? "Đang lưu..." : "Lưu")}
           </Button>
         </DialogFooter>
       </DialogContent>
