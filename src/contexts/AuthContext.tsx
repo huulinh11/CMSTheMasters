@@ -28,77 +28,61 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserAndProfile = async (currentUser: User) => {
-      const { data: userProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        // Lỗi database thực sự, không phải không tìm thấy
-        throw profileError;
-      }
-
-      if (!userProfile) {
-        // Đây là trường hợp nghiêm trọng: user tồn tại trong auth nhưng không có trong profiles.
-        // Đây là trạng thái không hợp lệ, chúng ta cần đăng xuất họ.
-        throw new Error(`User profile not found for user ID: ${currentUser.id}.`);
-      }
-      
-      return userProfile;
-    };
-
-    // Chạy một lần khi component được mount
-    const initializeAuth = async () => {
+    // Effect này chỉ chạy một lần duy nhất khi ứng dụng khởi động.
+    // Nó sẽ thiết lập listener và kiểm tra session ban đầu.
+    const initializeAndListen = async () => {
       try {
+        // 1. Chủ động kiểm tra session ban đầu một lần duy nhất.
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
 
-        if (initialSession?.user) {
-          const userProfile = await fetchUserAndProfile(initialSession.user);
-          setSession(initialSession);
-          setUser(initialSession.user);
-          setProfile(userProfile);
-        }
+        // 3. Thiết lập listener cho các thay đổi trong tương lai.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          setSession(session);
+          setUser(session?.user ?? null);
+        });
+
+        return subscription;
       } catch (error) {
-        console.error("Authentication initialization error:", error);
-        await supabase.auth.signOut();
-        setSession(null);
-        setUser(null);
-        setProfile(null);
+        console.error("Lỗi trong quá trình khởi tạo xác thực:", error);
       } finally {
+        // 2. Quan trọng: Luôn tắt màn hình tải sau khi kiểm tra ban đầu hoàn tất.
         setIsLoading(false);
       }
     };
 
-    initializeAuth();
-
-    // Lắng nghe các thay đổi trạng thái xác thực
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      try {
-        if (newSession?.user) {
-          const userProfile = await fetchUserAndProfile(newSession.user);
-          setSession(newSession);
-          setUser(newSession.user);
-          setProfile(userProfile);
-        } else {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-        }
-      } catch (error) {
-        console.error("Auth state change error:", error);
-        await supabase.auth.signOut();
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-      }
-    });
+    const subscriptionPromise = initializeAndListen();
 
     return () => {
-      subscription.unsubscribe();
+      subscriptionPromise.then(sub => sub?.unsubscribe());
     };
-  }, []);
+  }, []); // Mảng dependency rỗng đảm bảo effect chỉ chạy một lần.
+
+  // Effect này chỉ chịu trách nhiệm tải profile khi có user.
+  useEffect(() => {
+    if (user) {
+      const fetchProfile = async () => {
+        const { data: userProfile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error("Lỗi tải profile, đang đăng xuất:", error);
+          await supabase.auth.signOut();
+          setProfile(null);
+        } else {
+          setProfile(userProfile || null);
+        }
+      };
+      fetchProfile();
+    } else {
+      // Nếu không có user, đảm bảo profile cũng là null.
+      setProfile(null);
+    }
+  }, [user]); // Chạy lại mỗi khi đối tượng user thay đổi.
 
   const permissions = useMemo(() => {
     const role = profile?.role || user?.user_metadata?.role;
@@ -107,6 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Listener onAuthStateChange sẽ tự động xử lý việc cập nhật state.
   };
 
   const value = { session, user, profile, permissions, isLoading, signOut };

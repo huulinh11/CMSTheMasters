@@ -28,57 +28,56 @@ import PermissionProtectedRoute from "./components/PermissionProtectedRoute";
 
 const queryClient = new QueryClient();
 
-const AppLayout = () => (
+// Component này bao bọc tất cả các trang cần xác thực.
+const ProtectedLayout = () => (
   <AuthProvider>
-    <Outlet />
+    <ProtectedRoute />
   </AuthProvider>
 );
 
 const router = createBrowserRouter([
-  {
-    element: <AppLayout />,
-    children: [
-      { 
-        path: "/login", 
-        element: <Login />,
-        action: loginAction,
-      },
-      {
-        path: "/",
-        element: <ProtectedRoute />,
-        children: [
-          { element: <PermissionProtectedRoute permissionId="dashboard" />, children: [{ index: true, element: <Dashboard /> }] },
-          { element: <PermissionProtectedRoute permissionId="guests" />, children: [{ path: "guests", element: <Guests /> }] },
-          { element: <PermissionProtectedRoute permissionId="media-benefits" />, children: [{ path: "media-benefits", element: <MediaBenefits /> }] },
-          { element: <PermissionProtectedRoute permissionId="event-tasks" />, children: [{ path: "event-tasks", element: <EventTasks /> }] },
-          { element: <PermissionProtectedRoute permissionId="information" />, children: [{ path: "information", element: <Information /> }] },
-          { element: <PermissionProtectedRoute permissionId="revenue" />, children: [{ path: "revenue", element: <Revenue /> }] },
-          { element: <PermissionProtectedRoute permissionId="timeline" />, children: [{ path: "timeline", element: <Timeline /> }] },
-          { element: <PermissionProtectedRoute permissionId="public-user" />, children: [{ path: "public-user", element: <PublicUser /> }] },
-          { element: <PermissionProtectedRoute permissionId="account" />, children: [{ path: "account", element: <Account /> }] },
-          {
-            element: <PermissionProtectedRoute permissionId="settings" />,
-            children: [
-              { 
-                path: "settings", 
-                element: <SettingsPage />,
-                children: [
-                  { index: true, element: <div /> },
-                  { path: "roles", element: <RoleSettings /> },
-                  { path: "tasks", element: <TaskSettings /> },
-                  { path: "benefits", element: <BenefitSettings /> },
-                  { path: "general", element: <GeneralSettings /> },
-                ]
-              }
-            ],
-          },
-        ],
-      },
-    ]
+  // Các trang công khai không cần xác thực được đặt ở cấp cao nhất.
+  { 
+    path: "/login", 
+    element: <Login />,
+    action: loginAction,
   },
   { path: "/profile/:slug", element: <PublicProfile /> },
   { path: "/checklist/:identifier/*", element: <PublicChecklist /> },
   { path: "/timeline/public", element: <PublicTimelinePreview /> },
+  
+  // Tất cả các trang cần đăng nhập đều là con của ProtectedLayout.
+  {
+    path: "/",
+    element: <ProtectedLayout />,
+    children: [
+      { element: <PermissionProtectedRoute permissionId="dashboard" />, children: [{ index: true, element: <Dashboard /> }] },
+      { element: <PermissionProtectedRoute permissionId="guests" />, children: [{ path: "guests", element: <Guests /> }] },
+      { element: <PermissionProtectedRoute permissionId="media-benefits" />, children: [{ path: "media-benefits", element: <MediaBenefits /> }] },
+      { element: <PermissionProtectedRoute permissionId="event-tasks" />, children: [{ path: "event-tasks", element: <EventTasks /> }] },
+      { element: <PermissionProtectedRoute permissionId="information" />, children: [{ path: "information", element: <Information /> }] },
+      { element: <PermissionProtectedRoute permissionId="revenue" />, children: [{ path: "revenue", element: <Revenue /> }] },
+      { element: <PermissionProtectedRoute permissionId="timeline" />, children: [{ path: "timeline", element: <Timeline /> }] },
+      { element: <PermissionProtectedRoute permissionId="public-user" />, children: [{ path: "public-user", element: <PublicUser /> }] },
+      { element: <PermissionProtectedRoute permissionId="account" />, children: [{ path: "account", element: <Account /> }] },
+      {
+        element: <PermissionProtectedRoute permissionId="settings" />,
+        children: [
+          { 
+            path: "settings", 
+            element: <SettingsPage />,
+            children: [
+              { index: true, element: <div /> },
+              { path: "roles", element: <RoleSettings /> },
+              { path: "tasks", element: <TaskSettings /> },
+              { path: "benefits", element: <BenefitSettings /> },
+              { path: "general", element: <GeneralSettings /> },
+            ]
+          }
+        ],
+      },
+    ],
+  },
   { path: "*", element: <NotFound /> },
 ]);
 
