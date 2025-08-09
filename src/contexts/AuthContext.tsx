@@ -28,67 +28,70 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Hàm này sẽ chạy một lần khi ứng dụng khởi động để lấy session và profile ban đầu.
-    const getInitialSessionAndProfile = async () => {
-      try {
-        // 1. Lấy session ban đầu.
-        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
+    const fetchUserAndProfile = async (currentUser: User) => {
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
 
-        // 2. Nếu có người dùng, tải profile của họ.
+      if (profileError && profileError.code !== 'PGRST116') {
+        // Lỗi database thực sự, không phải không tìm thấy
+        throw profileError;
+      }
+
+      if (!userProfile) {
+        // Đây là trường hợp nghiêm trọng: user tồn tại trong auth nhưng không có trong profiles.
+        // Đây là trạng thái không hợp lệ, chúng ta cần đăng xuất họ.
+        throw new Error(`User profile not found for user ID: ${currentUser.id}.`);
+      }
+      
+      return userProfile;
+    };
+
+    // Chạy một lần khi component được mount
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+
         if (initialSession?.user) {
-          const { data: userProfile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', initialSession.user.id)
-            .single();
-          
-          if (profileError && profileError.code !== 'PGRST116') {
-            throw profileError;
-          }
-          
-          // Cập nhật tất cả state cùng lúc.
+          const userProfile = await fetchUserAndProfile(initialSession.user);
           setSession(initialSession);
           setUser(initialSession.user);
-          setProfile(userProfile || null);
+          setProfile(userProfile);
         }
       } catch (error) {
-        console.error("Lỗi trong quá trình tải xác thực ban đầu:", error);
-        // Xóa state nếu có lỗi.
+        console.error("Authentication initialization error:", error);
+        await supabase.auth.signOut();
         setSession(null);
         setUser(null);
         setProfile(null);
       } finally {
-        // 3. Chỉ đặt isLoading thành false sau khi mọi thứ đã hoàn tất.
         setIsLoading(false);
       }
     };
 
-    getInitialSessionAndProfile();
+    initializeAuth();
 
-    // 4. Thiết lập listener để theo dõi các thay đổi xác thực trong tương lai (đăng nhập/đăng xuất).
+    // Lắng nghe các thay đổi trạng thái xác thực
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
-      
-      // Nếu người dùng đăng xuất, xóa profile.
-      if (!newSession?.user) {
+      try {
+        if (newSession?.user) {
+          const userProfile = await fetchUserAndProfile(newSession.user);
+          setSession(newSession);
+          setUser(newSession.user);
+          setProfile(userProfile);
+        } else {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+        }
+      } catch (error) {
+        console.error("Auth state change error:", error);
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
         setProfile(null);
-        return;
-      }
-
-      // Nếu người dùng đăng nhập hoặc session được làm mới, tải lại profile.
-      const { data: userProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', newSession.user.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error("Lỗi tải profile khi trạng thái xác thực thay đổi:", profileError);
-        setProfile(null);
-      } else {
-        setProfile(userProfile || null);
       }
     });
 
