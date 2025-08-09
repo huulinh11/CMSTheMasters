@@ -54,6 +54,10 @@ export const MaterialsViewerDialog = ({ open, onOpenChange, guest }: MaterialsVi
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['public_checklist', guest.phone] });
       queryClient.invalidateQueries({ queryKey: ['public_checklist', guest.id] });
+      const guestQueryKey = guest.type === 'Chức vụ' ? ['vip_guests'] : ['guests'];
+      queryClient.invalidateQueries({ queryKey: guestQueryKey });
+      const guestDetailsQueryKey = ['guest_details', guest.type === 'Chức vụ' ? 'vip' : 'regular', guest.id];
+      queryClient.invalidateQueries({ queryKey: guestDetailsQueryKey });
       showSuccess("Cập nhật tư liệu thành công!");
       setIsEditing(false);
     },

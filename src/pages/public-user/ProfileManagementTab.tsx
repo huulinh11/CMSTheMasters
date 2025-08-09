@@ -91,7 +91,7 @@ const ProfileManagementTab = () => {
       const updatePayload: { profile_content: ContentBlock[], profile_status?: ProfileStatus } = {
         profile_content: content,
       };
-      if (guest.profile_status === 'Trống') {
+      if (guest.profile_status === 'Trống' || !guest.profile_status) {
         updatePayload.profile_status = 'Đang chỉnh sửa';
       }
       const { error } = await supabase
@@ -100,10 +100,16 @@ const ProfileManagementTab = () => {
         .eq('id', guest.id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      const { guest } = variables;
       queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
       queryClient.invalidateQueries({ queryKey: ['guests'] });
-      queryClient.invalidateQueries({ queryKey: ['public_profile'] });
+      if (guest.slug) {
+        queryClient.invalidateQueries({ queryKey: ['public_profile', guest.slug] });
+      }
+      const guestType = guest.type === 'Chức vụ' ? 'vip' : 'regular';
+      queryClient.invalidateQueries({ queryKey: ['guest_details', guestType, guest.id] });
+
       showSuccess("Cập nhật profile thành công!");
       setEditingGuest(null);
     },
