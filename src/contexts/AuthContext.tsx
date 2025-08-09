@@ -28,8 +28,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // Effect này chỉ chạy một lần duy nhất khi ứng dụng khởi động.
+    // Nó sẽ thiết lập listener và kiểm tra session ban đầu.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
@@ -44,33 +45,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (error && error.code !== 'PGRST116') {
           console.error("Lỗi tải profile, đang đăng xuất:", error);
           await supabase.auth.signOut();
+          setProfile(null);
         } else {
           setProfile(userProfile || null);
         }
-      }
-      setIsLoading(false);
-    };
-
-    checkInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Chỉ cập nhật state, không cần fetch lại profile ở đây vì checkInitialSession đã làm
-      // và các sự kiện sau đó (như SIGNED_OUT) sẽ tự động dọn dẹp state.
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (!session?.user) {
+      } else {
         setProfile(null);
       }
-      // Đảm bảo loading chỉ tắt sau lần kiểm tra đầu tiên
-      if (isLoading) {
-        setIsLoading(false);
-      }
+      
+      // Sau khi kiểm tra xong, dù thành công hay thất bại, ta kết thúc trạng thái loading.
+      setIsLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [isLoading]);
+  }, []); // Mảng dependency rỗng đảm bảo effect chỉ chạy một lần.
 
   const permissions = useMemo(() => {
     const role = profile?.role || user?.user_metadata?.role;
@@ -79,9 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setSession(null);
-    setUser(null);
-    setProfile(null);
+    // Listener onAuthStateChange sẽ tự động xử lý việc cập nhật state.
   };
 
   const value = { session, user, profile, permissions, isLoading, signOut };
