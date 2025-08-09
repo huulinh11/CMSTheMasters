@@ -42,14 +42,14 @@ const PublicHomeTab = () => {
   });
 
   const { data: referredGuests } = useQuery({
-    queryKey: ['referred_guests', guest.name],
+    queryKey: ['referred_guests', guest.id],
     queryFn: async () => {
-      if (!guest.name) return [];
-      const { data, error } = await supabase.rpc('get_referred_guests', { referrer_name_in: guest.name });
+      if (!guest.id) return [];
+      const { data, error } = await supabase.rpc('get_referred_guests', { referrer_name_in: guest.id });
       if (error) throw error;
       return data || [];
     },
-    enabled: !!guest.name,
+    enabled: !!guest.id,
   });
 
   if (isLoadingSettings) {

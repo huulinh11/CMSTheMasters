@@ -123,9 +123,17 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       if (upsaleHistoryError) throw new Error(`Upsale History Error: ${upsaleHistoryError.message}`);
 
       const revenueData = allRevenueData.find((r: any) => r.id === guestId);
+      
+      let referrerName: string | null = guestData.referrer;
+      if (guestData.referrer && !allRevenueData.some((r: any) => r.name === guestData.referrer)) {
+        const { data: referrerGuest } = await supabase.from('vip_guests').select('name').eq('id', guestData.referrer).single();
+        if (referrerGuest) {
+          referrerName = referrerGuest.name;
+        }
+      }
 
       return {
-        guest: { ...guestData, secondaryInfo: guestData.secondary_info },
+        guest: { ...guestData, secondaryInfo: guestData.secondary_info, referrer: referrerName },
         revenue: revenueData ? {
           ...revenueData,
           sponsorship: revenueData.sponsorship || 0,
