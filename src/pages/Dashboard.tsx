@@ -182,14 +182,27 @@ const Dashboard = () => {
         const url = new URL(scannedUrl);
         const guestId = url.searchParams.get('guestId');
         if (guestId) {
-          successSoundRef.current?.play().catch(err => console.error("Audio play failed:", err));
-          showSuccess(`Đã quét thành công! Đang mở checklist...`);
           setIsScannerOpen(false);
-          
-          // Delay navigation to allow sound to play
-          setTimeout(() => {
+          showSuccess(`Đã quét thành công! Đang mở checklist...`);
+  
+          const audio = successSoundRef.current;
+          if (audio) {
+            const navigateAndCleanup = () => {
+              navigate(`/event-tasks?guestId=${guestId}`);
+              audio.removeEventListener('ended', navigateAndCleanup);
+              audio.removeEventListener('error', navigateAndCleanup);
+            };
+  
+            audio.addEventListener('ended', navigateAndCleanup);
+            audio.addEventListener('error', navigateAndCleanup);
+  
+            audio.play().catch(err => {
+              console.error("Audio play failed:", err);
+              navigateAndCleanup();
+            });
+          } else {
             navigate(`/event-tasks?guestId=${guestId}`);
-          }, 300);
+          }
         } else {
           showError("Mã QR không hợp lệ (thiếu guestId).");
         }
