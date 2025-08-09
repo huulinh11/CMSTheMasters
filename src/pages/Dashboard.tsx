@@ -185,7 +185,11 @@ const Dashboard = () => {
           successSoundRef.current?.play().catch(err => console.error("Audio play failed:", err));
           showSuccess(`Đã quét thành công! Đang mở checklist...`);
           setIsScannerOpen(false);
-          navigate(`/event-tasks?guestId=${guestId}`);
+          
+          // Delay navigation to allow sound to play
+          setTimeout(() => {
+            navigate(`/event-tasks?guestId=${guestId}`);
+          }, 300);
         } else {
           showError("Mã QR không hợp lệ (thiếu guestId).");
         }
