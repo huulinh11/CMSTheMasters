@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ProfileStatus } from './vip-guest';
 import { PAYMENT_SOURCES } from './guest-revenue';
+import { ContentBlock } from './profile-content';
 
 export const guestFormSchema = z.object({
   name: z.string().min(1, { message: "Tên không được để trống." }),
@@ -20,7 +21,7 @@ export type GuestFormValues = z.infer<typeof guestFormSchema>;
 export type Guest = GuestFormValues & {
   id: string;
   slug?: string;
-  profile_content?: any;
+  profile_content?: ContentBlock[] | null;
   materials?: string;
   profile_status?: ProfileStatus;
   template_id?: string | null;

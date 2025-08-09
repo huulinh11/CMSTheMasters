@@ -34,7 +34,6 @@ const formSchema = z.object({
   secondaryInfo: z.string().optional(),
   materials: z.string().optional(),
   facebook_link: z.string().url({ message: "Link Facebook không hợp lệ." }).optional().or(z.literal('')),
-  profile_content: z.string().optional(),
   image_url: z.string().url({ message: "Link ảnh không hợp lệ." }).optional().or(z.literal('')),
 });
 
@@ -51,7 +50,6 @@ export const EditInformationDialog = ({ open, onOpenChange, onSubmit, guest }: E
         secondaryInfo: guest.secondaryInfo || "",
         materials: guest.materials || "",
         facebook_link: guest.facebook_link || "",
-        profile_content: guest.profile_content || "",
         image_url: guest.image_url || "",
       });
     }
@@ -109,19 +107,6 @@ export const EditInformationDialog = ({ open, onOpenChange, onSubmit, guest }: E
                   <FormLabel>Tư liệu</FormLabel>
                   <FormControl>
                     <Textarea placeholder="Nhập nội dung tư liệu" {...field} rows={5} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="profile_content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Profile</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Nhập nội dung profile" {...field} rows={5} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

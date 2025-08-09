@@ -263,40 +263,44 @@ const ProfileManagementTab = () => {
     if (guest.template_id) {
       const template = templates.find(t => t.id === guest.template_id);
       if (template) {
-        const userContentMap = new Map((guest.profile_content || []).map((b: ContentBlock) => [b.id, b]));
-        guestContent = (template.content || []).map((templateBlock: ContentBlock): ContentBlock => {
+        const userContentMap = new Map((guest.profile_content || []).map((b) => [b.id, b]));
+        guestContent = (template.content || []).map((templateBlock): ContentBlock => {
           const userBlock = userContentMap.get(templateBlock.id);
-          if (!userBlock) {
+          if (!userBlock || userBlock.type !== templateBlock.type) {
             return templateBlock;
           }
   
-          if (templateBlock.type === 'image' && userBlock.type === 'image') {
-            return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
-          }
-  
-          if (templateBlock.type === 'video' && userBlock.type === 'video') {
-            return { ...templateBlock, videoUrl: userBlock.videoUrl };
-          }
-  
-          if (templateBlock.type === 'text' && userBlock.type === 'text') {
-            const userItemsMap = new Map((userBlock.items || []).map(item => [item.id, item]));
-            const mergedItems = templateBlock.items.map(templateItem => {
-              const userItem = userItemsMap.get(templateItem.id);
-              if (!userItem) {
-                return templateItem;
+          switch (templateBlock.type) {
+            case 'image':
+              if (userBlock.type === 'image') {
+                return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
               }
-  
-              if (templateItem.type === 'text' && userItem.type === 'text') {
-                return { ...templateItem, text: userItem.text };
+              break;
+            case 'video':
+              if (userBlock.type === 'video') {
+                return { ...templateBlock, videoUrl: userBlock.videoUrl };
               }
-              if (templateItem.type === 'image' && userItem.type === 'image') {
-                return { ...templateItem, imageUrl: userItem.imageUrl };
+              break;
+            case 'text':
+              if (userBlock.type === 'text') {
+                const userItemsMap = new Map((userBlock.items || []).map(item => [item.id, item]));
+                const mergedItems = templateBlock.items.map(templateItem => {
+                  const userItem = userItemsMap.get(templateItem.id);
+                  if (!userItem || userItem.type !== templateItem.type) {
+                    return templateItem;
+                  }
+                  if (templateItem.type === 'text' && userItem.type === 'text') {
+                    return { ...templateItem, text: userItem.text };
+                  }
+                  if (templateItem.type === 'image' && userItem.type === 'image') {
+                    return { ...templateItem, imageUrl: userItem.imageUrl };
+                  }
+                  return templateItem;
+                });
+                return { ...templateBlock, items: mergedItems };
               }
-              return templateItem;
-            });
-            return { ...templateBlock, items: mergedItems };
+              break;
           }
-  
           return templateBlock;
         });
       }

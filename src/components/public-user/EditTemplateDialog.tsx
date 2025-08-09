@@ -98,13 +98,13 @@ export const EditTemplateDialog = ({
             <Label htmlFor="assigned-role">Gán cho vai trò (mặc định)</Label>
             <Select
               value={assignedRole || ""}
-              onValueChange={(value) => setAssignedRole(value || null)}
+              onValueChange={(value) => setAssignedRole(value === "NONE" ? null : value)}
             >
               <SelectTrigger id="assigned-role">
                 <SelectValue placeholder="Chọn vai trò" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Không có</SelectItem>
+                <SelectItem value="NONE">Không có</SelectItem>
                 {allRoles.map((role) => (
                   <SelectItem key={role.id} value={role.name}>
                     {role.name}

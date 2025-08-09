@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ContentBlock } from './profile-content';
 
 export const vipGuestFormSchema = z.object({
   name: z.string().min(1, { message: "Tên không được để trống." }),
@@ -23,7 +24,7 @@ export type VipGuest = VipGuestFormValues & {
   slug?: string;
   materials?: string;
   facebook_link?: string;
-  profile_content?: any;
+  profile_content?: ContentBlock[] | null;
   image_url?: string;
   profile_status?: ProfileStatus;
   template_id?: string | null;
