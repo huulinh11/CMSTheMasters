@@ -148,8 +148,22 @@ export default function RegularMediaBenefitsTab() {
   });
 
   const handleUpdateBenefit = useCallback((guestId: string, field: string, value: any) => {
-    mutation.mutate({ guestId, benefits: { [field]: value } });
-  }, [mutation]);
+    const standardFields = ['invitation_status', 'page_post_link', 'btc_post_link', 'pre_event_news', 'post_event_news', 'red_carpet_video_link', 'news_video', 'beauty_ai_photos_link'];
+    
+    let payload: Partial<MediaBenefit>;
+    if (standardFields.includes(field)) {
+      payload = { [field]: value };
+    } else {
+      const existingBenefit = benefitsMap.get(guestId);
+      payload = {
+        custom_data: {
+          ...existingBenefit?.custom_data,
+          [field]: value,
+        }
+      };
+    }
+    mutation.mutate({ guestId, benefits: payload });
+  }, [mutation, benefitsMap]);
 
   const handleSaveAllBenefits = (guestId: string, benefits: Partial<MediaBenefit>) => {
     mutation.mutate({ guestId, benefits });
@@ -222,6 +236,8 @@ export default function RegularMediaBenefitsTab() {
           guests={filteredGuests}
           onUpdateBenefit={handleUpdateBenefit}
           onEdit={setEditingGuest}
+          benefitsByRole={benefitsByRole}
+          allBenefits={allBenefits}
         />
       ) : (
         <RegularMediaBenefitsTable
