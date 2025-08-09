@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Calendar, ClipboardList, Megaphone, Info, FileText, Users } from "lucide-react";
 import { MaterialsViewerDialog } from "@/components/public-checklist/MaterialsViewerDialog";
-import { MemberCardDialog } from "@/components/public-checklist/MemberCardDialog";
+import { ReferredGuestsDialog } from "@/components/public-checklist/ReferredGuestsDialog";
 
 type LogoConfig = {
   imageUrl: string;
@@ -29,8 +29,7 @@ type ChecklistSettings = {
 const PublicHomeTab = () => {
   const { guest } = useOutletContext<ChecklistDataContext>();
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
-  const [isMemberCardOpen, setIsMemberCardOpen] = useState(false);
-  const data = useOutletContext<ChecklistDataContext>();
+  const [isReferredGuestsOpen, setIsReferredGuestsOpen] = useState(false);
 
   const { data: settings, isLoading: isLoadingSettings } = useQuery<ChecklistSettings | null>({
     queryKey: ['checklist_settings'],
@@ -39,6 +38,19 @@ const PublicHomeTab = () => {
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     }
+  });
+
+  const { data: referredGuests } = useQuery({
+    queryKey: ['referred_guests', guest.name],
+    queryFn: async () => {
+      if (!guest.name) return [];
+      const { data: vips, error: vipsError } = await supabase.from('vip_guests').select('id, name, role, type: "Chức vụ"').eq('referrer', guest.name);
+      if (vipsError) throw vipsError;
+      const { data: regulars, error: regularsError } = await supabase.from('guests').select('id, name, role, type: "Khách mời"').eq('referrer', guest.name);
+      if (regularsError) throw regularsError;
+      return [...(vips || []), ...(regulars || [])];
+    },
+    enabled: !!guest.name,
   });
 
   if (isLoadingSettings) {
@@ -91,17 +103,17 @@ const PublicHomeTab = () => {
 
         <div className="space-y-3">
           <Link to="../event-info">
-            <Button variant="outline" className="w-full justify-start h-14 text-base border-primary text-primary hover:bg-primary/5 hover:text-primary">
+            <Button className="w-full justify-start h-14 text-base">
               <Calendar className="mr-4 h-6 w-6" /> Xem Timeline & Thông tin sự kiện
             </Button>
           </Link>
           <Link to="../tasks">
-            <Button variant="outline" className="w-full justify-start h-14 text-base border-primary text-primary hover:bg-primary/5 hover:text-primary">
+            <Button className="w-full justify-start h-14 text-base">
               <ClipboardList className="mr-4 h-6 w-6" /> Xem tác vụ
             </Button>
           </Link>
           <Link to="../benefits">
-            <Button variant="outline" className="w-full justify-start h-14 text-base border-primary text-primary hover:bg-primary/5 hover:text-primary">
+            <Button className="w-full justify-start h-14 text-base">
               <Megaphone className="mr-4 h-6 w-6" /> Xem quyền lợi của bạn
             </Button>
           </Link>
@@ -127,21 +139,28 @@ const PublicHomeTab = () => {
           </div>
         </div>
         
-        <Separator />
-        <Button className="w-full h-14 text-base" onClick={() => setIsMemberCardOpen(true)}>
-          <Users className="mr-4 h-6 w-6" /> Xem thẻ thành viên
-        </Button>
+        {referredGuests && referredGuests.length > 0 && (
+          <>
+            <Separator />
+            <Button className="w-full h-14 text-base" onClick={() => setIsReferredGuestsOpen(true)}>
+              <Users className="mr-4 h-6 w-6" /> Xem thành viên ({referredGuests.length})
+            </Button>
+          </>
+        )}
       </div>
       <MaterialsViewerDialog
         open={isMaterialsOpen}
         onOpenChange={setIsMaterialsOpen}
         guest={guest}
       />
-      <MemberCardDialog
-        open={isMemberCardOpen}
-        onOpenChange={setIsMemberCardOpen}
-        data={data}
-      />
+      {referredGuests && referredGuests.length > 0 && (
+        <ReferredGuestsDialog
+          open={isReferredGuestsOpen}
+          onOpenChange={setIsReferredGuestsOpen}
+          referrerName={guest.name}
+          referredGuests={referredGuests}
+        />
+      )}
     </>
   );
 };
