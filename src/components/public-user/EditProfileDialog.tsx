@@ -235,7 +235,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
         </div>
       )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div className="flex-grow overflow-hidden flex flex-col">
+        <div className="flex-grow overflow-hidden flex flex-col h-full">
           <ScrollArea className="flex-grow pr-4">
             <SortableContext items={blocks.map(b => `block_${b.id}`)} strategy={verticalListSortingStrategy}>
               <div className="space-y-4">

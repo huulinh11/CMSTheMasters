@@ -130,12 +130,10 @@ const ProfileManagementTab = () => {
       queryClient.invalidateQueries({ queryKey: ['guest_details', guestType, guest.id] });
 
       showSuccess("Cập nhật profile thành công!");
+      setEditingGuest(null);
     },
     onError: (error: Error) => {
       showError(`Lỗi: ${error.message}`);
-    },
-    onSettled: () => {
-      setEditingGuest(null);
     }
   });
 
@@ -202,11 +200,9 @@ const ProfileManagementTab = () => {
       queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
       queryClient.invalidateQueries({ queryKey: ['guests'] });
       showSuccess("Gán template thành công!");
-    },
-    onError: (error: Error) => showError(error.message),
-    onSettled: () => {
       setIsAssignTemplateOpen(false);
     },
+    onError: (error: Error) => showError(error.message),
   });
 
   // ... (useEffect for slug backfill remains the same)
@@ -270,8 +266,8 @@ const ProfileManagementTab = () => {
     if (guest.template_id) {
       const template = templates.find(t => t.id === guest.template_id);
       if (template) {
-        const userContentMap = new Map((guest.profile_content || []).map((b) => [b.id, b]));
-        guestContent = (template.content || []).map((templateBlock): ContentBlock => {
+        const userContentMap = new Map((guest.profile_content || []).map((b: ContentBlock) => [b.id, b]));
+        guestContent = (template.content || []).map((templateBlock: ContentBlock): ContentBlock => {
           const userBlock = userContentMap.get(templateBlock.id);
           if (!userBlock || userBlock.type !== templateBlock.type) {
             return templateBlock;
