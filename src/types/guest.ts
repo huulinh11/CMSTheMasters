@@ -23,4 +23,5 @@ export type Guest = GuestFormValues & {
   profile_content?: any;
   materials?: string;
   profile_status?: ProfileStatus;
+  template_id?: string | null;
 };

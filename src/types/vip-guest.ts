@@ -26,4 +26,5 @@ export type VipGuest = VipGuestFormValues & {
   profile_content?: any;
   image_url?: string;
   profile_status?: ProfileStatus;
+  template_id?: string | null;
 };
