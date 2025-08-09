@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface RoleMultiSelectProps {
   options: RoleConfiguration[];
@@ -53,25 +54,27 @@ export function RoleMultiSelect({ options, selected, onChange }: RoleMultiSelect
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
           <Command>
             <CommandInput placeholder="Tìm vai trò..." />
-            <CommandList className="max-h-[300px]">
+            <CommandList>
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
-              <CommandGroup>
-                {options.map((option) => (
-                  <CommandItem
-                    key={option.id}
-                    value={option.name}
-                    onSelect={() => handleSelect(option.name)}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        selected.includes(option.name) ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {option.name}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+              <ScrollArea className="h-72">
+                <CommandGroup>
+                  {options.map((option) => (
+                    <CommandItem
+                      key={option.id}
+                      value={option.name}
+                      onSelect={() => handleSelect(option.name)}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selected.includes(option.name) ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {option.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </ScrollArea>
             </CommandList>
           </Command>
         </PopoverContent>
