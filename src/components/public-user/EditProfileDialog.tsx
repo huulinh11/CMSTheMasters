@@ -47,13 +47,13 @@ interface EditProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   guest: CombinedGuest | null;
-  onSave: (content: ContentBlock[]) => void;
+  onSave?: (content: ContentBlock[]) => void;
+  onContentChange?: (content: ContentBlock[]) => void;
   isSaving: boolean;
   isTemplateMode?: boolean;
   isSubDialog?: boolean;
 }
 
-// ... (SortableItem and fontFamilies remain the same)
 const SortableItem = ({ id, children, className }: { id: string, children: React.ReactNode, className?: string }) => {
   const {
     attributes,
@@ -94,7 +94,7 @@ const fontFamilies = [
 ];
 
 
-export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving, isTemplateMode = false, isSubDialog = false }: EditProfileDialogProps) => {
+export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContentChange, isSaving, isTemplateMode = false, isSubDialog = false }: EditProfileDialogProps) => {
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
   useEffect(() => {
@@ -143,6 +143,12 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving,
       setBlocks(migratedBlocks as ContentBlock[]);
     }
   }, [guest]);
+
+  useEffect(() => {
+    if (onContentChange) {
+      onContentChange(blocks);
+    }
+  }, [blocks, onContentChange]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -361,7 +367,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, isSaving,
             <Button variant="outline" size="sm" onClick={() => handleAddBlock('video')} disabled={isTemplateMode}><Video className="mr-2 h-4 w-4" /> Thêm video</Button>
             <Button variant="outline" size="sm" onClick={() => handleAddBlock('text')} disabled={isTemplateMode}><Type className="mr-2 h-4 w-4" /> Thêm text</Button>
           </div>
-          <Button onClick={() => onSave(blocks)} disabled={isSaving}>
+          <Button onClick={() => onSave && onSave(blocks)} disabled={isSaving}>
             {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
           </Button>
         </DialogFooter>
