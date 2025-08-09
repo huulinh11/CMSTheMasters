@@ -1,9 +1,19 @@
-import { Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import Layout from './Layout';
+import LoadingScreen from './LoadingScreen';
 
 const ProtectedRoute = () => {
-  // The loader in App.tsx now handles the redirection.
-  // This component's only job is to provide the main layout.
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <Layout>
       <Outlet />
