@@ -51,6 +51,7 @@ const RegularGuestRevenueTab = () => {
 
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
   const canViewSummaryStats = !!(userRole && ['Admin', 'Quản lý'].includes(userRole));
+  const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
 
   const { data: guestsData = [], isLoading: isLoadingGuests } = useQuery<any[]>({
     queryKey: ['guest_revenue_details'],
@@ -108,6 +109,21 @@ const RegularGuestRevenueTab = () => {
       showSuccess(editingGuestForForm ? "Cập nhật khách mời thành công!" : "Thêm khách mời thành công!");
       setIsFormOpen(false);
       setEditingGuestForForm(null);
+    },
+    onError: (error: any) => showError(error.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!canDelete) throw new Error("Bạn không có quyền xóa khách.");
+      const { error } = await supabase.from('guests').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+      showSuccess(`Đã xóa khách mời.`);
+      setViewingGuestId(null);
     },
     onError: (error: any) => showError(error.message),
   });
@@ -191,6 +207,10 @@ const RegularGuestRevenueTab = () => {
       ...values,
     };
     addOrEditMutation.mutate(guestToUpsert);
+  };
+
+  const handleDeleteGuest = (id: string) => {
+    deleteMutation.mutate(id);
   };
 
   const isLoading = isLoadingGuests || isLoadingRoles || isLoadingHistory;
@@ -278,6 +298,7 @@ const RegularGuestRevenueTab = () => {
         open={!!viewingGuestId}
         onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
         onEdit={handleEditFromDetails}
+        onDelete={handleDeleteGuest}
         roleConfigs={roleConfigs}
       />
       <AddGuestDialog

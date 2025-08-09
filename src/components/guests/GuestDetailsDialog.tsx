@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp } from "lucide-react";
+import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,6 +29,16 @@ import { ContentBlock } from "@/types/profile-content";
 import { MediaBenefit } from "@/types/media-benefit";
 import PaymentDialog from "@/components/Revenue/PaymentDialog";
 import GuestPaymentDialog from "@/components/Revenue/GuestPaymentDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
@@ -65,7 +75,7 @@ const MaterialsViewerDialog = ({ open, onOpenChange, content, guestName, onEdit 
   </Dialog>
 );
 
-const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { guestId: string, guestType: 'vip' | 'regular', onEdit: (guest: any) => void, roleConfigs: any[] }) => {
+const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs }: { guestId: string, guestType: 'vip' | 'regular', onEdit: (guest: any) => void, onDelete: (guestId: string) => void, roleConfigs: any[] }) => {
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [isMediaDialogOpen, setIsMediaDialogOpen] = useState(false);
@@ -74,8 +84,10 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
   const [isRevenueDialogOpen, setIsRevenueDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [revenueDialogMode, setRevenueDialogMode] = useState<'edit' | 'upsale'>('edit');
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const queryClient = useQueryClient();
   const { profile, user } = useAuth();
+  const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
 
   const { data, isLoading } = useQuery({
     queryKey: ['guest_details', guestType, guestId],
@@ -203,6 +215,12 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
     showSuccess("Đã sao chép link!");
   };
 
+  const handleDelete = () => {
+    if (data?.guest.id) {
+      onDelete(data.guest.id);
+    }
+  };
+
   if (isLoading) {
     return <div className="p-4 md:p-6 space-y-4"><Skeleton className="h-[80vh] w-full" /></div>;
   }
@@ -232,6 +250,11 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
                     <p className="text-slate-500 mt-1">{guest.role} ({guest.id})</p>
                 </div>
             </div>
+            {canDelete && (
+              <Button variant="destructive" onClick={() => setIsDeleteAlertOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" /> Xóa
+              </Button>
+            )}
         </div>
       </header>
 
@@ -354,6 +377,20 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, roleConfigs }: { gues
           </div>
         </div>
       </ScrollArea>
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này không thể hoàn tác. Thao tác này sẽ xóa vĩnh viễn khách mời <strong>{guest.name}</strong> và tất cả dữ liệu liên quan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Xóa</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <MaterialsViewerDialog 
         open={isMaterialsOpen} 
         onOpenChange={setIsMaterialsOpen} 
@@ -427,10 +464,11 @@ interface GuestDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (guest: any) => void;
+  onDelete: (guestId: string) => void;
   roleConfigs: any[];
 }
 
-export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onEdit, roleConfigs }: GuestDetailsDialogProps) => {
+export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onEdit, onDelete, roleConfigs }: GuestDetailsDialogProps) => {
   const isMobile = useIsMobile();
 
   return (
@@ -438,13 +476,13 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
       {isMobile ? (
         <Drawer open={open} onOpenChange={onOpenChange}>
           <DrawerContent className="h-[90vh]">
-            {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} roleConfigs={roleConfigs} />}
+            {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DrawerContent>
         </Drawer>
       ) : (
         <Dialog open={open} onOpenChange={onOpenChange}>
           <DialogContent className="max-w-7xl h-[90vh] p-0">
-            {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} roleConfigs={roleConfigs} />}
+            {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DialogContent>
         </Dialog>
       )}

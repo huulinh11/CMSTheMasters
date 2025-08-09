@@ -196,6 +196,7 @@ const VipGuestTab = () => {
 
   const handleDeleteGuest = (id: string) => {
     deleteMutation.mutate([id]);
+    setViewingGuestId(null);
   };
 
   const handleBulkDelete = () => {
@@ -350,6 +351,7 @@ const VipGuestTab = () => {
         open={!!viewingGuestId}
         onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
         onEdit={handleEditFromDetails}
+        onDelete={handleDeleteGuest}
         roleConfigs={roleConfigs}
       />
     </div>

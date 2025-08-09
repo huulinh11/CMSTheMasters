@@ -42,6 +42,7 @@ const VipGuestRevenueTab = () => {
 
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
   const canViewSummaryStats = !!(userRole && ['Admin', 'Quản lý'].includes(userRole));
+  const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuestRevenue[]>({
     queryKey: ['vip_revenue'],
@@ -98,6 +99,21 @@ const VipGuestRevenueTab = () => {
     onError: (error: any) => showError(error.message),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!canDelete) throw new Error("Bạn không có quyền xóa khách.");
+      const { error } = await supabase.from('vip_guests').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+      showSuccess(`Đã xóa khách.`);
+      setViewingGuestId(null);
+    },
+    onError: (error: any) => showError(error.message),
+  });
+
   const filteredGuests = useMemo(() => {
     return guests.filter((guest) => {
       const searchMatch =
@@ -129,6 +145,10 @@ const VipGuestRevenueTab = () => {
       ...values,
     };
     addOrEditMutation.mutate(guestToUpsert);
+  };
+
+  const handleDeleteGuest = (id: string) => {
+    deleteMutation.mutate(id);
   };
 
   const isLoading = isLoadingGuests || isLoadingRoles;
@@ -212,6 +232,7 @@ const VipGuestRevenueTab = () => {
         open={!!viewingGuestId}
         onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
         onEdit={handleEditFromDetails}
+        onDelete={handleDeleteGuest}
         roleConfigs={roleConfigs}
       />
       <AddVipGuestDialog
