@@ -69,22 +69,36 @@ const BenefitSettings = () => {
   const mutation = useMutation({
     mutationFn: async ({ name, roles, originalName }: { name: string; roles: string[]; originalName?: string }) => {
       const isEditing = !!originalName;
-      
-      if (isEditing && name !== originalName) {
-        const { error: updateError } = await supabase.from('media_benefits_master').update({ name }).eq('name', originalName);
-        if (updateError) throw updateError;
-      } else if (!isEditing) {
-        const { error: insertError } = await supabase.from('media_benefits_master').insert({ name });
+
+      // Step 1: Handle the master benefit table.
+      if (isEditing) {
+        if (name !== originalName) {
+          const { error: updateError } = await supabase
+            .from('media_benefits_master')
+            .update({ name })
+            .eq('name', originalName);
+          if (updateError) throw updateError;
+        }
+      } else {
+        const { error: insertError } = await supabase
+          .from('media_benefits_master')
+          .insert({ name });
         if (insertError) throw insertError;
       }
 
-      const { error: deleteError } = await supabase.from('role_benefits').delete().eq('benefit_name', name);
+      // Step 2: Sync the role associations.
+      const { error: deleteError } = await supabase
+        .from('role_benefits')
+        .delete()
+        .eq('benefit_name', name);
       if (deleteError) throw deleteError;
 
       if (roles.length > 0) {
         const newLinks = roles.map(role_name => ({ benefit_name: name, role_name }));
-        const { error: insertError } = await supabase.from('role_benefits').insert(newLinks);
-        if (insertError) throw insertError;
+        const { error: insertLinksError } = await supabase
+          .from('role_benefits')
+          .insert(newLinks);
+        if (insertLinksError) throw insertLinksError;
       }
     },
     onSuccess: () => {

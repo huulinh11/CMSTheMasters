@@ -69,26 +69,41 @@ const TaskSettings = () => {
   const mutation = useMutation({
     mutationFn: async ({ name, roles, originalName }: { name: string; roles: string[]; originalName?: string }) => {
       const isEditing = !!originalName;
-      const taskNameToUpdate = originalName || name;
 
-      // Step 1: Upsert the task in the master table.
-      if (isEditing && name !== originalName) {
-        const { error: updateError } = await supabase.from('event_tasks_master').update({ name }).eq('name', originalName);
-        if (updateError) throw updateError;
-      } else if (!isEditing) {
-        const { error: insertError } = await supabase.from('event_tasks_master').insert({ name });
+      // Step 1: Handle the master task table.
+      if (isEditing) {
+        // If the name has changed, update it. The CASCADE will handle role_tasks.
+        if (name !== originalName) {
+          const { error: updateError } = await supabase
+            .from('event_tasks_master')
+            .update({ name })
+            .eq('name', originalName);
+          if (updateError) throw updateError;
+        }
+      } else {
+        // If it's a new task, insert it.
+        const { error: insertError } = await supabase
+          .from('event_tasks_master')
+          .insert({ name });
         if (insertError) throw insertError;
       }
 
-      // Step 2: Delete existing role associations for this task.
-      const { error: deleteError } = await supabase.from('role_tasks').delete().eq('task_name', name);
+      // Step 2: Sync the role associations.
+      // First, delete all existing associations for this task.
+      // We use the *new* name because if it was updated, the CASCADE took care of it.
+      const { error: deleteError } = await supabase
+        .from('role_tasks')
+        .delete()
+        .eq('task_name', name);
       if (deleteError) throw deleteError;
 
-      // Step 3: Insert new role associations if any are selected.
+      // Second, if there are any roles to associate, insert them.
       if (roles.length > 0) {
         const newLinks = roles.map(role_name => ({ task_name: name, role_name }));
-        const { error: insertError } = await supabase.from('role_tasks').insert(newLinks);
-        if (insertError) throw insertError;
+        const { error: insertLinksError } = await supabase
+          .from('role_tasks')
+          .insert(newLinks);
+        if (insertLinksError) throw insertLinksError;
       }
     },
     onSuccess: () => {
