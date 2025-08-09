@@ -13,6 +13,7 @@ import CommissionDetailsDialog from "@/components/Revenue/CommissionDetailsDialo
 import UpsaleCommissionDetailsDialog from "@/components/Revenue/UpsaleCommissionDetailsDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import CommissionStats from "@/components/Revenue/CommissionStats";
 
 const CommissionTab = () => {
   const { profile, user } = useAuth();
@@ -24,6 +25,7 @@ const CommissionTab = () => {
   
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
   const isSale = useMemo(() => userRole === 'Sale', [userRole]);
+  const canViewSummaryStats = useMemo(() => userRole === 'Admin' || userRole === 'Quản lý', [userRole]);
 
   const [commissionType, setCommissionType] = useState<'all' | 'referrer' | 'upsale'>(
     isSale ? 'upsale' : 'all'
@@ -53,6 +55,16 @@ const CommissionTab = () => {
       return data || [];
     },
   });
+
+  const commissionStats = useMemo(() => {
+    if (!canViewSummaryStats) return { totalUpsaleAmount: 0, totalUpsaleCount: 0, totalCommission: 0 };
+    
+    const totalUpsaleAmount = upsaleSummaryData.reduce((sum, item) => sum + item.total_upsale_amount, 0);
+    const totalUpsaleCount = upsaleSummaryData.reduce((sum, item) => sum + item.upsale_count, 0);
+    const totalCommission = upsaleSummaryData.reduce((sum, item) => sum + item.total_commission, 0);
+
+    return { totalUpsaleAmount, totalUpsaleCount, totalCommission };
+  }, [upsaleSummaryData, canViewSummaryStats]);
 
   const processedReferrerSummary = useMemo(() => {
     let data = referrerSummary.filter(item => 
@@ -250,6 +262,13 @@ const CommissionTab = () => {
 
   return (
     <div className="space-y-4">
+      {canViewSummaryStats && (
+        <CommissionStats 
+          totalUpsaleAmount={commissionStats.totalUpsaleAmount}
+          totalUpsaleCount={commissionStats.totalUpsaleCount}
+          totalCommission={commissionStats.totalCommission}
+        />
+      )}
       {!isSale && (
         <div className="flex flex-col md:flex-row gap-2">
           <Input 
