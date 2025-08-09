@@ -35,17 +35,25 @@ export const AuthProvider = ({ children, initialSession, initialUser, initialPro
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const navigate = useNavigate();
 
+  // Effect này sẽ đồng bộ state của context với dữ liệu từ loader mỗi khi điều hướng.
+  // Điều này quan trọng vì AuthProvider không mount lại, nhưng dữ liệu từ loader thì thay đổi.
   useEffect(() => {
     setSession(initialSession);
     setUser(initialUser);
     setProfile(initialProfile);
+  }, [initialSession, initialUser, initialProfile]);
 
+  // Effect này chỉ chạy một lần để đăng ký listener theo dõi thay đổi trạng thái đăng nhập.
+  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      // Session từ listener luôn là mới nhất.
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
       if (currentUser) {
+        // Phải fetch lại profile vì thông tin user có thể đã thay đổi,
+        // hoặc đây là sự kiện SIGNED_IN của một user khác.
         const { data: userProfile, error } = await supabase
           .from('profiles')
           .select('*')
@@ -54,12 +62,12 @@ export const AuthProvider = ({ children, initialSession, initialUser, initialPro
         
         if (error && error.code !== 'PGRST116') {
           showError(`Lỗi tải thông tin người dùng: ${error.message}`);
-          // Don't sign out, just clear the profile to prevent a broken state
           setProfile(null);
         } else {
           setProfile(userProfile || null);
         }
       } else {
+        // Nếu không có user, không có profile.
         setProfile(null);
       }
 
@@ -68,8 +76,10 @@ export const AuthProvider = ({ children, initialSession, initialUser, initialPro
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [navigate, initialSession, initialUser, initialProfile]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const permissions = useMemo(() => {
     const role = profile?.role || user?.user_metadata?.role;
