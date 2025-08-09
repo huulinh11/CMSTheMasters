@@ -13,7 +13,7 @@ import { Camera } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import QrScannerComponent from "@/components/QrScannerComponent";
 import { useNavigate } from "react-router-dom";
-import { showSuccess, showError } from "@/utils/toast";
+import { showError } from "@/utils/toast";
 
 type UpsaleHistory = {
   guest_id: string;
@@ -194,7 +194,6 @@ const Dashboard = () => {
         const url = new URL(scannedUrl);
         const guestId = url.searchParams.get('guestId');
         if (guestId) {
-          showSuccess(`Đã quét thành công! Đang mở checklist...`);
           const targetUrl = `/event-tasks?guestId=${guestId}`;
           
           const audio = successSoundRef.current;
