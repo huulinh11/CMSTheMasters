@@ -9,11 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RoleConfiguration } from "@/types/role-configuration";
 import { AddEditBenefitDialog } from "@/components/settings/AddEditBenefitDialog";
 import { Badge } from "@/components/ui/badge";
-
-interface BenefitItem {
-  id: string;
-  name: string;
-}
+import { BenefitItem, benefitFieldTypeLabels } from "@/types/benefit-configuration";
 
 interface RoleBenefit {
   role_name: string;
@@ -23,7 +19,7 @@ interface RoleBenefit {
 const BenefitSettings = () => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<{ name: string; roles: string[] } | null>(null);
+  const [editingItem, setEditingItem] = useState<{ name: string; roles: string[]; field_type: BenefitItem['field_type'] } | null>(null);
 
   const { data: benefits = [], isLoading: isLoadingBenefits } = useQuery<BenefitItem[]>({
     queryKey: ['media_benefits_master'],
@@ -67,38 +63,24 @@ const BenefitSettings = () => {
   }, [benefits, roleBenefits]);
 
   const mutation = useMutation({
-    mutationFn: async ({ name, roles, originalName }: { name: string; roles: string[]; originalName?: string }) => {
+    mutationFn: async ({ name, roles, field_type, originalName }: { name: string; roles: string[]; field_type: BenefitItem['field_type']; originalName?: string }) => {
       const isEditing = !!originalName;
-
-      // Step 1: Handle the master benefit table.
+      
       if (isEditing) {
-        if (name !== originalName) {
-          const { error: updateError } = await supabase
-            .from('media_benefits_master')
-            .update({ name })
-            .eq('name', originalName);
-          if (updateError) throw updateError;
-        }
+        const { error: updateError } = await supabase.from('media_benefits_master').update({ name, field_type }).eq('name', originalName);
+        if (updateError) throw updateError;
       } else {
-        const { error: insertError } = await supabase
-          .from('media_benefits_master')
-          .insert({ name });
+        const { error: insertError } = await supabase.from('media_benefits_master').insert({ name, field_type });
         if (insertError) throw insertError;
       }
 
-      // Step 2: Sync the role associations.
-      const { error: deleteError } = await supabase
-        .from('role_benefits')
-        .delete()
-        .eq('benefit_name', name);
+      const { error: deleteError } = await supabase.from('role_benefits').delete().eq('benefit_name', name);
       if (deleteError) throw deleteError;
 
       if (roles.length > 0) {
         const newLinks = roles.map(role_name => ({ benefit_name: name, role_name }));
-        const { error: insertLinksError } = await supabase
-          .from('role_benefits')
-          .insert(newLinks);
-        if (insertLinksError) throw insertLinksError;
+        const { error: insertError } = await supabase.from('role_benefits').insert(newLinks);
+        if (insertError) throw insertError;
       }
     },
     onSuccess: () => {
@@ -123,7 +105,7 @@ const BenefitSettings = () => {
     onError: (error: Error) => showError(error.message),
   });
 
-  const handleOpenDialog = (item: { name: string; roles: string[] } | null) => {
+  const handleOpenDialog = (item: { name: string; roles: string[]; field_type: BenefitItem['field_type'] } | null) => {
     setEditingItem(item);
     setIsDialogOpen(true);
   };
@@ -147,6 +129,7 @@ const BenefitSettings = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Tên Quyền lợi</TableHead>
+                <TableHead>Loại trường</TableHead>
                 <TableHead>Áp dụng cho vai trò</TableHead>
                 <TableHead className="text-right">Tác vụ</TableHead>
               </TableRow>
@@ -156,6 +139,7 @@ const BenefitSettings = () => {
                 benefitsWithRoles.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>{benefitFieldTypeLabels[item.field_type]}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {item.roles.map(role => <Badge key={role} variant="secondary">{role}</Badge>)}
@@ -173,7 +157,7 @@ const BenefitSettings = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center">
+                  <TableCell colSpan={4} className="h-24 text-center">
                     Chưa có quyền lợi nào.
                   </TableCell>
                 </TableRow>
