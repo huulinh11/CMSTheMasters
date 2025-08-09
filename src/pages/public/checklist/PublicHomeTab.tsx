@@ -8,8 +8,9 @@ import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Calendar, ClipboardList, Megaphone, Info, FileText } from "lucide-react";
+import { Calendar, ClipboardList, Megaphone, Info, FileText, Users } from "lucide-react";
 import { MaterialsViewerDialog } from "@/components/public-checklist/MaterialsViewerDialog";
+import { MemberCardDialog } from "@/components/public-checklist/MemberCardDialog";
 
 type LogoConfig = {
   imageUrl: string;
@@ -28,6 +29,8 @@ type ChecklistSettings = {
 const PublicHomeTab = () => {
   const { guest } = useOutletContext<ChecklistDataContext>();
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
+  const [isMemberCardOpen, setIsMemberCardOpen] = useState(false);
+  const data = useOutletContext<ChecklistDataContext>();
 
   const { data: settings, isLoading: isLoadingSettings } = useQuery<ChecklistSettings | null>({
     queryKey: ['checklist_settings'],
@@ -79,7 +82,7 @@ const PublicHomeTab = () => {
             <h1 style={titleStyle}>{settings.title_config.text}</h1>
           )}
           <p className="text-lg">Xin chào: <span className="font-bold">{guest.name}</span></p>
-          <p className="text-slate-600">{guest.role}</p>
+          <p className="text-slate-600">{guest.role} ({guest.id})</p>
         </div>
 
         <GuestQrCode guestId={guest.id} guestName={guest.name} />
@@ -88,18 +91,18 @@ const PublicHomeTab = () => {
 
         <div className="space-y-3">
           <Link to="../event-info">
-            <Button variant="outline" className="w-full justify-start h-14 text-base">
-              <Calendar className="mr-4 h-6 w-6 text-primary" /> Xem Timeline & Thông tin sự kiện
+            <Button variant="outline" className="w-full justify-start h-14 text-base border-primary text-primary hover:bg-primary/5 hover:text-primary">
+              <Calendar className="mr-4 h-6 w-6" /> Xem Timeline & Thông tin sự kiện
             </Button>
           </Link>
           <Link to="../tasks">
-            <Button variant="outline" className="w-full justify-start h-14 text-base">
-              <ClipboardList className="mr-4 h-6 w-6 text-primary" /> Xem tác vụ
+            <Button variant="outline" className="w-full justify-start h-14 text-base border-primary text-primary hover:bg-primary/5 hover:text-primary">
+              <ClipboardList className="mr-4 h-6 w-6" /> Xem tác vụ
             </Button>
           </Link>
           <Link to="../benefits">
-            <Button variant="outline" className="w-full justify-start h-14 text-base">
-              <Megaphone className="mr-4 h-6 w-6 text-primary" /> Xem quyền lợi của bạn
+            <Button variant="outline" className="w-full justify-start h-14 text-base border-primary text-primary hover:bg-primary/5 hover:text-primary">
+              <Megaphone className="mr-4 h-6 w-6" /> Xem quyền lợi của bạn
             </Button>
           </Link>
         </div>
@@ -109,10 +112,6 @@ const PublicHomeTab = () => {
         <div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">Thông tin khác của bạn</h2>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-500 flex items-center"><Info className="mr-2 h-4 w-4" /> ID</span>
-              <span className="font-medium">{guest.id}</span>
-            </div>
             {guest.secondaryInfo && (
               <div className="flex justify-between items-center">
                 <span className="text-slate-500 flex items-center"><Info className="mr-2 h-4 w-4" /> Thông tin phụ</span>
@@ -127,11 +126,21 @@ const PublicHomeTab = () => {
             </div>
           </div>
         </div>
+        
+        <Separator />
+        <Button className="w-full h-14 text-base" onClick={() => setIsMemberCardOpen(true)}>
+          <Users className="mr-4 h-6 w-6" /> Xem thẻ thành viên
+        </Button>
       </div>
       <MaterialsViewerDialog
         open={isMaterialsOpen}
         onOpenChange={setIsMaterialsOpen}
         guest={guest}
+      />
+      <MemberCardDialog
+        open={isMemberCardOpen}
+        onOpenChange={setIsMemberCardOpen}
+        data={data}
       />
     </>
   );
