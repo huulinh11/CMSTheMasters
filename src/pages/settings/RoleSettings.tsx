@@ -36,10 +36,12 @@ const RoleSettings = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['role_configurations'] });
       showSuccess(editingRole ? "Cập nhật vai trò thành công!" : "Thêm vai trò thành công!");
+    },
+    onError: (error) => showError((error as Error).message),
+    onSettled: () => {
       setIsDialogOpen(false);
       setEditingRole(null);
     },
-    onError: (error) => showError((error as Error).message),
   });
 
   const deleteMutation = useMutation({

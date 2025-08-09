@@ -110,9 +110,12 @@ const TaskSettings = () => {
       queryClient.invalidateQueries({ queryKey: ['event_tasks_master'] });
       queryClient.invalidateQueries({ queryKey: ['role_tasks'] });
       showSuccess(`Tác vụ đã được ${editingItem ? 'cập nhật' : 'thêm'} thành công!`);
-      setIsDialogOpen(false);
     },
     onError: (error: Error) => showError(error.message),
+    onSettled: () => {
+      setIsDialogOpen(false);
+      setEditingItem(null);
+    },
   });
 
   const deleteMutation = useMutation({

@@ -130,10 +130,12 @@ const ProfileManagementTab = () => {
       queryClient.invalidateQueries({ queryKey: ['guest_details', guestType, guest.id] });
 
       showSuccess("Cập nhật profile thành công!");
-      setEditingGuest(null);
     },
     onError: (error: Error) => {
       showError(`Lỗi: ${error.message}`);
+    },
+    onSettled: () => {
+      setEditingGuest(null);
     }
   });
 
@@ -160,9 +162,12 @@ const ProfileManagementTab = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile_templates'] });
       showSuccess("Lưu template thành công!");
-      setIsEditTemplateOpen(false);
     },
     onError: (error: Error) => showError(error.message),
+    onSettled: () => {
+      setIsEditTemplateOpen(false);
+      setEditingTemplate(null);
+    },
   });
 
   const deleteTemplateMutation = useMutation({
@@ -197,9 +202,11 @@ const ProfileManagementTab = () => {
       queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
       queryClient.invalidateQueries({ queryKey: ['guests'] });
       showSuccess("Gán template thành công!");
-      setIsAssignTemplateOpen(false);
     },
     onError: (error: Error) => showError(error.message),
+    onSettled: () => {
+      setIsAssignTemplateOpen(false);
+    },
   });
 
   // ... (useEffect for slug backfill remains the same)

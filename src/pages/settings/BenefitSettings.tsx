@@ -87,9 +87,12 @@ const BenefitSettings = () => {
       queryClient.invalidateQueries({ queryKey: ['media_benefits_master'] });
       queryClient.invalidateQueries({ queryKey: ['role_benefits'] });
       showSuccess(`Quyền lợi đã được ${editingItem ? 'cập nhật' : 'thêm'} thành công!`);
-      setIsDialogOpen(false);
     },
     onError: (error: Error) => showError(error.message),
+    onSettled: () => {
+      setIsDialogOpen(false);
+      setEditingItem(null);
+    },
   });
 
   const deleteMutation = useMutation({

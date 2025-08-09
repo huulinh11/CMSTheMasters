@@ -64,11 +64,13 @@ const AccountPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['app_users'] });
       showSuccess(`Thao tác thành công!`);
-      setIsDialogOpen(false);
-      setEditingUser(null);
     },
     onError: (error: Error) => {
       showError(error.message);
+    },
+    onSettled: () => {
+      setIsDialogOpen(false);
+      setEditingUser(null);
     },
   });
 
