@@ -53,7 +53,7 @@ export function RoleMultiSelect({ options, selected, onChange }: RoleMultiSelect
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
           <Command>
             <CommandInput placeholder="Tìm vai trò..." />
-            <CommandList>
+            <CommandList className="max-h-[300px]">
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
               <CommandGroup>
                 {options.map((option) => (
