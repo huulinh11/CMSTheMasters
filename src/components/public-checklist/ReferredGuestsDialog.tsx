@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChecklistDataContext } from "@/pages/public/PublicChecklist";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,7 +23,7 @@ import { TASKS_BY_ROLE } from "@/config/event-tasks";
 import { MEDIA_BENEFITS_BY_ROLE } from "@/config/media-benefits-by-role";
 import { Button } from "../ui/button";
 import { Copy, ArrowLeft } from "lucide-react";
-import { showSuccess, showError } from "@/utils/toast";
+import { showSuccess } from "@/utils/toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "../ui/skeleton";
@@ -29,7 +39,6 @@ const MemberCardContent = ({ data }: { data: ChecklistDataContext }) => {
 
   const handleCopyLink = () => {
     if (!guest.phone) {
-      showError("Khách mời này không có SĐT để tạo link.");
       return;
     }
     const url = `${window.location.origin}/checklist/${guest.phone}`;
@@ -49,9 +58,16 @@ const MemberCardContent = ({ data }: { data: ChecklistDataContext }) => {
         <TabsContent value="info" className="mt-4">
           <div className="space-y-4">
             <GuestQrCode guestId={guest.id} guestName={guest.name} />
-            <Button className="w-full" onClick={handleCopyLink}>
-              <Copy className="mr-2 h-4 w-4" /> Sao chép link checklist
-            </Button>
+            <div className="space-y-1">
+              <Button className="w-full" onClick={handleCopyLink} disabled={!guest.phone}>
+                <Copy className="mr-2 h-4 w-4" /> Sao chép link checklist
+              </Button>
+              {!guest.phone && (
+                <p className="text-sm text-red-600 text-center">
+                  Khách mời này không có số điện thoại để tạo link.
+                </p>
+              )}
+            </div>
           </div>
         </TabsContent>
         <TabsContent value="event" className="mt-4">
