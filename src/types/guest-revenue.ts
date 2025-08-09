@@ -11,6 +11,7 @@ export type GuestRevenue = Guest & {
   payment_source?: PaymentSource;
   is_upsaled: boolean;
   commission: number; // Placeholder
+  bill_image_url?: string | null;
 };
 
 export type GuestPayment = {

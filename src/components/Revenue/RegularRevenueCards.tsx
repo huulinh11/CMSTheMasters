@@ -84,6 +84,18 @@ export const RegularRevenueCards = ({
                 <InfoRow label="Chưa thanh toán" value={formatCurrency(guest.unpaid)} valueClass="text-red-600" />
                 <InfoRow label="Nguồn thanh toán" value={guest.payment_source || "Trống"} />
                 {guest.referrer && <InfoRow label="Người giới thiệu" value={guest.referrer} />}
+                {guest.is_upsaled && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Bill</span>
+                    {guest.bill_image_url ? (
+                      <a href={guest.bill_image_url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="link" className="p-0 h-auto text-sm">Xem bill</Button>
+                      </a>
+                    ) : (
+                      <span className="font-medium text-slate-500">Trống</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button className="flex-1" variant="outline" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}>
