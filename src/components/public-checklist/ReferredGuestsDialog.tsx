@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,8 +19,6 @@ import { GuestQrCode } from "./GuestQrCode";
 import { TimelineDisplay } from "./TimelineDisplay";
 import { EventTaskDisplay } from "./EventTaskDisplay";
 import { MediaBenefitDisplay } from "./MediaBenefitDisplay";
-import { TASKS_BY_ROLE } from "@/config/event-tasks";
-import { MEDIA_BENEFITS_BY_ROLE } from "@/config/media-benefits-by-role";
 import { Button } from "../ui/button";
 import { Copy, ArrowLeft } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
@@ -29,13 +27,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "../ui/skeleton";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 type CombinedGuest = (Guest | VipGuest) & { type: 'Chức vụ' | 'Khách mời' };
 
 const MemberCardContent = ({ data }: { data: ChecklistDataContext }) => {
-  const { guest, mediaBenefit, tasks, timelineEvents } = data;
-  const benefitsForRole = MEDIA_BENEFITS_BY_ROLE[guest.role] || [];
-  const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
+  const { guest, mediaBenefit, tasks, timelineEvents, tasksByRole, benefitsByRole } = data;
+  const benefitsForRole = benefitsByRole[guest.role] || [];
+  const tasksForRole = tasksByRole[guest.role] || [];
 
   const handleCopyLink = () => {
     if (!guest.phone) {
@@ -85,7 +84,9 @@ const MemberCardContent = ({ data }: { data: ChecklistDataContext }) => {
 };
 
 const ReferredGuestDetailView = ({ guest, onBack }: { guest: CombinedGuest, onBack: () => void }) => {
-  const { data, isLoading } = useQuery<ChecklistDataContext | null>({
+  const { tasksByRole, benefitsByRole, isLoading: isLoadingPermissions } = useRolePermissions();
+
+  const { data, isLoading } = useQuery<Omit<ChecklistDataContext, 'guest' | 'tasksByRole' | 'benefitsByRole'> | null>({
     queryKey: ['public_checklist_detail', guest.id],
     queryFn: async () => {
       const { data: mediaBenefit } = await supabase.from('media_benefits').select('*').eq('guest_id', guest.id).single();
@@ -93,7 +94,6 @@ const ReferredGuestDetailView = ({ guest, onBack }: { guest: CombinedGuest, onBa
       const { data: timelineEvents } = await supabase.from('public_timeline_events').select('*').order('order');
 
       return {
-        guest,
         mediaBenefit,
         tasks: tasks || [],
         timelineEvents: timelineEvents || [],
@@ -101,12 +101,17 @@ const ReferredGuestDetailView = ({ guest, onBack }: { guest: CombinedGuest, onBa
     },
   });
 
+  const contextData = useMemo(() => {
+    if (!data) return null;
+    return { ...data, guest, tasksByRole, benefitsByRole };
+  }, [data, guest, tasksByRole, benefitsByRole]);
+
   return (
     <div className="p-4">
       <Button variant="ghost" onClick={onBack} className="mb-4">
         <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại danh sách
       </Button>
-      {isLoading ? <Skeleton className="h-96 w-full" /> : data ? <MemberCardContent data={data} /> : <p>Không thể tải dữ liệu.</p>}
+      {isLoading || isLoadingPermissions ? <Skeleton className="h-96 w-full" /> : contextData ? <MemberCardContent data={contextData} /> : <p>Không thể tải dữ liệu.</p>}
     </div>
   );
 };

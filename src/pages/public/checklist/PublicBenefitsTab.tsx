@@ -1,11 +1,10 @@
 import { useOutletContext } from "react-router-dom";
 import { ChecklistDataContext } from "../PublicChecklist";
-import { MEDIA_BENEFITS_BY_ROLE } from "@/config/media-benefits-by-role";
 import { MediaBenefitDisplay } from "@/components/public-checklist/MediaBenefitDisplay";
 
 const PublicBenefitsTab = () => {
-  const { guest, mediaBenefit } = useOutletContext<ChecklistDataContext>();
-  const benefitsForRole = MEDIA_BENEFITS_BY_ROLE[guest.role] || [];
+  const { guest, mediaBenefit, benefitsByRole } = useOutletContext<ChecklistDataContext>();
+  const benefitsForRole = benefitsByRole[guest.role] || [];
 
   return (
     <div className="p-4 space-y-4">

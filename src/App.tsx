@@ -12,7 +12,11 @@ import Information from "./pages/Information";
 import Revenue from "./pages/Revenue";
 import Timeline from "./pages/Timeline";
 import Account from "./pages/Account";
-import Settings from "./pages/Settings";
+import SettingsPage from "./pages/Settings";
+import RoleSettings from "./pages/settings/RoleSettings";
+import TaskSettings from "./pages/settings/TaskSettings";
+import BenefitSettings from "./pages/settings/BenefitSettings";
+import GeneralSettings from "./pages/settings/GeneralSettings";
 import NotFound from "./pages/NotFound";
 import PublicUser from "./pages/PublicUser";
 import PublicProfile from "./pages/public/PublicProfile";
@@ -45,11 +49,8 @@ const protectedLoader = async () => {
       .eq('id', user.id)
       .single();
 
-    // NEW LOGIC: If there's an error fetching the profile, log it but DON'T redirect.
-    // The app can function with a null profile by using user_metadata for permissions.
     if (profileError && profileError.code !== 'PGRST116') {
       console.error("Lỗi khi tải profile, nhưng vẫn tiếp tục:", profileError);
-      // Proceed with a null profile.
       return { session, user, profile: null };
     }
 
@@ -87,12 +88,7 @@ const ProtectedRoot = () => {
 
 const router = createBrowserRouter([
   // Public routes
-  { 
-    path: "/login", 
-    element: <Login />,
-    action: loginAction,
-    loader: loginLoader,
-  },
+  { path: "/login", element: <Login />, action: loginAction, loader: loginLoader },
   { path: "/profile/:slug", element: <PublicProfile /> },
   { path: "/checklist/:identifier/*", element: <PublicChecklist /> },
   { path: "/timeline/public", element: <PublicTimelinePreview /> },
@@ -103,45 +99,30 @@ const router = createBrowserRouter([
     element: <ProtectedRoot />,
     loader: protectedLoader,
     children: [
-      {
-        element: <PermissionProtectedRoute permissionId="dashboard" />,
-        children: [{ index: true, element: <Dashboard /> }],
-      },
-      {
-        element: <PermissionProtectedRoute permissionId="guests" />,
-        children: [{ path: "guests", element: <Guests /> }],
-      },
-      {
-        element: <PermissionProtectedRoute permissionId="media-benefits" />,
-        children: [{ path: "media-benefits", element: <MediaBenefits /> }],
-      },
-      {
-        element: <PermissionProtectedRoute permissionId="event-tasks" />,
-        children: [{ path: "event-tasks", element: <EventTasks /> }],
-      },
-      {
-        element: <PermissionProtectedRoute permissionId="information" />,
-        children: [{ path: "information", element: <Information /> }],
-      },
-      {
-        element: <PermissionProtectedRoute permissionId="revenue" />,
-        children: [{ path: "revenue", element: <Revenue /> }],
-      },
-      {
-        element: <PermissionProtectedRoute permissionId="timeline" />,
-        children: [{ path: "timeline", element: <Timeline /> }],
-      },
-      {
-        element: <PermissionProtectedRoute permissionId="public-user" />,
-        children: [{ path: "public-user", element: <PublicUser /> }],
-      },
-      {
-        element: <PermissionProtectedRoute permissionId="account" />,
-        children: [{ path: "account", element: <Account /> }],
-      },
+      { element: <PermissionProtectedRoute permissionId="dashboard" />, children: [{ index: true, element: <Dashboard /> }] },
+      { element: <PermissionProtectedRoute permissionId="guests" />, children: [{ path: "guests", element: <Guests /> }] },
+      { element: <PermissionProtectedRoute permissionId="media-benefits" />, children: [{ path: "media-benefits", element: <MediaBenefits /> }] },
+      { element: <PermissionProtectedRoute permissionId="event-tasks" />, children: [{ path: "event-tasks", element: <EventTasks /> }] },
+      { element: <PermissionProtectedRoute permissionId="information" />, children: [{ path: "information", element: <Information /> }] },
+      { element: <PermissionProtectedRoute permissionId="revenue" />, children: [{ path: "revenue", element: <Revenue /> }] },
+      { element: <PermissionProtectedRoute permissionId="timeline" />, children: [{ path: "timeline", element: <Timeline /> }] },
+      { element: <PermissionProtectedRoute permissionId="public-user" />, children: [{ path: "public-user", element: <PublicUser /> }] },
+      { element: <PermissionProtectedRoute permissionId="account" />, children: [{ path: "account", element: <Account /> }] },
       {
         element: <PermissionProtectedRoute permissionId="settings" />,
-        children: [{ path: "settings", element: <Settings /> }],
+        children: [
+          { 
+            path: "settings", 
+            element: <SettingsPage />,
+            children: [
+              { index: true, element: <div /> /* Index route for menu */ },
+              { path: "roles", element: <RoleSettings /> },
+              { path: "tasks", element: <TaskSettings /> },
+              { path: "benefits", element: <BenefitSettings /> },
+              { path: "general", element: <GeneralSettings /> },
+            ]
+          }
+        ],
       },
     ],
   },

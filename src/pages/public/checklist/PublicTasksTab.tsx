@@ -1,15 +1,14 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { useOutletContext } from "react-router-dom";
 import { ChecklistDataContext } from "../PublicChecklist";
-import { TASKS_BY_ROLE } from "@/config/event-tasks";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
 
 const PublicTasksTab = () => {
-  const { guest, tasks } = useOutletContext<ChecklistDataContext>();
-  const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
+  const { guest, tasks, tasksByRole } = useOutletContext<ChecklistDataContext>();
+  const tasksForRole = tasksByRole[guest.role] || [];
 
   const completedCount = tasks.filter(t => tasksForRole.includes(t.task_name) && t.is_completed).length;
   const totalCount = tasksForRole.length;

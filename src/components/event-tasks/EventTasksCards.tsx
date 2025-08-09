@@ -2,21 +2,21 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TaskGuest } from "@/types/event-task";
 import { Phone, Camera } from "lucide-react";
-import { TASKS_BY_ROLE } from "@/config/event-tasks";
 
 interface EventTasksCardsProps {
   guests: TaskGuest[];
   onViewDetails: (guest: TaskGuest) => void;
   onImageClick: (guest: TaskGuest) => void;
   onOpenChecklist: (guest: TaskGuest) => void;
+  tasksByRole: Record<string, string[]>;
 }
 
-export const EventTasksCards = ({ guests, onViewDetails, onImageClick, onOpenChecklist }: EventTasksCardsProps) => {
+export const EventTasksCards = ({ guests, onViewDetails, onImageClick, onOpenChecklist, tasksByRole }: EventTasksCardsProps) => {
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
         guests.map((guest) => {
-          const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
+          const tasksForRole = tasksByRole[guest.role] || [];
           const completedCount = guest.tasks.filter(t => tasksForRole.includes(t.task_name) && t.is_completed).length;
           const totalCount = tasksForRole.length;
 

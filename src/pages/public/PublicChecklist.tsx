@@ -12,7 +12,8 @@ import PublicHomeTab from "@/pages/public/checklist/PublicHomeTab";
 import PublicEventInfoTab from "@/pages/public/checklist/PublicEventInfoTab";
 import PublicTasksTab from "@/pages/public/checklist/PublicTasksTab";
 import PublicBenefitsTab from "@/pages/public/checklist/PublicBenefitsTab";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 type CombinedGuest = (Guest | VipGuest) & { type: 'Chức vụ' | 'Khách mời', secondaryInfo?: string, materials?: string };
 export type ChecklistDataContext = {
@@ -20,13 +21,16 @@ export type ChecklistDataContext = {
   mediaBenefit: MediaBenefit | null;
   tasks: GuestTask[];
   timelineEvents: TimelineEvent[];
+  tasksByRole: Record<string, string[]>;
+  benefitsByRole: Record<string, string[]>;
 };
 
 const PublicChecklist = () => {
   const { identifier } = useParams<{ identifier: string }>();
   const queryClient = useQueryClient();
+  const { tasksByRole, benefitsByRole, isLoading: isLoadingPermissions } = useRolePermissions();
 
-  const { data, isLoading, error } = useQuery<ChecklistDataContext | null>({
+  const { data, isLoading, error } = useQuery<Omit<ChecklistDataContext, 'tasksByRole' | 'benefitsByRole'> | null>({
     queryKey: ['public_checklist', identifier],
     queryFn: async () => {
       if (!identifier) return null;
@@ -62,6 +66,11 @@ const PublicChecklist = () => {
     enabled: !!identifier,
   });
 
+  const contextData = useMemo(() => {
+    if (!data) return null;
+    return { ...data, tasksByRole, benefitsByRole };
+  }, [data, tasksByRole, benefitsByRole]);
+
   useEffect(() => {
     if (!data?.guest.id) return;
 
@@ -81,7 +90,7 @@ const PublicChecklist = () => {
     };
   }, [data?.guest.id, identifier, queryClient]);
 
-  if (isLoading) {
+  if (isLoading || isLoadingPermissions) {
     return (
       <PublicChecklistLayout>
         <div className="p-4">
@@ -91,7 +100,7 @@ const PublicChecklist = () => {
     );
   }
 
-  if (error || !data) {
+  if (error || !contextData) {
     return (
       <div className="max-w-4xl mx-auto my-8 p-4 text-center">
         <h1 className="text-2xl font-bold text-red-600">Lỗi</h1>
@@ -103,7 +112,7 @@ const PublicChecklist = () => {
   return (
     <PublicChecklistLayout>
       <Routes>
-        <Route path="/" element={<Outlet context={data} />}>
+        <Route path="/" element={<Outlet context={contextData} />}>
           <Route index element={<PublicHomeTab />} />
           <Route path="event-info" element={<PublicEventInfoTab />} />
           <Route path="tasks" element={<PublicTasksTab />} />

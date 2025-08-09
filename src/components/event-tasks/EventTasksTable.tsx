@@ -9,16 +9,16 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { TaskGuest } from "@/types/event-task";
-import { TASKS_BY_ROLE } from "@/config/event-tasks";
 
 interface EventTasksTableProps {
   guests: TaskGuest[];
   onViewDetails: (guest: TaskGuest) => void;
   onImageClick: (guest: TaskGuest) => void;
   onOpenChecklist: (guest: TaskGuest) => void;
+  tasksByRole: Record<string, string[]>;
 }
 
-export const EventTasksTable = ({ guests, onViewDetails, onImageClick, onOpenChecklist }: EventTasksTableProps) => {
+export const EventTasksTable = ({ guests, onViewDetails, onImageClick, onOpenChecklist, tasksByRole }: EventTasksTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -37,7 +37,7 @@ export const EventTasksTable = ({ guests, onViewDetails, onImageClick, onOpenChe
         <TableBody>
           {guests.length > 0 ? (
             guests.map((guest) => {
-              const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
+              const tasksForRole = tasksByRole[guest.role] || [];
               const completedCount = guest.tasks.filter(t => tasksForRole.includes(t.task_name) && t.is_completed).length;
               const totalCount = tasksForRole.length;
 

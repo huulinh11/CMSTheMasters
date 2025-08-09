@@ -1,33 +1,49 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import RoleSettings from "@/pages/settings/RoleSettings";
-import GeneralSettings from "@/pages/settings/GeneralSettings";
-import TaskSettings from "@/pages/settings/TaskSettings";
-import BenefitSettings from "@/pages/settings/BenefitSettings";
+import { Outlet, useLocation, Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChevronRight } from "lucide-react";
+
+const settingsItems = [
+  { to: "/settings/roles", label: "Vai trò" },
+  { to: "/settings/tasks", label: "Tác vụ" },
+  { to: "/settings/benefits", label: "Quyền lợi" },
+  { to: "/settings/general", label: "Chung" },
+];
+
+const SettingsIndex = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {settingsItems.map(item => (
+      <Link to={item.to} key={item.to}>
+        <Card className="hover:bg-slate-50 transition-colors">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>{item.label}</CardTitle>
+            <ChevronRight className="h-5 w-5 text-slate-400" />
+          </CardHeader>
+        </Card>
+      </Link>
+    ))}
+  </div>
+);
 
 const SettingsPage = () => {
+  const location = useLocation();
+  const isIndex = location.pathname === '/settings';
+
+  const pageTitle = settingsItems.find(item => location.pathname.startsWith(item.to))?.label;
+
   return (
     <div className="p-4 md:p-6">
-      <h1 className="text-2xl font-bold text-slate-800 mb-4">Cấu hình</h1>
-      <Tabs defaultValue="roles" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 md:w-auto bg-primary/10 p-1 h-12 rounded-xl">
-          <TabsTrigger value="roles" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Vai trò</TabsTrigger>
-          <TabsTrigger value="tasks" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Tác vụ</TabsTrigger>
-          <TabsTrigger value="benefits" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Quyền lợi</TabsTrigger>
-          <TabsTrigger value="general" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Chung</TabsTrigger>
-        </TabsList>
-        <TabsContent value="roles" className="mt-4">
-          <RoleSettings />
-        </TabsContent>
-        <TabsContent value="tasks" className="mt-4">
-          <TaskSettings />
-        </TabsContent>
-        <TabsContent value="benefits" className="mt-4">
-          <BenefitSettings />
-        </TabsContent>
-        <TabsContent value="general" className="mt-4">
-          <GeneralSettings />
-        </TabsContent>
-      </Tabs>
+      <div className="flex items-center mb-4">
+        {!isIndex && (
+          <Link to="/settings" className="mr-2 p-2 rounded-md hover:bg-slate-100">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        )}
+        <h1 className="text-2xl font-bold text-slate-800">
+          Cấu hình {pageTitle && `> ${pageTitle}`}
+        </h1>
+      </div>
+      {isIndex ? <SettingsIndex /> : <Outlet />}
     </div>
   );
 };

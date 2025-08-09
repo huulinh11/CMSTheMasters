@@ -9,8 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
 import { MediaBenefitDisplay } from "@/components/public-checklist/MediaBenefitDisplay";
-import { MEDIA_BENEFITS_BY_ROLE } from "@/config/media-benefits-by-role";
-import { TASKS_BY_ROLE } from "@/config/event-tasks";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -40,6 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import BillPreviewDialog from "../Revenue/BillPreviewDialog";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
@@ -90,6 +89,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
   const queryClient = useQueryClient();
   const { profile, user } = useAuth();
   const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
+  const { tasksByRole, benefitsByRole, isLoading: isLoadingPermissions } = useRolePermissions();
 
   const { data, isLoading } = useQuery({
     queryKey: ['guest_details', guestType, guestId],
@@ -231,7 +231,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingPermissions) {
     return <div className="p-4 md:p-6 space-y-4"><Skeleton className="h-[80vh] w-full" /></div>;
   }
 
@@ -240,8 +240,8 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
   }
 
   const { guest, revenue, mediaBenefit, tasks, payments, upsaleHistory } = data;
-  const benefitsForRole = MEDIA_BENEFITS_BY_ROLE[guest.role] || [];
-  const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
+  const benefitsForRole = benefitsByRole[guest.role] || [];
+  const tasksForRole = tasksByRole[guest.role] || [];
   const guestWithRevenue = { ...guest, ...revenue };
 
   return (
@@ -441,6 +441,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         onOpenChange={setIsTasksDialogOpen}
         guest={{ ...guest, tasks }}
         onTaskChange={handleTaskChange}
+        tasksByRole={tasksByRole}
       />
       <EditProfileDialog
         open={isProfileDialogOpen}

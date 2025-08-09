@@ -6,7 +6,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { History, Phone, User, X } from "lucide-react";
 import { TaskGuest } from "@/types/event-task";
-import { TASKS_BY_ROLE } from "@/config/event-tasks";
 import { TaskHistoryDialog } from "./TaskHistoryDialog";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,10 +16,11 @@ interface TaskChecklistDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTaskChange: (payload: { guestId: string; taskName: string; isCompleted: boolean }) => void;
+  tasksByRole: Record<string, string[]>;
 }
 
-const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest: TaskGuest, onTaskChange: TaskChecklistDialogProps['onTaskChange'], setHistoryModalState: (state: { guestId: string; taskName: string; } | null) => void }) => {
-  const tasksForRole = TASKS_BY_ROLE[guest.role] || [];
+const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState, tasksByRole }: { guest: TaskGuest, onTaskChange: TaskChecklistDialogProps['onTaskChange'], setHistoryModalState: (state: { guestId: string; taskName: string; } | null) => void, tasksByRole: Record<string, string[]> }) => {
+  const tasksForRole = tasksByRole[guest.role] || [];
   const completedCount = tasksForRole.filter(taskName => guest.tasks.find(t => t.task_name === taskName)?.is_completed).length;
   const totalCount = tasksForRole.length;
   const progressValue = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
@@ -89,7 +89,7 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState }: { guest
   );
 };
 
-export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange }: TaskChecklistDialogProps) => {
+export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange, tasksByRole }: TaskChecklistDialogProps) => {
   const [historyModalState, setHistoryModalState] = useState<{ guestId: string; taskName: string } | null>(null);
   const isMobile = useIsMobile();
 
@@ -108,7 +108,7 @@ export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange }:
             </DrawerHeader>
             <div className="flex-1 overflow-y-auto">
               <div className="p-4">
-                <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
+                <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} tasksByRole={tasksByRole} />
               </div>
             </div>
           </DrawerContent>
@@ -132,7 +132,7 @@ export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange }:
           </DialogHeader>
           <div className="flex-1 overflow-y-auto">
             <div className="py-4 pr-6">
-              <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} />
+              <ChecklistContent guest={guest} onTaskChange={onTaskChange} setHistoryModalState={setHistoryModalState} tasksByRole={tasksByRole} />
             </div>
           </div>
         </DialogContent>

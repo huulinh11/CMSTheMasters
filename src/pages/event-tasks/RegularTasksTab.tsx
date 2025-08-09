@@ -20,10 +20,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { TaskFilterSheet } from "@/components/event-tasks/TaskFilterSheet";
-import { ALL_TASKS } from "@/config/event-tasks";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { TaskChecklistDialog } from "@/components/event-tasks/TaskChecklistDialog";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 export const RegularTasksTab = () => {
   const queryClient = useQueryClient();
@@ -36,6 +36,7 @@ export const RegularTasksTab = () => {
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
   const [dialogGuest, setDialogGuest] = useState<TaskGuest | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { allTasks, tasksByRole, isLoading: isLoadingPermissions } = useRolePermissions();
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<Guest[]>({
     queryKey: ['guests'],
@@ -171,7 +172,7 @@ export const RegularTasksTab = () => {
     });
   }, [combinedGuests, searchTerm, roleFilters, advancedFilters]);
 
-  const isLoading = isLoadingGuests || isLoadingTasks;
+  const isLoading = isLoadingGuests || isLoadingTasks || isLoadingPermissions;
 
   const handleFilterChange = (field: string, value: string) => {
     setAdvancedFilters(prev => ({ ...prev, [field]: value }));
@@ -221,7 +222,7 @@ export const RegularTasksTab = () => {
             filters={advancedFilters}
             onFilterChange={handleFilterChange}
             onClearFilters={handleClearFilters}
-            allTasks={ALL_TASKS}
+            allTasks={allTasks}
           />
         </div>
       </div>
@@ -234,6 +235,7 @@ export const RegularTasksTab = () => {
           onViewDetails={handleViewDetails}
           onImageClick={setImagePreviewGuest}
           onOpenChecklist={setDialogGuest}
+          tasksByRole={tasksByRole}
         />
       ) : (
         <EventTasksTable
@@ -241,6 +243,7 @@ export const RegularTasksTab = () => {
           onViewDetails={handleViewDetails}
           onImageClick={setImagePreviewGuest}
           onOpenChecklist={setDialogGuest}
+          tasksByRole={tasksByRole}
         />
       )}
       <ImagePreviewDialog
@@ -254,6 +257,7 @@ export const RegularTasksTab = () => {
         open={!!dialogGuest}
         onOpenChange={(isOpen) => !isOpen && setDialogGuest(null)}
         onTaskChange={handleTaskChange}
+        tasksByRole={tasksByRole}
       />
     </div>
   );

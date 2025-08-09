@@ -20,10 +20,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { TaskFilterSheet } from "@/components/event-tasks/TaskFilterSheet";
-import { ALL_TASKS } from "@/config/event-tasks";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { TaskChecklistDialog } from "@/components/event-tasks/TaskChecklistDialog";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 export const VipTasksTab = () => {
   const queryClient = useQueryClient();
@@ -36,6 +36,7 @@ export const VipTasksTab = () => {
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
   const [dialogGuest, setDialogGuest] = useState<TaskGuest | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { allTasks, tasksByRole, isLoading: isLoadingPermissions } = useRolePermissions();
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
@@ -130,7 +131,6 @@ export const VipTasksTab = () => {
       const guestToOpen = combinedGuests.find(g => g.id === guestId);
       if (guestToOpen) {
         setDialogGuest(guestToOpen);
-        // Clean up URL param after use
         setSearchParams({}, { replace: true });
       }
     }
@@ -158,10 +158,8 @@ export const VipTasksTab = () => {
 
       const advancedMatch = Object.entries(advancedFilters).every(([taskName, status]) => {
         if (!status || status === 'all') return true;
-
         const task = guest.tasks.find(t => t.task_name === taskName);
         const isCompleted = task?.is_completed || false;
-
         if (status === 'completed') return isCompleted;
         if (status === 'not_completed') return !isCompleted;
         return true;
@@ -171,7 +169,7 @@ export const VipTasksTab = () => {
     });
   }, [combinedGuests, searchTerm, roleFilters, advancedFilters]);
 
-  const isLoading = isLoadingGuests || isLoadingTasks;
+  const isLoading = isLoadingGuests || isLoadingTasks || isLoadingPermissions;
 
   const handleFilterChange = (field: string, value: string) => {
     setAdvancedFilters(prev => ({ ...prev, [field]: value }));
@@ -221,7 +219,7 @@ export const VipTasksTab = () => {
             filters={advancedFilters}
             onFilterChange={handleFilterChange}
             onClearFilters={handleClearFilters}
-            allTasks={ALL_TASKS}
+            allTasks={allTasks}
           />
         </div>
       </div>
@@ -254,6 +252,7 @@ export const VipTasksTab = () => {
         open={!!dialogGuest}
         onOpenChange={(isOpen) => !isOpen && setDialogGuest(null)}
         onTaskChange={handleTaskChange}
+        tasksByRole={tasksByRole}
       />
     </div>
   );

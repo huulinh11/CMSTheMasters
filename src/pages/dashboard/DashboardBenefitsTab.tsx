@@ -4,13 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { MediaBenefit } from "@/types/media-benefit";
-import { MEDIA_BENEFITS_BY_ROLE } from "@/config/media-benefits-by-role";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 type BenefitStat = {
   name: string;
@@ -18,8 +18,6 @@ type BenefitStat = {
   completed: number;
   uncompleted: number;
 };
-
-const ALL_BENEFITS = [...new Set(Object.values(MEDIA_BENEFITS_BY_ROLE).flat())];
 
 const isBenefitCompleted = (benefitName: string, benefitData: MediaBenefit | undefined): boolean => {
   if (!benefitData) return false;
@@ -39,6 +37,7 @@ const isBenefitCompleted = (benefitName: string, benefitData: MediaBenefit | und
 const DashboardBenefitsTab = () => {
   const [filter, setFilter] = useState<'all' | 'completed' | 'uncompleted'>('all');
   const [sortOrder, setSortOrder] = useState<'default' | 'progress-asc' | 'progress-desc'>('default');
+  const { allBenefits, benefitsByRole, isLoading: isLoadingPermissions } = useRolePermissions();
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<(VipGuest | Guest)[]>({
     queryKey: ['all_guests_for_benefit_stats'],
@@ -61,12 +60,12 @@ const DashboardBenefitsTab = () => {
   });
 
   const benefitStats = useMemo((): BenefitStat[] => {
-    if (isLoadingGuests || isLoadingBenefits) return [];
+    if (isLoadingGuests || isLoadingBenefits || isLoadingPermissions) return [];
 
     const benefitsMap = new Map(benefits.map(b => [b.guest_id, b]));
 
-    return ALL_BENEFITS.map(benefitName => {
-      const guestsWithBenefit = guests.filter(g => MEDIA_BENEFITS_BY_ROLE[g.role]?.includes(benefitName));
+    return allBenefits.map(benefitName => {
+      const guestsWithBenefit = guests.filter(g => benefitsByRole[g.role]?.includes(benefitName));
       const total = guestsWithBenefit.length;
       const completed = guestsWithBenefit.filter(g => isBenefitCompleted(benefitName, benefitsMap.get(g.id))).length;
       
@@ -77,7 +76,7 @@ const DashboardBenefitsTab = () => {
         uncompleted: total - completed,
       };
     });
-  }, [guests, benefits, isLoadingGuests, isLoadingBenefits]);
+  }, [guests, benefits, isLoadingGuests, isLoadingBenefits, allBenefits, benefitsByRole, isLoadingPermissions]);
 
   const filteredAndSortedStats = useMemo(() => {
     let stats = [...benefitStats];
@@ -105,7 +104,7 @@ const DashboardBenefitsTab = () => {
     return stats;
   }, [benefitStats, filter, sortOrder]);
 
-  if (isLoadingGuests || isLoadingBenefits) {
+  if (isLoadingGuests || isLoadingBenefits || isLoadingPermissions) {
     return <Skeleton className="h-96 w-full" />;
   }
 

@@ -4,13 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { GuestTask } from "@/types/event-task";
-import { ALL_TASKS, TASKS_BY_ROLE } from "@/config/event-tasks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 type TaskStat = {
   name: string;
@@ -22,6 +22,7 @@ type TaskStat = {
 const DashboardTasksTab = () => {
   const [filter, setFilter] = useState<'all' | 'completed' | 'uncompleted'>('all');
   const [sortOrder, setSortOrder] = useState<'default' | 'progress-asc' | 'progress-desc'>('default');
+  const { allTasks, tasksByRole, isLoading: isLoadingPermissions } = useRolePermissions();
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<(VipGuest | Guest)[]>({
     queryKey: ['all_guests_for_task_stats'],
@@ -44,7 +45,7 @@ const DashboardTasksTab = () => {
   });
 
   const taskStats = useMemo((): TaskStat[] => {
-    if (isLoadingGuests || isLoadingTasks) return [];
+    if (isLoadingGuests || isLoadingTasks || isLoadingPermissions) return [];
 
     const completedTasksMap = new Map<string, Set<string>>();
     tasks.forEach(task => {
@@ -56,8 +57,8 @@ const DashboardTasksTab = () => {
       }
     });
 
-    return ALL_TASKS.map(taskName => {
-      const guestsWithTask = guests.filter(g => TASKS_BY_ROLE[g.role]?.includes(taskName));
+    return allTasks.map(taskName => {
+      const guestsWithTask = guests.filter(g => tasksByRole[g.role]?.includes(taskName));
       const total = guestsWithTask.length;
       const completedSet = completedTasksMap.get(taskName) || new Set();
       const completed = guestsWithTask.filter(g => completedSet.has(g.id)).length;
@@ -69,7 +70,7 @@ const DashboardTasksTab = () => {
         uncompleted: total - completed,
       };
     });
-  }, [guests, tasks, isLoadingGuests, isLoadingTasks]);
+  }, [guests, tasks, isLoadingGuests, isLoadingTasks, allTasks, tasksByRole, isLoadingPermissions]);
 
   const filteredAndSortedStats = useMemo(() => {
     let stats = [...taskStats];
@@ -97,7 +98,7 @@ const DashboardTasksTab = () => {
     return stats;
   }, [taskStats, filter, sortOrder]);
 
-  if (isLoadingGuests || isLoadingTasks) {
+  if (isLoadingGuests || isLoadingTasks || isLoadingPermissions) {
     return <Skeleton className="h-96 w-full" />;
   }
 
