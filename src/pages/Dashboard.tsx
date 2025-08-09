@@ -15,6 +15,19 @@ import QrScannerComponent from "@/components/QrScannerComponent";
 import { useNavigate } from "react-router-dom";
 import { showError } from "@/utils/toast";
 
+// A simple, global audio player to prevent sound from being cut off during navigation
+const audioPlayer = {
+  audio: null as HTMLAudioElement | null,
+  init(url: string) {
+    if (this.audio?.src !== url) {
+      this.audio = new Audio(url);
+    }
+  },
+  play() {
+    this.audio?.play().catch(err => console.error("Audio play failed:", err));
+  }
+};
+
 type UpsaleHistory = {
   guest_id: string;
   from_sponsorship: number;
@@ -33,8 +46,8 @@ const Dashboard = () => {
   const { profile, user } = useAuth();
   const displayName = profile?.full_name || user?.email?.split('@')[0];
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isProcessingScan, setIsProcessingScan] = useState(false);
   const navigate = useNavigate();
-  const successSoundRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: settings } = useQuery({
     queryKey: ['checklist_settings'],
@@ -47,9 +60,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (settings?.qr_scan_sound_url) {
-      successSoundRef.current = new Audio(settings.qr_scan_sound_url);
-    } else {
-      successSoundRef.current = null;
+      audioPlayer.init(settings.qr_scan_sound_url);
     }
   }, [settings]);
   
@@ -189,42 +200,28 @@ const Dashboard = () => {
   }, [vipGuests, regularGuests]);
 
   const handleScan = (scannedUrl: string | null) => {
-    if (scannedUrl) {
-      try {
-        const url = new URL(scannedUrl);
-        const guestId = url.searchParams.get('guestId');
-        if (guestId) {
-          const targetUrl = `/event-tasks?guestId=${guestId}`;
-          
-          const audio = successSoundRef.current;
-          if (audio) {
-            const navigateAfterSound = () => {
-              setIsScannerOpen(false);
-              navigate(targetUrl);
-              audio.removeEventListener('ended', navigateAfterSound);
-              audio.removeEventListener('error', navigateAfterSound);
-            };
-  
-            audio.addEventListener('ended', navigateAfterSound);
-            audio.addEventListener('error', (e) => {
-              console.error("Audio playback error:", e);
-              navigateAfterSound(); // Navigate even if sound fails
-            });
-  
-            audio.play().catch(err => {
-              console.error("Audio play() promise rejected:", err);
-              navigateAfterSound(); // Fallback if play() itself fails
-            });
-          } else {
-            setIsScannerOpen(false);
-            navigate(targetUrl); // No audio object, navigate immediately
-          }
-        } else {
-          showError("Mã QR không hợp lệ (thiếu guestId).");
-        }
-      } catch (error) {
-        showError("Mã QR không phải là một URL hợp lệ.");
+    if (isProcessingScan || !scannedUrl) return;
+
+    try {
+      const url = new URL(scannedUrl);
+      const guestId = url.searchParams.get('guestId');
+      if (guestId) {
+        setIsProcessingScan(true);
+        audioPlayer.play();
+        setIsScannerOpen(false);
+        navigate(`/event-tasks?guestId=${guestId}`);
+      } else {
+        showError("Mã QR không hợp lệ (thiếu guestId).");
       }
+    } catch (error) {
+      showError("Mã QR không phải là một URL hợp lệ.");
+    }
+  };
+
+  const handleScannerOpenChange = (isOpen: boolean) => {
+    setIsScannerOpen(isOpen);
+    if (!isOpen) {
+      setIsProcessingScan(false);
     }
   };
 
@@ -312,7 +309,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-      <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
+      <Dialog open={isScannerOpen} onOpenChange={handleScannerOpenChange}>
         <DialogContent className="p-0 bg-transparent border-none max-w-md">
           <QrScannerComponent onScan={handleScan} onClose={() => setIsScannerOpen(false)} />
         </DialogContent>
