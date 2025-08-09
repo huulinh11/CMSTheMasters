@@ -161,7 +161,9 @@ const ProfileManagementTab = () => {
       queryClient.invalidateQueries({ queryKey: ['profile_templates'] });
       showSuccess("Lưu template thành công!");
     },
-    onError: (error: Error) => showError(error.message),
+    onError: (error: Error) => {
+      showError(error.message);
+    },
     onSettled: () => {
       setIsEditTemplateOpen(false);
       setEditingTemplate(null);

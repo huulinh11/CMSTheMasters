@@ -23,6 +23,7 @@ import { EditProfileDialog } from "./EditProfileDialog";
 import { ContentBlock } from "@/types/profile-content";
 import { PlusCircle, Image as ImageIcon, Video, Type } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface EditTemplateDialogProps {
   open: boolean;
@@ -135,19 +136,21 @@ export const EditTemplateDialog = ({
             </Select>
           </div>
         </div>
-        <div className="flex-grow min-h-0">
-          <EditProfileDialog
-            open={true}
-            onOpenChange={() => {}}
-            guest={mockGuest}
-            onSave={() => {}}
-            onContentChange={setContent}
-            isSaving={false}
-            onUploadingChange={setIsUploading}
-            isTemplateMode={false}
-            isSubDialog={true}
-          />
-        </div>
+        <ScrollArea className="flex-grow min-h-0">
+          <div className="pr-4">
+            <EditProfileDialog
+              open={true}
+              onOpenChange={() => {}}
+              guest={mockGuest}
+              onSave={() => {}}
+              onContentChange={setContent}
+              isSaving={false}
+              onUploadingChange={setIsUploading}
+              isTemplateMode={false}
+              isSubDialog={true}
+            />
+          </div>
+        </ScrollArea>
         <DialogFooter className="flex-shrink-0 pt-4 border-t justify-between">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => handleAddBlock('image')}><ImageIcon className="mr-2 h-4 w-4" /> Thêm ảnh</Button>
