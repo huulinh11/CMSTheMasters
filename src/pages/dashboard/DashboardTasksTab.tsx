@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type TaskStat = {
   name: string;
@@ -20,6 +21,7 @@ type TaskStat = {
 
 const DashboardTasksTab = () => {
   const [filter, setFilter] = useState<'all' | 'completed' | 'uncompleted'>('all');
+  const [sortOrder, setSortOrder] = useState<'default' | 'progress-asc' | 'progress-desc'>('default');
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<(VipGuest | Guest)[]>({
     queryKey: ['all_guests_for_task_stats'],
@@ -69,12 +71,31 @@ const DashboardTasksTab = () => {
     });
   }, [guests, tasks, isLoadingGuests, isLoadingTasks]);
 
-  const filteredStats = useMemo(() => {
-    if (filter === 'all') return taskStats;
-    if (filter === 'completed') return taskStats.filter(s => s.completed === s.total && s.total > 0);
-    if (filter === 'uncompleted') return taskStats.filter(s => s.uncompleted > 0);
-    return [];
-  }, [taskStats, filter]);
+  const filteredAndSortedStats = useMemo(() => {
+    let stats = [...taskStats];
+
+    if (filter === 'completed') {
+      stats = stats.filter(s => s.completed === s.total && s.total > 0);
+    } else if (filter === 'uncompleted') {
+      stats = stats.filter(s => s.uncompleted > 0);
+    }
+
+    if (sortOrder === 'progress-asc') {
+      stats.sort((a, b) => {
+        const progressA = a.total > 0 ? a.completed / a.total : 0;
+        const progressB = b.total > 0 ? b.completed / b.total : 0;
+        return progressA - progressB;
+      });
+    } else if (sortOrder === 'progress-desc') {
+      stats.sort((a, b) => {
+        const progressA = a.total > 0 ? a.completed / a.total : 0;
+        const progressB = b.total > 0 ? b.completed / b.total : 0;
+        return progressB - progressA;
+      });
+    }
+    
+    return stats;
+  }, [taskStats, filter, sortOrder]);
 
   if (isLoadingGuests || isLoadingTasks) {
     return <Skeleton className="h-96 w-full" />;
@@ -82,15 +103,25 @@ const DashboardTasksTab = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <RadioGroup defaultValue="all" onValueChange={(value) => setFilter(value as any)} className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="r1" /><Label htmlFor="r1">Tất cả</Label></div>
-          <div className="flex items-center space-x-2"><RadioGroupItem value="uncompleted" id="r2" /><Label htmlFor="r2">Chưa hoàn thành</Label></div>
+      <div className="flex flex-col md:flex-row justify-end gap-4">
+        <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as any)}>
+          <SelectTrigger className="w-full md:w-[240px]">
+            <SelectValue placeholder="Sắp xếp theo..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Mặc định</SelectItem>
+            <SelectItem value="progress-asc">Tiến độ: Thấp đến cao</SelectItem>
+            <SelectItem value="progress-desc">Tiến độ: Cao đến thấp</SelectItem>
+          </SelectContent>
+        </Select>
+        <RadioGroup defaultValue="all" onValueChange={(value) => setFilter(value as any)} className="flex items-center space-x-4 bg-slate-100 p-2 rounded-md">
+          <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="r1" /><Label htmlFor="r1">All</Label></div>
+          <div className="flex items-center space-x-2"><RadioGroupItem value="uncompleted" id="r2" /><Label htmlFor="r2">Chưa</Label></div>
           <div className="flex items-center space-x-2"><RadioGroupItem value="completed" id="r3" /><Label htmlFor="r3">Hoàn thành</Label></div>
         </RadioGroup>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredStats.map(stat => (
+        {filteredAndSortedStats.map(stat => (
           <Card key={stat.name}>
             <CardHeader>
               <CardTitle className="text-base">{stat.name}</CardTitle>

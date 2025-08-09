@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type BenefitStat = {
   name: string;
@@ -37,6 +38,7 @@ const isBenefitCompleted = (benefitName: string, benefitData: MediaBenefit | und
 
 const DashboardBenefitsTab = () => {
   const [filter, setFilter] = useState<'all' | 'completed' | 'uncompleted'>('all');
+  const [sortOrder, setSortOrder] = useState<'default' | 'progress-asc' | 'progress-desc'>('default');
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<(VipGuest | Guest)[]>({
     queryKey: ['all_guests_for_benefit_stats'],
@@ -77,12 +79,31 @@ const DashboardBenefitsTab = () => {
     });
   }, [guests, benefits, isLoadingGuests, isLoadingBenefits]);
 
-  const filteredStats = useMemo(() => {
-    if (filter === 'all') return benefitStats;
-    if (filter === 'completed') return benefitStats.filter(s => s.completed === s.total && s.total > 0);
-    if (filter === 'uncompleted') return benefitStats.filter(s => s.uncompleted > 0);
-    return [];
-  }, [benefitStats, filter]);
+  const filteredAndSortedStats = useMemo(() => {
+    let stats = [...benefitStats];
+
+    if (filter === 'completed') {
+      stats = stats.filter(s => s.completed === s.total && s.total > 0);
+    } else if (filter === 'uncompleted') {
+      stats = stats.filter(s => s.uncompleted > 0);
+    }
+
+    if (sortOrder === 'progress-asc') {
+      stats.sort((a, b) => {
+        const progressA = a.total > 0 ? a.completed / a.total : 0;
+        const progressB = b.total > 0 ? b.completed / b.total : 0;
+        return progressA - progressB;
+      });
+    } else if (sortOrder === 'progress-desc') {
+      stats.sort((a, b) => {
+        const progressA = a.total > 0 ? a.completed / a.total : 0;
+        const progressB = b.total > 0 ? b.completed / b.total : 0;
+        return progressB - progressA;
+      });
+    }
+
+    return stats;
+  }, [benefitStats, filter, sortOrder]);
 
   if (isLoadingGuests || isLoadingBenefits) {
     return <Skeleton className="h-96 w-full" />;
@@ -90,15 +111,25 @@ const DashboardBenefitsTab = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <RadioGroup defaultValue="all" onValueChange={(value) => setFilter(value as any)} className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="b1" /><Label htmlFor="b1">Tất cả</Label></div>
-          <div className="flex items-center space-x-2"><RadioGroupItem value="uncompleted" id="b2" /><Label htmlFor="b2">Chưa hoàn thành</Label></div>
+      <div className="flex flex-col md:flex-row justify-end gap-4">
+        <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as any)}>
+          <SelectTrigger className="w-full md:w-[240px]">
+            <SelectValue placeholder="Sắp xếp theo..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Mặc định</SelectItem>
+            <SelectItem value="progress-asc">Tiến độ: Thấp đến cao</SelectItem>
+            <SelectItem value="progress-desc">Tiến độ: Cao đến thấp</SelectItem>
+          </SelectContent>
+        </Select>
+        <RadioGroup defaultValue="all" onValueChange={(value) => setFilter(value as any)} className="flex items-center space-x-4 bg-slate-100 p-2 rounded-md">
+          <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="b1" /><Label htmlFor="b1">All</Label></div>
+          <div className="flex items-center space-x-2"><RadioGroupItem value="uncompleted" id="b2" /><Label htmlFor="b2">Chưa</Label></div>
           <div className="flex items-center space-x-2"><RadioGroupItem value="completed" id="b3" /><Label htmlFor="b3">Hoàn thành</Label></div>
         </RadioGroup>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredStats.map(stat => (
+        {filteredAndSortedStats.map(stat => (
           <Card key={stat.name}>
             <CardHeader>
               <CardTitle className="text-base">{stat.name}</CardTitle>

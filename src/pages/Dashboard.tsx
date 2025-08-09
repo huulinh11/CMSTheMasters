@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Camera, Settings } from "lucide-react";
+import { Camera } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import QrScannerComponent from "@/components/QrScannerComponent";
 import { useNavigate } from "react-router-dom";
@@ -91,10 +91,6 @@ const DashboardPage = () => {
           <Button onClick={() => setIsScannerOpen(true)}>
             <Camera className="mr-2 h-4 w-4" />
             Quét mã QR
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/settings')}>
-            <Settings className="mr-2 h-4 w-4" />
-            Cấu hình
           </Button>
         </div>
       </header>
