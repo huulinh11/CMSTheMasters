@@ -60,9 +60,11 @@ const Information = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vip_guests_information'] });
       showSuccess("Cập nhật thông tin thành công!");
-      setEditingGuest(null);
     },
     onError: (error) => showError(error.message),
+    onSettled: () => {
+      setEditingGuest(null);
+    },
   });
 
   const filteredGuests = useMemo(() => {

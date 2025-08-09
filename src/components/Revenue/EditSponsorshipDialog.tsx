@@ -45,10 +45,12 @@ const EditSponsorshipDialog = ({ guest, open, onOpenChange }: EditSponsorshipDia
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vip_revenue"] });
       showSuccess("Cập nhật tiền tài trợ thành công!");
-      onOpenChange(false);
     },
     onError: (error) => {
       showError(`Lỗi: ${error.message}`);
+    },
+    onSettled: () => {
+      onOpenChange(false);
     },
   });
 

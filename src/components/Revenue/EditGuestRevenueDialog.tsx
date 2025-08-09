@@ -92,9 +92,11 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["guest_revenue_details"] });
       showSuccess("Cập nhật thông tin thành công!");
-      onOpenChange(false);
     },
     onError: (error) => showError(`Lỗi: ${error.message}`),
+    onSettled: () => {
+      onOpenChange(false);
+    },
   });
 
   const upsaleMutation = useMutation({
@@ -114,7 +116,6 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
           .upload(filePath, values.billFile);
 
         if (uploadError) {
-          setIsUploading(false);
           throw new Error(`Lỗi tải bill lên: ${uploadError.message}`);
         }
 
@@ -123,7 +124,6 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
           .getPublicUrl(filePath);
         
         billImageUrl = publicUrl;
-        setIsUploading(false);
       }
 
       const { error } = await supabase.rpc('upsale_guest', {
@@ -142,11 +142,13 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
       queryClient.invalidateQueries({ queryKey: ["guests"] });
       queryClient.invalidateQueries({ queryKey: ["guest_upsale_history"] });
       showSuccess("Upsale thành công!");
-      onOpenChange(false);
     },
     onError: (error) => {
-      setIsUploading(false);
       showError(`Lỗi: ${error.message}`);
+    },
+    onSettled: () => {
+      setIsUploading(false);
+      onOpenChange(false);
     },
   });
 

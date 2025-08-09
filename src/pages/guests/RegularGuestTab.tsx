@@ -125,10 +125,12 @@ const RegularGuestTab = () => {
       queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
       queryClient.invalidateQueries({ queryKey: ['guest_revenue_for_guests_tab'] });
       showSuccess(editingGuest ? "Cập nhật khách mời thành công!" : "Thêm khách mời thành công!");
+    },
+    onError: (error) => showError(error.message),
+    onSettled: () => {
       setIsDialogOpen(false);
       setEditingGuest(null);
     },
-    onError: (error) => showError(error.message),
   });
 
   const deleteMutation = useMutation({

@@ -119,10 +119,12 @@ const VipGuestTab = () => {
       queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
       queryClient.invalidateQueries({ queryKey: ['vip_guest_revenue_for_guests_tab'] });
       showSuccess(editingGuest ? "Cập nhật khách thành công!" : "Thêm khách thành công!");
+    },
+    onError: (error: any) => showError(error.message),
+    onSettled: () => {
       setIsFormOpen(false);
       setEditingGuest(null);
     },
-    onError: (error: any) => showError(error.message),
   });
 
   const deleteMutation = useMutation({

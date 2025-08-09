@@ -48,10 +48,12 @@ const PaymentDialog = ({ guest, open, onOpenChange }: PaymentDialogProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vip_revenue"] });
       showSuccess("Thanh toán thành công!");
-      onOpenChange(false);
     },
     onError: (error) => {
       showError(`Lỗi: ${error.message}`);
+    },
+    onSettled: () => {
+      onOpenChange(false);
     },
   });
 

@@ -135,10 +135,12 @@ const Timeline = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timeline_events'] });
       showSuccess(editingItem ? "Cập nhật thành công!" : "Thêm thành công!");
+    },
+    onError: (error: any) => showError(error.message),
+    onSettled: () => {
       setIsDialogOpen(false);
       setEditingItem(null);
     },
-    onError: (error: any) => showError(error.message),
   });
 
   const deleteMutation = useMutation({
