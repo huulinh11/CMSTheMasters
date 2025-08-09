@@ -39,6 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import BillPreviewDialog from "../Revenue/BillPreviewDialog";
 
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
@@ -85,6 +86,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [revenueDialogMode, setRevenueDialogMode] = useState<'edit' | 'upsale'>('edit');
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [billPreviewUrl, setBillPreviewUrl] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { profile, user } = useAuth();
   const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
@@ -320,6 +322,19 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                   <InfoRow icon={CheckCircle} label="Đã thanh toán" value={formatCurrency(revenue.paid)} />
                   <InfoRow icon={AlertCircle} label="Chưa thanh toán" value={formatCurrency(revenue.unpaid)} />
                   <InfoRow icon={Info} label="Nguồn thanh toán" value={revenue.payment_source} />
+                  {revenue.is_upsaled && (
+                    <InfoRow icon={FileText} label="Bill">
+                      <div className="flex justify-between items-center w-full">
+                        {revenue.bill_image_url ? (
+                          <Button variant="link" className="p-0 h-auto font-medium" onClick={() => setBillPreviewUrl(revenue.bill_image_url)}>
+                            Xem bill
+                          </Button>
+                        ) : (
+                          <p className="font-medium text-slate-500">Trống</p>
+                        )}
+                      </div>
+                    </InfoRow>
+                  )}
                   <div className="flex gap-2 mt-4">
                     <Button 
                       className="flex-1" 
@@ -454,6 +469,11 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
           roleConfigs={roleConfigs}
         />
       )}
+      <BillPreviewDialog
+        imageUrl={billPreviewUrl}
+        open={!!billPreviewUrl}
+        onOpenChange={() => setBillPreviewUrl(null)}
+      />
     </>
   );
 };
