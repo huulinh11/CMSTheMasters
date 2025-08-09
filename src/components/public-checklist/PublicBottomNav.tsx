@@ -1,12 +1,12 @@
 import { NavLink, useParams } from "react-router-dom";
-import { Megaphone, Calendar, ClipboardList, User } from "lucide-react";
+import { Home, Calendar, ClipboardList, Megaphone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const navItems = [
-  { to: "", icon: Megaphone, label: "Quyền lợi", end: true },
+  { to: "", icon: Home, label: "Home", end: true },
   { to: "/event-info", icon: Calendar, label: "Sự kiện" },
   { to: "/tasks", icon: ClipboardList, label: "Tác vụ" },
-  { to: "/info", icon: User, label: "Cá nhân" },
+  { to: "/benefits", icon: Megaphone, label: "Quyền lợi" },
 ];
 
 const PublicBottomNav = () => {

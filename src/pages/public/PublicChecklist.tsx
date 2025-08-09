@@ -8,10 +8,10 @@ import { GuestTask } from "@/types/event-task";
 import { TimelineEvent } from "@/types/timeline";
 import { Skeleton } from "@/components/ui/skeleton";
 import PublicChecklistLayout from "@/layouts/PublicChecklistLayout";
-import PublicBenefitsTab from "@/pages/public/checklist/PublicBenefitsTab";
+import PublicHomeTab from "@/pages/public/checklist/PublicHomeTab";
 import PublicEventInfoTab from "@/pages/public/checklist/PublicEventInfoTab";
 import PublicTasksTab from "@/pages/public/checklist/PublicTasksTab";
-import PublicInfoTab from "@/pages/public/checklist/PublicInfoTab";
+import PublicBenefitsTab from "@/pages/public/checklist/PublicBenefitsTab";
 import { useEffect } from "react";
 
 type CombinedGuest = (Guest | VipGuest) & { type: 'Chức vụ' | 'Khách mời', secondaryInfo?: string, materials?: string };
@@ -36,12 +36,10 @@ const PublicChecklist = () => {
 
       let guest: CombinedGuest | null = null;
       
-      // Try vip_guests first
       const { data: vipGuest } = await supabase.from('vip_guests').select('*').eq(queryColumn, identifier).single();
       if (vipGuest) {
           guest = { ...vipGuest, type: 'Chức vụ', secondaryInfo: vipGuest.secondary_info, materials: vipGuest.materials };
       } else {
-          // If not found, try guests
           const { data: regularGuest } = await supabase.from('guests').select('*').eq(queryColumn, identifier).single();
           if (regularGuest) {
               guest = { ...regularGuest, type: 'Khách mời', materials: regularGuest.materials };
@@ -106,10 +104,10 @@ const PublicChecklist = () => {
     <PublicChecklistLayout>
       <Routes>
         <Route path="/" element={<Outlet context={data} />}>
-          <Route index element={<PublicBenefitsTab />} />
+          <Route index element={<PublicHomeTab />} />
           <Route path="event-info" element={<PublicEventInfoTab />} />
           <Route path="tasks" element={<PublicTasksTab />} />
-          <Route path="info" element={<PublicInfoTab />} />
+          <Route path="benefits" element={<PublicBenefitsTab />} />
           <Route path="*" element={<Navigate to="" replace />} />
         </Route>
       </Routes>
