@@ -100,7 +100,7 @@ const PublicHomeTab = () => {
 
         <Separator />
 
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <Link to="../event-info">
             <Button className="w-full justify-start h-14 text-base">
               <Calendar className="mr-4 h-6 w-6" /> Xem Timeline & Thông tin sự kiện
