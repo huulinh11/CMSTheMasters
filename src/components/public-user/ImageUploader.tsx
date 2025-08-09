@@ -8,9 +8,10 @@ import { showError } from "@/utils/toast";
 interface ImageUploaderProps {
   onUploadSuccess: (url: string) => void;
   guestId: string;
+  onUploading?: (isUploading: boolean) => void;
 }
 
-export const ImageUploader = ({ onUploadSuccess, guestId }: ImageUploaderProps) => {
+export const ImageUploader = ({ onUploadSuccess, guestId, onUploading }: ImageUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const inputId = useId();
 
@@ -19,6 +20,7 @@ export const ImageUploader = ({ onUploadSuccess, guestId }: ImageUploaderProps) 
     if (!file) return;
 
     setIsUploading(true);
+    onUploading?.(true);
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
@@ -45,6 +47,7 @@ export const ImageUploader = ({ onUploadSuccess, guestId }: ImageUploaderProps) 
       showError(`Lỗi tải ảnh: ${error.message}`);
     } finally {
       setIsUploading(false);
+      onUploading?.(false);
     }
   };
 

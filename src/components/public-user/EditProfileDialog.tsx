@@ -50,6 +50,7 @@ interface EditProfileDialogProps {
   onSave?: (content: ContentBlock[]) => void;
   onContentChange?: (content: ContentBlock[]) => void;
   isSaving: boolean;
+  onUploadingChange?: (isUploading: boolean) => void;
   isTemplateMode?: boolean;
   isSubDialog?: boolean;
 }
@@ -94,8 +95,21 @@ const fontFamilies = [
 ];
 
 
-export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContentChange, isSaving, isTemplateMode = false, isSubDialog = false }: EditProfileDialogProps) => {
+export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContentChange, isSaving, onUploadingChange, isTemplateMode = false, isSubDialog = false }: EditProfileDialogProps) => {
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
+  const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    onUploadingChange?.(uploadingIds.size > 0);
+  }, [uploadingIds, onUploadingChange]);
+
+  const handleUploadingState = (id: string, isUploading: boolean) => {
+    setUploadingIds(prev => {
+      const newSet = new Set(prev);
+      if (isUploading) { newSet.add(id); } else { newSet.delete(id); }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     if (guest) {
@@ -268,7 +282,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
                           {block.type === 'image' && (
                             <>
                               <RadioGroup value={block.imageSourceType || 'url'} onValueChange={(value) => handleUpdateBlock(block.id, 'imageSourceType', value)} className="flex gap-4" disabled={isTemplateMode}><div className="flex items-center space-x-2"><RadioGroupItem value="url" id={`image-url-${block.id}`} /><Label htmlFor={`image-url-${block.id}`}>Nhập link</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="upload" id={`image-upload-${block.id}`} /><Label htmlFor={`image-upload-${block.id}`}>Tải ảnh</Label></div></RadioGroup>
-                              {(block.imageSourceType === 'url' || !block.imageSourceType) ? <Input placeholder="Link ảnh" value={block.imageUrl} onChange={e => handleUpdateBlock(block.id, 'imageUrl', e.target.value)} className="truncate" /> : <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'imageUrl', url)} />}
+                              {(block.imageSourceType === 'url' || !block.imageSourceType) ? <Input placeholder="Link ảnh" value={block.imageUrl} onChange={e => handleUpdateBlock(block.id, 'imageUrl', e.target.value)} className="truncate" /> : <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'imageUrl', url)} onUploading={isUp => handleUploadingState(`block-image-${block.id}`, isUp)} />}
                               <Input placeholder="Link khi click (tùy chọn)" value={block.linkUrl} onChange={e => handleUpdateBlock(block.id, 'linkUrl', e.target.value)} className="truncate" />
                               <div><Label className="text-xs">Rộng (%)</Label><Slider value={[block.width || 100]} onValueChange={([val]) => handleUpdateBlock(block.id, 'width', val)} max={100} step={1} disabled={isTemplateMode} /></div>
                             </>
@@ -286,7 +300,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
                             <>
                               <Label className="font-medium text-sm">Ảnh nền</Label>
                               <RadioGroup value={block.imageSourceType || 'url'} onValueChange={(value) => handleUpdateBlock(block.id, 'imageSourceType', value)} className="flex gap-4" disabled={isTemplateMode}><div className="flex items-center space-x-2"><RadioGroupItem value="url" id={`bg-url-${block.id}`} /><Label htmlFor={`bg-url-${block.id}`}>Nhập link</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="upload" id={`bg-upload-${block.id}`} /><Label htmlFor={`bg-upload-${block.id}`}>Tải ảnh</Label></div></RadioGroup>
-                              {(block.imageSourceType === 'url' || !block.imageSourceType) ? <Input placeholder="Link ảnh nền (tùy chọn)" value={block.backgroundImageUrl} onChange={e => handleUpdateBlock(block.id, 'backgroundImageUrl', e.target.value)} className="truncate" disabled={isTemplateMode} /> : <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'backgroundImageUrl', url)} />}
+                              {(block.imageSourceType === 'url' || !block.imageSourceType) ? <Input placeholder="Link ảnh nền (tùy chọn)" value={block.backgroundImageUrl} onChange={e => handleUpdateBlock(block.id, 'backgroundImageUrl', e.target.value)} className="truncate" disabled={isTemplateMode} /> : <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'backgroundImageUrl', url)} onUploading={isUp => handleUploadingState(`block-bg-${block.id}`, isUp)} />}
                               <Separator className="my-3" />
                               <Label className="font-medium text-sm">Nội dung</Label>
                               <SortableContext items={block.items.map(t => `item_${block.id}_${t.id}`)} strategy={verticalListSortingStrategy}>
@@ -316,7 +330,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
                                       ) : (
                                         <div className="space-y-2">
                                           <RadioGroup value={item.imageSourceType || 'url'} onValueChange={(value) => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, imageSourceType: value} : i))} className="flex gap-4" disabled={isTemplateMode}><div className="flex items-center space-x-2"><RadioGroupItem value="url" id={`item-img-url-${item.id}`} /><Label htmlFor={`item-img-url-${item.id}`}>Nhập link</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="upload" id={`item-img-upload-${item.id}`} /><Label htmlFor={`item-img-upload-${item.id}`}>Tải ảnh</Label></div></RadioGroup>
-                                          {(item.imageSourceType === 'url' || !item.imageSourceType) ? <Input placeholder="Link ảnh" value={item.imageUrl} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, imageUrl: e.target.value} : i))} /> : <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, imageUrl: url} : i))} />}
+                                          {(item.imageSourceType === 'url' || !item.imageSourceType) ? <Input placeholder="Link ảnh" value={item.imageUrl} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, imageUrl: e.target.value} : i))} /> : <ImageUploader guestId={guest.id} onUploadSuccess={url => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, imageUrl: url} : i))} onUploading={isUp => handleUploadingState(`item-image-${item.id}`, isUp)} />}
                                           <div><Label className="text-xs">Rộng (%)</Label><Slider value={[item.width || 100]} onValueChange={([val]) => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, width: val} : i))} max={100} step={1} disabled={isTemplateMode} /></div>
                                           <div className="grid grid-cols-4 gap-1">
                                             <div><Label className="text-xs">M.Top</Label><Input type="number" value={item.marginTop || 0} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, marginTop: Number(e.target.value)} : i))} disabled={isTemplateMode} /></div>

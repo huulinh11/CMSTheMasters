@@ -44,6 +44,7 @@ export const EditTemplateDialog = ({
   const [name, setName] = useState("");
   const [assignedRole, setAssignedRole] = useState<string | null>(null);
   const [content, setContent] = useState<ContentBlock[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (template) {
@@ -142,6 +143,7 @@ export const EditTemplateDialog = ({
             onSave={() => {}}
             onContentChange={setContent}
             isSaving={false}
+            onUploadingChange={setIsUploading}
             isTemplateMode={false}
             isSubDialog={true}
           />
@@ -156,8 +158,8 @@ export const EditTemplateDialog = ({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Hủy
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? "Đang lưu..." : "Lưu Template"}
+            <Button onClick={handleSave} disabled={isSaving || isUploading}>
+              {isSaving || isUploading ? "Đang lưu..." : "Lưu Template"}
             </Button>
           </div>
         </DialogFooter>
