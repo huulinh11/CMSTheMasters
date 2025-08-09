@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext, ReactNode, useMemo } from 'react';
+import { createContext, useEffect, useContext, ReactNode, useMemo } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -29,37 +29,18 @@ interface AuthProviderProps {
   initialProfile: Profile | null;
 }
 
+// AuthProvider giờ đây không còn state riêng. Nó lấy dữ liệu trực tiếp từ props
+// được cung cấp bởi loader, đảm bảo chỉ có một nguồn sự thật duy nhất.
 export const AuthProvider = ({ children, initialSession, initialUser, initialProfile }: AuthProviderProps) => {
-  const [session, setSession] = useState<Session | null>(initialSession);
-  const [user, setUser] = useState<User | null>(initialUser);
-  const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const navigate = useNavigate();
 
+  // Listener này chỉ dùng để xử lý các sự kiện bất đồng bộ xảy ra SAU khi trang đã tải,
+  // ví dụ như người dùng đăng xuất từ một tab khác.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      if (currentUser) {
-        const { data: userProfile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
-        
-        if (error && error.code !== 'PGRST116') {
-          showError(`Lỗi tải thông tin người dùng: ${error.message}. Đang đăng xuất...`);
-          setProfile(null);
-          await supabase.auth.signOut();
-        } else {
-          setProfile(userProfile || null);
-        }
-      } else {
-        setProfile(null);
-      }
-
-      if (_event === 'SIGNED_OUT') {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Nếu session không còn, nghĩa là người dùng đã đăng xuất.
+      if (!session) {
+        // Chuyển hướng về trang đăng nhập.
         navigate('/login');
       }
     });
@@ -70,21 +51,23 @@ export const AuthProvider = ({ children, initialSession, initialUser, initialPro
   }, [navigate]);
 
   const permissions = useMemo(() => {
-    const role = profile?.role || user?.user_metadata?.role;
+    const role = initialProfile?.role || initialUser?.user_metadata?.role;
     return getPermissionsForRole(role);
-  }, [profile, user]);
+  }, [initialProfile, initialUser]);
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       showError(`Sign out error: ${error.message}`);
     }
+    // Listener ở trên sẽ bắt sự kiện SIGNED_OUT và tự động điều hướng.
   };
 
+  // Giá trị của context được lấy thẳng từ props, không qua state.
   const value = {
-    session,
-    user,
-    profile,
+    session: initialSession,
+    user: initialUser,
+    profile: initialProfile,
     permissions,
     signOut,
   };
