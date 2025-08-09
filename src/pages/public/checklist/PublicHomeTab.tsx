@@ -45,11 +45,9 @@ const PublicHomeTab = () => {
     queryKey: ['referred_guests', guest.name],
     queryFn: async () => {
       if (!guest.name) return [];
-      const { data: vips, error: vipsError } = await supabase.from('vip_guests').select('id, name, role, phone, type: "Chức vụ"').ilike('referrer', guest.name);
-      if (vipsError) throw vipsError;
-      const { data: regulars, error: regularsError } = await supabase.from('guests').select('id, name, role, phone, type: "Khách mời"').ilike('referrer', guest.name);
-      if (regularsError) throw regularsError;
-      return [...(vips || []), ...(regulars || [])];
+      const { data, error } = await supabase.rpc('get_referred_guests', { referrer_name_in: guest.name });
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!guest.name,
   });
