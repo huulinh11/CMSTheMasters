@@ -13,6 +13,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import BillPreviewDialog from "./BillPreviewDialog";
+import { Button } from "@/components/ui/button";
 
 interface GuestHistoryDialogProps {
   guest: GuestRevenue | null;
@@ -42,6 +45,8 @@ type UpsaleHistoryItem = {
 type CombinedHistoryItem = PaymentHistoryItem | UpsaleHistoryItem;
 
 const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogProps) => {
+  const [billPreviewUrl, setBillPreviewUrl] = useState<string | null>(null);
+
   const { data: history = [], isLoading } = useQuery<CombinedHistoryItem[]>({
     queryKey: ['guest_history', guest?.id],
     queryFn: async () => {
@@ -92,78 +97,89 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
   if (!guest) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Lịch sử giao dịch</DialogTitle>
-          <DialogDescription>
-            Cho khách mời: {guest.name}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-4 max-h-[60vh] overflow-y-auto">
-          {isLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ngày</TableHead>
-                  <TableHead>Chi tiết</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {history.length > 0 ? (
-                  history.map((item) => (
-                    <TableRow key={`${item.type}-${item.id}`}>
-                      <TableCell className="align-top text-sm text-muted-foreground whitespace-nowrap">
-                        {format(new Date(item.created_at), 'dd/MM/yyyy HH:mm')}
-                      </TableCell>
-                      <TableCell>
-                        {item.type === 'payment' ? (
-                          <div>
-                            <div className="font-semibold">Thanh toán</div>
-                            <div className="text-green-600 font-medium">{formatCurrency(item.amount)}</div>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="font-semibold text-blue-600">Upsale</div>
-                            <div className="flex items-center text-sm flex-wrap">
-                              <span>{item.from_role} ({formatCurrency(item.from_sponsorship)})</span>
-                              <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />
-                              <span>{item.to_role} ({formatCurrency(item.to_sponsorship)})</span>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Lịch sử giao dịch</DialogTitle>
+            <DialogDescription>
+              Cho khách mời: {guest.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 max-h-[60vh] overflow-y-auto">
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ngày</TableHead>
+                    <TableHead>Chi tiết</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {history.length > 0 ? (
+                    history.map((item) => (
+                      <TableRow key={`${item.type}-${item.id}`}>
+                        <TableCell className="align-top text-sm text-muted-foreground whitespace-nowrap">
+                          {format(new Date(item.created_at), 'dd/MM/yyyy HH:mm')}
+                        </TableCell>
+                        <TableCell>
+                          {item.type === 'payment' ? (
+                            <div>
+                              <div className="font-semibold">Thanh toán</div>
+                              <div className="text-green-600 font-medium">{formatCurrency(item.amount)}</div>
                             </div>
-                            {item.upsaled_by && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                bởi {item.upsaled_by}
+                          ) : (
+                            <div>
+                              <div className="font-semibold text-blue-600">Upsale</div>
+                              <div className="flex items-center text-sm flex-wrap">
+                                <span>{item.from_role} ({formatCurrency(item.from_sponsorship)})</span>
+                                <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />
+                                <span>{item.to_role} ({formatCurrency(item.to_sponsorship)})</span>
                               </div>
-                            )}
-                            {item.bill_image_url && (
-                              <a href={item.bill_image_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-1 inline-block">
-                                Xem bill
-                              </a>
-                            )}
-                          </div>
-                        )}
+                              {item.upsaled_by && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  bởi {item.upsaled_by}
+                                </div>
+                              )}
+                              {item.bill_image_url && (
+                                <Button
+                                  variant="link"
+                                  className="text-sm p-0 h-auto mt-1"
+                                  onClick={() => setBillPreviewUrl(item.bill_image_url)}
+                                >
+                                  Xem bill
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={2} className="h-24 text-center">
+                        Chưa có giao dịch nào.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={2} className="h-24 text-center">
-                      Chưa có giao dịch nào.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <BillPreviewDialog
+        imageUrl={billPreviewUrl}
+        open={!!billPreviewUrl}
+        onOpenChange={() => setBillPreviewUrl(null)}
+      />
+    </>
   );
 };
 
