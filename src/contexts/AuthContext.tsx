@@ -30,44 +30,24 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children, initialSession, initialUser, initialProfile }: AuthProviderProps) => {
+  // Trạng thái được khởi tạo hoàn toàn từ dữ liệu do loader cung cấp.
   const [session, setSession] = useState<Session | null>(initialSession);
   const [user, setUser] = useState<User | null>(initialUser);
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const navigate = useNavigate();
 
-  // Effect này sẽ đồng bộ state của context với dữ liệu từ loader mỗi khi điều hướng.
-  // Điều này quan trọng vì AuthProvider không mount lại, nhưng dữ liệu từ loader thì thay đổi.
+  // useEffect này chỉ lắng nghe các thay đổi trong tương lai, không tham gia vào quá trình khởi tạo.
   useEffect(() => {
-    setSession(initialSession);
-    setUser(initialUser);
-    setProfile(initialProfile);
-  }, [initialSession, initialUser, initialProfile]);
-
-  // Effect này chỉ chạy một lần để đăng ký listener theo dõi thay đổi trạng thái đăng nhập.
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      // Session từ listener luôn là mới nhất.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Chỉ xử lý khi trạng thái thực sự thay đổi (ví dụ: đăng xuất từ tab khác)
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
       if (currentUser) {
-        // Phải fetch lại profile vì thông tin user có thể đã thay đổi,
-        // hoặc đây là sự kiện SIGNED_IN của một user khác.
-        const { data: userProfile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
-        
-        if (error && error.code !== 'PGRST116') {
-          showError(`Lỗi tải thông tin người dùng: ${error.message}`);
-          setProfile(null);
-        } else {
-          setProfile(userProfile || null);
-        }
+        supabase.from('profiles').select('*').eq('id', currentUser.id).single()
+          .then(({ data }) => setProfile(data || null));
       } else {
-        // Nếu không có user, không có profile.
         setProfile(null);
       }
 
@@ -76,9 +56,7 @@ export const AuthProvider = ({ children, initialSession, initialUser, initialPro
       }
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const permissions = useMemo(() => {

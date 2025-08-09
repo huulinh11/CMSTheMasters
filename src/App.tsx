@@ -35,13 +35,17 @@ const protectedLoader = async () => {
   try {
     const { data, error: sessionError } = await supabase.auth.getSession();
 
-    if (sessionError || !data?.session?.user) {
-      console.error("Lỗi khi lấy session hoặc không có session:", sessionError);
+    if (sessionError) {
+      console.error("Lỗi khi lấy session:", sessionError);
       return redirect('/login');
     }
 
-    const { session } = data;
-    const user = session.user;
+    if (!data || !data.session || !data.session.user) {
+      return redirect('/login');
+    }
+
+    const session = data.session;
+    const user = data.session.user;
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -50,13 +54,15 @@ const protectedLoader = async () => {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      console.error("Lỗi khi tải profile, nhưng vẫn tiếp tục:", profileError);
-      return { session, user, profile: null };
+      console.error("Lỗi khi tải profile:", profileError);
+      await supabase.auth.signOut();
+      return redirect('/login');
     }
 
-    return { session, user, profile: profile || null };
+    return { session, user, profile };
   } catch (e) {
     console.error("Lỗi nghiêm trọng trong loader:", e);
+    await supabase.auth.signOut();
     return redirect('/login');
   }
 };
@@ -64,8 +70,12 @@ const protectedLoader = async () => {
 // Loader cho trang login để tự động chuyển hướng nếu đã đăng nhập
 const loginLoader = async () => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Lỗi trong login loader:", error);
+      return null;
+    }
+    if (data && data.session) {
       return redirect('/');
     }
     return null;
@@ -87,13 +97,15 @@ const ProtectedRoot = () => {
 };
 
 const router = createBrowserRouter([
-  // Public routes
-  { path: "/login", element: <Login />, action: loginAction, loader: loginLoader },
+  { 
+    path: "/login", 
+    element: <Login />,
+    action: loginAction,
+    loader: loginLoader,
+  },
   { path: "/profile/:slug", element: <PublicProfile /> },
   { path: "/checklist/:identifier/*", element: <PublicChecklist /> },
   { path: "/timeline/public", element: <PublicTimelinePreview /> },
-
-  // Protected routes
   {
     path: "/",
     element: <ProtectedRoot />,
@@ -115,7 +127,7 @@ const router = createBrowserRouter([
             path: "settings", 
             element: <SettingsPage />,
             children: [
-              { index: true, element: <div /> /* Index route for menu */ },
+              { index: true, element: <div /> },
               { path: "roles", element: <RoleSettings /> },
               { path: "tasks", element: <TaskSettings /> },
               { path: "benefits", element: <BenefitSettings /> },
