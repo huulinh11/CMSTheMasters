@@ -7,10 +7,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
+import { Copy, Settings } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import ChecklistSettings from "@/pages/ChecklistSettings";
 
 type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời' };
 
@@ -66,12 +68,29 @@ const ChecklistTab = () => {
 
   return (
     <div className="space-y-4">
-      <Input
-        placeholder="Tìm kiếm khách mời theo tên, vai trò, SĐT..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex justify-between items-center gap-2">
+        <Input
+          placeholder="Tìm kiếm khách mời theo tên, vai trò, SĐT..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-grow"
+        />
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="flex-shrink-0">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col">
+            <SheetHeader className="p-4 border-b flex-shrink-0">
+              <SheetTitle>Cấu hình Checklist</SheetTitle>
+            </SheetHeader>
+            <div className="p-4 overflow-y-auto flex-grow">
+              <ChecklistSettings />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
       <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
       {isLoading ? (
         <Skeleton className="h-96 w-full" />
