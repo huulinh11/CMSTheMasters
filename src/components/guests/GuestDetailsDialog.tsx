@@ -89,7 +89,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
   const queryClient = useQueryClient();
   const { profile, user } = useAuth();
   const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
-  const { tasksByRole, benefitsByRole, isLoading: isLoadingPermissions } = useRolePermissions();
+  const { tasksByRole, benefitsByRole, allBenefits, isLoading: isLoadingPermissions } = useRolePermissions();
 
   const { data, isLoading } = useQuery({
     queryKey: ['guest_details', guestType, guestId],
@@ -435,6 +435,8 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         onOpenChange={setIsMediaDialogOpen}
         guest={{ ...guest, media_benefit: mediaBenefit }}
         onSave={(guestId, benefits) => mediaBenefitMutation.mutate({ guestId, benefits })}
+        benefitsByRole={benefitsByRole}
+        allBenefits={allBenefits}
       />
       <TaskChecklistDialog
         open={isTasksDialogOpen}

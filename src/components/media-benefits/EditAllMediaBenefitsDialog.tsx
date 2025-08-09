@@ -10,17 +10,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AnyMediaGuest, NewsItem, NewsVideo, MediaBenefit } from "@/types/media-benefit";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PlusCircle, Trash2, Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 import { StatusSelect } from "./StatusSelect";
+import { BenefitItem } from "@/types/benefit-configuration";
 
 interface EditAllMediaBenefitsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (guestId: string, benefits: any) => void;
   guest: AnyMediaGuest | null;
+  benefitsByRole: Record<string, string[]>;
+  allBenefits: BenefitItem[];
 }
+
+// ... (Các component con InputWithCopy, NewsEditor, VideoEditor không thay đổi)
 
 const InputWithCopy = ({ value, onChange, placeholder, label }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, placeholder: string, label: string }) => {
   return (
@@ -67,10 +72,10 @@ const NewsEditor = ({ items, setItems, title }: { items: NewsItem[], setItems: (
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 p-3 border rounded-md">
       <h4 className="font-medium">{title}</h4>
       {items.map((item, index) => (
-        <div key={item.id} className="space-y-2 p-3 border rounded-md relative">
+        <div key={item.id} className="space-y-2 p-3 border rounded-md relative bg-white">
           <Label className="text-xs text-slate-500">Bài {index + 1}</Label>
           <InputWithCopy
             placeholder="Link nháp"
@@ -96,10 +101,10 @@ const NewsEditor = ({ items, setItems, title }: { items: NewsItem[], setItems: (
   );
 };
 
-const VideoEditor = ({ video, setVideo }: { video: NewsVideo, setVideo: (video: NewsVideo) => void }) => {
+const VideoEditor = ({ video, setVideo, title }: { video: NewsVideo, setVideo: (video: NewsVideo) => void, title: string }) => {
   return (
-    <div className="space-y-2">
-      <h4 className="font-medium">Video đưa tin</h4>
+    <div className="space-y-2 p-3 border rounded-md">
+      <h4 className="font-medium">{title}</h4>
       <InputWithCopy
         label="Link nháp"
         placeholder="Link nháp"
@@ -116,8 +121,15 @@ const VideoEditor = ({ video, setVideo }: { video: NewsVideo, setVideo: (video: 
   );
 };
 
-export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest }: EditAllMediaBenefitsDialogProps) => {
+
+export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, benefitsByRole, allBenefits }: EditAllMediaBenefitsDialogProps) => {
   const [benefits, setBenefits] = useState<Partial<MediaBenefit>>({});
+
+  const benefitsForGuest = useMemo(() => {
+    if (!guest) return [];
+    const benefitNames = benefitsByRole[guest.role] || [];
+    return allBenefits.filter(b => benefitNames.includes(b.name));
+  }, [guest, benefitsByRole, allBenefits]);
 
   useEffect(() => {
     if (guest) {
@@ -134,6 +146,16 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest }
     setBenefits(prev => ({ ...prev, [field]: value }));
   };
 
+  const updateCustomField = (field: string, value: any) => {
+    setBenefits(prev => ({
+      ...prev,
+      custom_data: {
+        ...prev.custom_data,
+        [field]: value,
+      }
+    }));
+  };
+
   if (!guest) return null;
 
   return (
@@ -147,38 +169,70 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest }
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
-          <div className="p-3 border rounded-md space-y-2">
-            <Label>Thư mời</Label>
-            <StatusSelect 
-              value={benefits.invitation_status || 'Trống'}
-              onUpdate={(value) => updateField('invitation_status', value)}
-            />
-          </div>
-
-          {'secondaryInfo' in guest && ( // VIP Guest
-            <>
-              <InputWithCopy label="Post bài page" placeholder="Link post" value={benefits.page_post_link || ''} onChange={(e) => updateField('page_post_link', e.target.value)} />
-              <InputWithCopy label="Post bài BTC" placeholder="Link post" value={benefits.btc_post_link || ''} onChange={(e) => updateField('btc_post_link', e.target.value)} />
-              <NewsEditor title="Báo trước sự kiện" items={benefits.pre_event_news || []} setItems={(items) => updateField('pre_event_news', items)} />
-              <NewsEditor title="Báo sau sự kiện" items={benefits.post_event_news || []} setItems={(items) => updateField('post_event_news', items)} />
-              <InputWithCopy label="Video thảm đỏ" placeholder="Link video" value={benefits.red_carpet_video_link || ''} onChange={(e) => updateField('red_carpet_video_link', e.target.value)} />
-              <VideoEditor video={benefits.news_video || { script_link: '', video_link: '' }} setVideo={(video) => updateField('news_video', video)} />
-            </>
-          )}
-
-          {'materials' in guest && ( // Regular Guest
-            <>
-              {(guest.role === 'VIP' || guest.role === 'V-Vip') && (
-                <>
-                  <NewsEditor title="Báo sau sự kiện" items={benefits.post_event_news || []} setItems={(items) => updateField('post_event_news', items)} />
-                  <InputWithCopy label="Bộ ảnh Beauty AI" placeholder="Link ảnh" value={benefits.beauty_ai_photos_link || ''} onChange={(e) => updateField('beauty_ai_photos_link', e.target.value)} />
-                </>
-              )}
-              {guest.role === 'V-Vip' && (
-                <InputWithCopy label="Video thảm đỏ" placeholder="Link video" value={benefits.red_carpet_video_link || ''} onChange={(e) => updateField('red_carpet_video_link', e.target.value)} />
-              )}
-            </>
-          )}
+          {benefitsForGuest.map(benefit => {
+            switch (benefit.field_type) {
+              case 'status_select':
+                return (
+                  <div key={benefit.id} className="p-3 border rounded-md space-y-2">
+                    <Label>{benefit.name}</Label>
+                    <StatusSelect 
+                      value={benefits.invitation_status || 'Trống'}
+                      onUpdate={(value) => updateField('invitation_status', value)}
+                    />
+                  </div>
+                );
+              case 'simple_link':
+                return (
+                  <InputWithCopy 
+                    key={benefit.id}
+                    label={benefit.name} 
+                    placeholder="Link" 
+                    value={benefits.custom_data?.[benefit.name] || benefits[benefit.name as keyof MediaBenefit] || ''} 
+                    onChange={(e) => {
+                      const standardFields = ['page_post_link', 'btc_post_link', 'red_carpet_video_link', 'beauty_ai_photos_link'];
+                      if (standardFields.includes(benefit.name)) {
+                        updateField(benefit.name as keyof MediaBenefit, e.target.value);
+                      } else {
+                        updateCustomField(benefit.name, e.target.value);
+                      }
+                    }} 
+                  />
+                );
+              case 'complex_news':
+                return (
+                  <NewsEditor
+                    key={benefit.id}
+                    title={benefit.name}
+                    items={benefits.custom_data?.[benefit.name] || benefits[benefit.name as keyof MediaBenefit] || []}
+                    setItems={(items) => {
+                      const standardFields = ['pre_event_news', 'post_event_news'];
+                      if (standardFields.includes(benefit.name)) {
+                        updateField(benefit.name as keyof MediaBenefit, items);
+                      } else {
+                        updateCustomField(benefit.name, items);
+                      }
+                    }}
+                  />
+                );
+              case 'complex_video':
+                return (
+                  <VideoEditor
+                    key={benefit.id}
+                    title={benefit.name}
+                    video={benefits.custom_data?.[benefit.name] || benefits[benefit.name as keyof MediaBenefit] || { script_link: '', video_link: '' }}
+                    setVideo={(video) => {
+                      if (benefit.name === 'news_video') {
+                        updateField('news_video', video);
+                      } else {
+                        updateCustomField(benefit.name, video);
+                      }
+                    }}
+                  />
+                );
+              default:
+                return null;
+            }
+          })}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>

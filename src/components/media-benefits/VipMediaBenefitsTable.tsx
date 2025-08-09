@@ -7,17 +7,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MediaVipGuest } from "@/types/media-benefit";
+import { MediaVipGuest, MediaBenefit } from "@/types/media-benefit";
 import { StatusSelect } from "./StatusSelect";
 import { SimpleLinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
+import { BenefitItem } from "@/types/benefit-configuration";
 
 interface VipMediaBenefitsTableProps {
   guests: MediaVipGuest[];
   onUpdateBenefit: (guestId: string, field: string, value: any) => void;
   onEdit: (guest: MediaVipGuest) => void;
+  benefitsToDisplay: BenefitItem[];
 }
 
-export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit }: VipMediaBenefitsTableProps) => {
+const getBenefitValue = (benefitName: keyof MediaBenefit | string, mediaBenefit?: MediaBenefit) => {
+  if (!mediaBenefit) return null;
+  if (benefitName in mediaBenefit) {
+    return mediaBenefit[benefitName as keyof MediaBenefit];
+  }
+  return mediaBenefit.custom_data?.[benefitName] || null;
+};
+
+export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit, benefitsToDisplay }: VipMediaBenefitsTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -26,13 +36,9 @@ export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit }: VipMe
             <TableHead>ID</TableHead>
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
-            <TableHead>Thư mời</TableHead>
-            <TableHead>Post bài page</TableHead>
-            <TableHead>Post bài BTC</TableHead>
-            <TableHead>Báo trước sự kiện</TableHead>
-            <TableHead>Báo sau sự kiện</TableHead>
-            <TableHead>Video thảm đỏ</TableHead>
-            <TableHead>Video đưa tin</TableHead>
+            {benefitsToDisplay.map(benefit => (
+              <TableHead key={benefit.name}>{benefit.name}</TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -46,35 +52,27 @@ export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit }: VipMe
                   </Button>
                 </TableCell>
                 <TableCell>{guest.role}</TableCell>
-                <TableCell>
-                  <StatusSelect
-                    value={guest.media_benefit?.invitation_status || 'Trống'}
-                    onUpdate={(value) => onUpdateBenefit(guest.id, 'invitation_status', value)}
-                  />
-                </TableCell>
-                <TableCell>
-                  <SimpleLinkDisplay link={guest.media_benefit?.page_post_link} />
-                </TableCell>
-                <TableCell>
-                  <SimpleLinkDisplay link={guest.media_benefit?.btc_post_link} />
-                </TableCell>
-                <TableCell>
-                  <ComplexBenefitDisplay data={guest.media_benefit?.pre_event_news} benefitType="pre_event_news" />
-                </TableCell>
-                <TableCell>
-                  <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} benefitType="post_event_news" />
-                </TableCell>
-                <TableCell>
-                  <SimpleLinkDisplay link={guest.media_benefit?.red_carpet_video_link} />
-                </TableCell>
-                <TableCell>
-                  <ComplexBenefitDisplay data={guest.media_benefit?.news_video} benefitType="news_video" />
-                </TableCell>
+                {benefitsToDisplay.map(benefit => (
+                  <TableCell key={benefit.name}>
+                    {benefit.field_type === 'status_select' && (
+                      <StatusSelect
+                        value={getBenefitValue('invitation_status', guest.media_benefit) || 'Trống'}
+                        onUpdate={(value) => onUpdateBenefit(guest.id, 'invitation_status', value)}
+                      />
+                    )}
+                    {benefit.field_type === 'simple_link' && (
+                      <SimpleLinkDisplay link={getBenefitValue(benefit.name, guest.media_benefit)} />
+                    )}
+                    {(benefit.field_type === 'complex_news' || benefit.field_type === 'complex_video') && (
+                      <ComplexBenefitDisplay data={getBenefitValue(benefit.name, guest.media_benefit)} benefitType={benefit.name} />
+                    )}
+                  </TableCell>
+                ))}
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={10} className="h-24 text-center">
+              <TableCell colSpan={3 + benefitsToDisplay.length} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>

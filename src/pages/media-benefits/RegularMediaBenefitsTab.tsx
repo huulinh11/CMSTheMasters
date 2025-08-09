@@ -236,6 +236,8 @@ export default function RegularMediaBenefitsTab() {
         open={!!editingGuest}
         onOpenChange={() => setEditingGuest(null)}
         onSave={handleSaveAllBenefits}
+        benefitsByRole={benefitsByRole}
+        allBenefits={allBenefits}
       />
     </div>
   );

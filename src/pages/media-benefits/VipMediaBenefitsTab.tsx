@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 const vipBenefitFieldGroups = [
   [
@@ -51,6 +52,7 @@ export default function VipMediaBenefitsTab() {
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
   const [editingGuest, setEditingGuest] = useState<MediaVipGuest | null>(null);
+  const { benefitsByRole, allBenefits, isLoading: isLoadingPermissions } = useRolePermissions();
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
@@ -175,8 +177,22 @@ export default function VipMediaBenefitsTab() {
   });
 
   const handleUpdateBenefit = useCallback((guestId: string, field: string, value: any) => {
-    mutation.mutate({ guestId, benefits: { [field]: value } });
-  }, [mutation]);
+    const standardFields = ['invitation_status', 'page_post_link', 'btc_post_link', 'pre_event_news', 'post_event_news', 'red_carpet_video_link', 'news_video', 'beauty_ai_photos_link'];
+    
+    let payload: Partial<MediaBenefit>;
+    if (standardFields.includes(field)) {
+      payload = { [field]: value };
+    } else {
+      const existingBenefit = benefitsMap.get(guestId);
+      payload = {
+        custom_data: {
+          ...existingBenefit?.custom_data,
+          [field]: value,
+        }
+      };
+    }
+    mutation.mutate({ guestId, benefits: payload });
+  }, [mutation, benefitsMap]);
 
   const handleSaveAllBenefits = (guestId: string, benefits: Partial<MediaBenefit>) => {
     mutation.mutate({ guestId, benefits });
@@ -190,7 +206,16 @@ export default function VipMediaBenefitsTab() {
     setAdvancedFilters({});
   };
 
-  const isLoading = isLoadingGuests || isLoadingBenefits;
+  const isLoading = isLoadingGuests || isLoadingBenefits || isLoadingPermissions;
+
+  const benefitsToDisplay = useMemo(() => {
+    const roleSet = new Set(filteredGuests.map(g => g.role));
+    const benefitSet = new Set<string>();
+    roleSet.forEach(role => {
+      (benefitsByRole[role] || []).forEach(benefit => benefitSet.add(benefit));
+    });
+    return allBenefits.filter(b => benefitSet.has(b.name));
+  }, [filteredGuests, benefitsByRole, allBenefits]);
 
   return (
     <div className="space-y-4">
@@ -240,12 +265,15 @@ export default function VipMediaBenefitsTab() {
           guests={filteredGuests}
           onUpdateBenefit={handleUpdateBenefit}
           onEdit={setEditingGuest}
+          benefitsByRole={benefitsByRole}
+          allBenefits={allBenefits}
         />
       ) : (
         <VipMediaBenefitsTable
           guests={filteredGuests}
           onUpdateBenefit={handleUpdateBenefit}
           onEdit={setEditingGuest}
+          benefitsToDisplay={benefitsToDisplay}
         />
       )}
       <EditAllMediaBenefitsDialog
@@ -253,6 +281,8 @@ export default function VipMediaBenefitsTab() {
         open={!!editingGuest}
         onOpenChange={() => setEditingGuest(null)}
         onSave={handleSaveAllBenefits}
+        benefitsByRole={benefitsByRole}
+        allBenefits={allBenefits}
       />
     </div>
   );
