@@ -47,14 +47,16 @@ export const EditTemplateDialog = ({
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    if (template) {
-      setName(template.name || "");
-      setAssignedRole(template.assigned_role || null);
-      setContent(template.content || []);
-    } else {
-      setName("");
-      setAssignedRole(null);
-      setContent([]);
+    if (open) {
+      if (template) {
+        setName(template.name || "");
+        setAssignedRole(template.assigned_role || null);
+        setContent(template.content || []);
+      } else {
+        setName("");
+        setAssignedRole(null);
+        setContent([]);
+      }
     }
   }, [template, open]);
 
