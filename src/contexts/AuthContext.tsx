@@ -35,13 +35,13 @@ export const AuthProvider = ({ children, initialSession, initialUser, initialPro
   const navigate = useNavigate();
 
   // Listener này chỉ dùng để xử lý các sự kiện bất đồng bộ xảy ra SAU khi trang đã tải,
-  // ví dụ như người dùng đăng xuất từ một tab khác.
+  // ví dụ như người dùng đăng xuất từ một tab khác. Nó không quản lý state.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // Nếu session không còn, nghĩa là người dùng đã đăng xuất.
-      if (!session) {
+      if (event === 'SIGNED_OUT' || !session) {
         // Chuyển hướng về trang đăng nhập.
-        navigate('/login');
+        navigate('/login', { replace: true });
       }
     });
 

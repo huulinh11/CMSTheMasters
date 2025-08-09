@@ -58,6 +58,12 @@ const protectedLoader = async () => {
       await supabase.auth.signOut();
       return redirect('/login');
     }
+    
+    if (!profile) {
+      console.error("Không tìm thấy profile cho người dùng:", user.id, "Đang đăng xuất.");
+      await supabase.auth.signOut();
+      return redirect('/login');
+    }
 
     return { session, user, profile };
   } catch (e) {
