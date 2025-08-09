@@ -8,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showSuccess, showError } from "@/utils/toast";
 import { Upload } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type GeneralSettingsData = {
   id: string;
   qr_scan_sound_url?: string | null;
+  default_dashboard_tab?: 'khach-moi' | 'tac-vu' | 'quyen-loi' | null;
 };
 
 const GeneralSettings = () => {
@@ -23,7 +25,7 @@ const GeneralSettings = () => {
   const { data, isLoading } = useQuery<GeneralSettingsData | null>({
     queryKey: ['general_settings'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('checklist_settings').select('id, qr_scan_sound_url').limit(1).single();
+      const { data, error } = await supabase.from('checklist_settings').select('id, qr_scan_sound_url, default_dashboard_tab').limit(1).single();
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     }
@@ -77,7 +79,6 @@ const GeneralSettings = () => {
         .from('avatars')
         .getPublicUrl(filePath);
       
-      // Add a timestamp to bust the cache
       const urlWithCacheBuster = `${publicUrl}?t=${new Date().getTime()}`;
 
       setSettings(prev => ({ ...prev, qr_scan_sound_url: urlWithCacheBuster }));
@@ -89,12 +90,39 @@ const GeneralSettings = () => {
     }
   };
 
+  const handleConfigChange = (field: keyof GeneralSettingsData, value: any) => {
+    setSettings(prev => ({ ...prev, [field]: value }));
+  };
+
   if (isLoading) {
     return <Skeleton className="h-64 w-full" />;
   }
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Cấu hình Dashboard</CardTitle>
+          <CardDescription>Chọn tab mặc định khi truy cập trang Dashboard.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Label>Tab mặc định</Label>
+          <Select
+            value={settings.default_dashboard_tab || 'khach-moi'}
+            onValueChange={(value) => handleConfigChange('default_dashboard_tab', value)}
+          >
+            <SelectTrigger className="max-w-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="khach-moi">Khách mời</SelectItem>
+              <SelectItem value="tac-vu">Tác vụ</SelectItem>
+              <SelectItem value="quyen-loi">Quyền lợi</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Âm thanh quét QR thành công</CardTitle>

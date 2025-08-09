@@ -1,0 +1,116 @@
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Guest } from "@/types/guest";
+import { VipGuest } from "@/types/vip-guest";
+import { GuestTask } from "@/types/event-task";
+import { ALL_TASKS, TASKS_BY_ROLE } from "@/config/event-tasks";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
+type TaskStat = {
+  name: string;
+  total: number;
+  completed: number;
+  uncompleted: number;
+};
+
+const DashboardTasksTab = () => {
+  const [filter, setFilter] = useState<'all' | 'completed' | 'uncompleted'>('all');
+
+  const { data: guests = [], isLoading: isLoadingGuests } = useQuery<(VipGuest | Guest)[]>({
+    queryKey: ['all_guests_for_task_stats'],
+    queryFn: async () => {
+      const { data: vips, error: vipError } = await supabase.from('vip_guests').select('id, role');
+      if (vipError) throw vipError;
+      const { data: regulars, error: regularError } = await supabase.from('guests').select('id, role');
+      if (regularError) throw regularError;
+      return [...(vips || []), ...(regulars || [])];
+    }
+  });
+
+  const { data: tasks = [], isLoading: isLoadingTasks } = useQuery<GuestTask[]>({
+    queryKey: ['guest_tasks'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('guest_tasks').select('*');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const taskStats = useMemo((): TaskStat[] => {
+    if (isLoadingGuests || isLoadingTasks) return [];
+
+    const completedTasksMap = new Map<string, Set<string>>();
+    tasks.forEach(task => {
+      if (task.is_completed) {
+        if (!completedTasksMap.has(task.task_name)) {
+          completedTasksMap.set(task.task_name, new Set());
+        }
+        completedTasksMap.get(task.task_name)!.add(task.guest_id);
+      }
+    });
+
+    return ALL_TASKS.map(taskName => {
+      const guestsWithTask = guests.filter(g => TASKS_BY_ROLE[g.role]?.includes(taskName));
+      const total = guestsWithTask.length;
+      const completedSet = completedTasksMap.get(taskName) || new Set();
+      const completed = guestsWithTask.filter(g => completedSet.has(g.id)).length;
+      
+      return {
+        name: taskName,
+        total,
+        completed,
+        uncompleted: total - completed,
+      };
+    });
+  }, [guests, tasks, isLoadingGuests, isLoadingTasks]);
+
+  const filteredStats = useMemo(() => {
+    if (filter === 'all') return taskStats;
+    if (filter === 'completed') return taskStats.filter(s => s.completed === s.total && s.total > 0);
+    if (filter === 'uncompleted') return taskStats.filter(s => s.uncompleted > 0);
+    return [];
+  }, [taskStats, filter]);
+
+  if (isLoadingGuests || isLoadingTasks) {
+    return <Skeleton className="h-96 w-full" />;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <RadioGroup defaultValue="all" onValueChange={(value) => setFilter(value as any)} className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="r1" /><Label htmlFor="r1">Tất cả</Label></div>
+          <div className="flex items-center space-x-2"><RadioGroupItem value="uncompleted" id="r2" /><Label htmlFor="r2">Chưa hoàn thành</Label></div>
+          <div className="flex items-center space-x-2"><RadioGroupItem value="completed" id="r3" /><Label htmlFor="r3">Hoàn thành</Label></div>
+        </RadioGroup>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredStats.map(stat => (
+          <Card key={stat.name}>
+            <CardHeader>
+              <CardTitle className="text-base">{stat.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between items-center text-sm mb-1">
+                <span className="text-slate-500">Tiến độ</span>
+                <span className="font-semibold">{stat.completed} / {stat.total}</span>
+              </div>
+              <Progress value={stat.total > 0 ? (stat.completed / stat.total) * 100 : 0} />
+              <div className="flex justify-between items-center text-xs mt-2">
+                <span className="text-green-600">Hoàn thành: {stat.completed}</span>
+                <span className="text-red-600">Chưa: {stat.uncompleted}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default DashboardTasksTab;
