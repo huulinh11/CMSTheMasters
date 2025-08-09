@@ -36,10 +36,22 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const successSoundRef = useRef<HTMLAudioElement | null>(null);
 
+  const { data: settings } = useQuery({
+    queryKey: ['checklist_settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('checklist_settings').select('qr_scan_sound_url').limit(1).single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    }
+  });
+
   useEffect(() => {
-    // Pre-load the audio file
-    successSoundRef.current = new Audio('/scan-success.mp3');
-  }, []);
+    if (settings?.qr_scan_sound_url) {
+      successSoundRef.current = new Audio(settings.qr_scan_sound_url);
+    } else {
+      successSoundRef.current = null;
+    }
+  }, [settings]);
   
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
   const canViewRevenue = !!(userRole && ['Admin', 'Quản lý', 'Sale'].includes(userRole));
