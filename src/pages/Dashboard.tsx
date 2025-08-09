@@ -184,24 +184,25 @@ const Dashboard = () => {
         if (guestId) {
           setIsScannerOpen(false);
           showSuccess(`Đã quét thành công! Đang mở checklist...`);
-  
+          const targetUrl = `/event-tasks?guestId=${guestId}`;
+          
           const audio = successSoundRef.current;
           if (audio) {
-            const navigateAndCleanup = () => {
-              navigate(`/event-tasks?guestId=${guestId}`);
-              audio.removeEventListener('ended', navigateAndCleanup);
-              audio.removeEventListener('error', navigateAndCleanup);
-            };
-  
-            audio.addEventListener('ended', navigateAndCleanup);
-            audio.addEventListener('error', navigateAndCleanup);
-  
-            audio.play().catch(err => {
-              console.error("Audio play failed:", err);
-              navigateAndCleanup();
-            });
+            audio.play()
+              .then(() => {
+                // Playback started successfully. Wait for it to finish before navigating.
+                const navigateAfterSound = () => {
+                  navigate(targetUrl);
+                  audio.removeEventListener('ended', navigateAfterSound);
+                };
+                audio.addEventListener('ended', navigateAfterSound);
+              })
+              .catch(err => {
+                console.error("Audio play failed, navigating immediately:", err);
+                navigate(targetUrl); // Fallback: navigate immediately if sound fails
+              });
           } else {
-            navigate(`/event-tasks?guestId=${guestId}`);
+            navigate(targetUrl); // No audio object, navigate immediately
           }
         } else {
           showError("Mã QR không hợp lệ (thiếu guestId).");
