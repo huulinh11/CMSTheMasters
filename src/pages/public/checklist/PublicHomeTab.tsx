@@ -30,6 +30,7 @@ const PublicHomeTab = () => {
   const { guest } = useOutletContext<ChecklistDataContext>();
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
   const [isReferredGuestsOpen, setIsReferredGuestsOpen] = useState(false);
+  const data = useOutletContext<ChecklistDataContext>();
 
   const { data: settings, isLoading: isLoadingSettings } = useQuery<ChecklistSettings | null>({
     queryKey: ['checklist_settings'],
@@ -44,9 +45,9 @@ const PublicHomeTab = () => {
     queryKey: ['referred_guests', guest.name],
     queryFn: async () => {
       if (!guest.name) return [];
-      const { data: vips, error: vipsError } = await supabase.from('vip_guests').select('id, name, role, type: "Chức vụ"').eq('referrer', guest.name);
+      const { data: vips, error: vipsError } = await supabase.from('vip_guests').select('id, name, role, phone, type: "Chức vụ"').ilike('referrer', guest.name);
       if (vipsError) throw vipsError;
-      const { data: regulars, error: regularsError } = await supabase.from('guests').select('id, name, role, type: "Khách mời"').eq('referrer', guest.name);
+      const { data: regulars, error: regularsError } = await supabase.from('guests').select('id, name, role, phone, type: "Khách mời"').ilike('referrer', guest.name);
       if (regularsError) throw regularsError;
       return [...(vips || []), ...(regulars || [])];
     },
@@ -101,7 +102,7 @@ const PublicHomeTab = () => {
 
         <Separator />
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Link to="../event-info">
             <Button className="w-full justify-start h-14 text-base">
               <Calendar className="mr-4 h-6 w-6" /> Xem Timeline & Thông tin sự kiện
