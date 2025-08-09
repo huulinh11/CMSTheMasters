@@ -180,7 +180,7 @@ export const VipTasksTab = () => {
   };
 
   const handleViewDetails = (guest: TaskGuest) => {
-    navigate(`/guests/vip/${guest.id}`);
+    navigate(`/guests?view_vip=${guest.id}`);
   };
 
   return (
@@ -232,6 +232,7 @@ export const VipTasksTab = () => {
           onViewDetails={handleViewDetails}
           onImageClick={setImagePreviewGuest}
           onOpenChecklist={setDialogGuest}
+          tasksByRole={tasksByRole}
         />
       ) : (
         <EventTasksTable
@@ -239,6 +240,7 @@ export const VipTasksTab = () => {
           onViewDetails={handleViewDetails}
           onImageClick={setImagePreviewGuest}
           onOpenChecklist={setDialogGuest}
+          tasksByRole={tasksByRole}
         />
       )}
       <ImagePreviewDialog

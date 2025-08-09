@@ -183,7 +183,7 @@ export const RegularTasksTab = () => {
   };
 
   const handleViewDetails = (guest: TaskGuest) => {
-    navigate(`/guests/regular/${guest.id}`);
+    navigate(`/guests?view_regular=${guest.id}`);
   };
 
   return (
