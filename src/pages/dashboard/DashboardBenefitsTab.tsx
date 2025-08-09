@@ -122,7 +122,7 @@ const DashboardBenefitsTab = () => {
             <SelectItem value="progress-desc">Tiến độ: Cao đến thấp</SelectItem>
           </SelectContent>
         </Select>
-        <RadioGroup defaultValue="all" onValueChange={(value) => setFilter(value as any)} className="flex items-center space-x-4 bg-slate-100 p-2 rounded-md">
+        <RadioGroup defaultValue="all" onValueChange={(value) => setFilter(value as any)} className="flex items-center space-x-4">
           <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="b1" /><Label htmlFor="b1">All</Label></div>
           <div className="flex items-center space-x-2"><RadioGroupItem value="uncompleted" id="b2" /><Label htmlFor="b2">Chưa</Label></div>
           <div className="flex items-center space-x-2"><RadioGroupItem value="completed" id="b3" /><Label htmlFor="b3">Hoàn thành</Label></div>
