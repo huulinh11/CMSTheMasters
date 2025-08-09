@@ -7,16 +7,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MediaRegularGuest } from "@/types/media-benefit";
+import { MediaRegularGuest, MediaBenefit } from "@/types/media-benefit";
 import { StatusSelect } from "./StatusSelect";
 import { SimpleLinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 import { Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
+import { BenefitItem } from "@/types/benefit-configuration";
 
 interface RegularMediaBenefitsTableProps {
   guests: MediaRegularGuest[];
   onUpdateBenefit: (guestId: string, field: string, value: any) => void;
   onEdit: (guest: MediaRegularGuest) => void;
+  benefitsToDisplay: BenefitItem[];
 }
 
 const handleCopy = (textToCopy: string | undefined) => {
@@ -25,22 +27,16 @@ const handleCopy = (textToCopy: string | undefined) => {
   showSuccess(`Đã sao chép!`);
 };
 
-export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit }: RegularMediaBenefitsTableProps) => {
-  const hasColumn = (field: string) => guests.some(g => {
-    switch(field) {
-      case 'materials': return !!g.materials;
-      case 'post_event_news': return g.role === 'VIP' || g.role === 'V-Vip';
-      case 'beauty_ai_photos_link': return g.role === 'VIP' || g.role === 'V-Vip';
-      case 'red_carpet_video_link': return g.role === 'V-Vip';
-      default: return false;
-    }
-  });
+const getBenefitValue = (benefitName: keyof MediaBenefit | string, mediaBenefit?: MediaBenefit) => {
+  if (!mediaBenefit) return null;
+  if (benefitName in mediaBenefit) {
+    return mediaBenefit[benefitName as keyof MediaBenefit];
+  }
+  return mediaBenefit.custom_data?.[benefitName] || null;
+};
 
-  const showMaterials = hasColumn('materials');
-  const showPostEventNews = hasColumn('post_event_news');
-  const showBeautyAI = hasColumn('beauty_ai_photos_link');
-  const showRedCarpet = hasColumn('red_carpet_video_link');
-
+export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit, benefitsToDisplay }: RegularMediaBenefitsTableProps) => {
+  
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -49,11 +45,10 @@ export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit }: R
             <TableHead>ID</TableHead>
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
-            <TableHead>Thư mời</TableHead>
-            {showMaterials && <TableHead>Tư liệu</TableHead>}
-            {showPostEventNews && <TableHead>Báo sau sự kiện</TableHead>}
-            {showBeautyAI && <TableHead>Bộ ảnh Beauty AI</TableHead>}
-            {showRedCarpet && <TableHead>Video thảm đỏ</TableHead>}
+            <TableHead>Tư liệu</TableHead>
+            {benefitsToDisplay.map(benefit => (
+              <TableHead key={benefit.name}>{benefit.name}</TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -68,52 +63,33 @@ export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit }: R
                 </TableCell>
                 <TableCell>{guest.role}</TableCell>
                 <TableCell>
-                  <StatusSelect
-                    value={guest.media_benefit?.invitation_status || 'Trống'}
-                    onUpdate={(value) => onUpdateBenefit(guest.id, 'invitation_status', value)}
-                  />
+                  {guest.materials ? (
+                    <Button variant="ghost" size="icon" onClick={() => handleCopy(guest.materials)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  ) : null}
                 </TableCell>
-                {showMaterials && (
-                  <TableCell>
-                    {guest.materials ? (
-                      <Button variant="ghost" size="icon" onClick={() => handleCopy(guest.materials)}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    ) : null}
-                  </TableCell>
-                )}
-                {showPostEventNews && (
-                  <TableCell>
-                    {(guest.role === 'VIP' || guest.role === 'V-Vip') ? (
-                      <ComplexBenefitDisplay data={guest.media_benefit?.post_event_news} benefitType="post_event_news" />
-                    ) : (
-                      <span className="text-slate-500 text-sm">Không</span>
+                {benefitsToDisplay.map(benefit => (
+                  <TableCell key={benefit.name}>
+                    {benefit.field_type === 'status_select' && (
+                      <StatusSelect
+                        value={getBenefitValue('invitation_status', guest.media_benefit) || 'Trống'}
+                        onUpdate={(value) => onUpdateBenefit(guest.id, 'invitation_status', value)}
+                      />
+                    )}
+                    {benefit.field_type === 'simple_link' && (
+                      <SimpleLinkDisplay link={getBenefitValue(benefit.name, guest.media_benefit)} />
+                    )}
+                    {(benefit.field_type === 'complex_news' || benefit.field_type === 'complex_video') && (
+                      <ComplexBenefitDisplay data={getBenefitValue(benefit.name, guest.media_benefit)} benefitType={benefit.name} />
                     )}
                   </TableCell>
-                )}
-                {showBeautyAI && (
-                  <TableCell>
-                    {(guest.role === 'VIP' || guest.role === 'V-Vip') ? (
-                      <SimpleLinkDisplay link={guest.media_benefit?.beauty_ai_photos_link} />
-                    ) : (
-                      <span className="text-slate-500 text-sm">Không</span>
-                    )}
-                  </TableCell>
-                )}
-                {showRedCarpet && (
-                  <TableCell>
-                    {guest.role === 'V-Vip' ? (
-                      <SimpleLinkDisplay link={guest.media_benefit?.red_carpet_video_link} />
-                    ) : (
-                      <span className="text-slate-500 text-sm">Không</span>
-                    )}
-                  </TableCell>
-                )}
+                ))}
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="h-24 text-center">
+              <TableCell colSpan={4 + benefitsToDisplay.length} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>

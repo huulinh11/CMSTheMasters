@@ -20,6 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
+import { BenefitItem } from "@/types/benefit-configuration";
 
 const regularBenefitFieldGroups = [
   [
@@ -42,6 +44,7 @@ export default function RegularMediaBenefitsTab() {
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
   const [editingGuest, setEditingGuest] = useState<MediaRegularGuest | null>(null);
+  const { benefitsByRole, allBenefits, isLoading: isLoadingPermissions } = useRolePermissions();
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<Guest[]>({
     queryKey: ['guests'],
@@ -112,7 +115,7 @@ export default function RegularMediaBenefitsTab() {
             return (benefit?.invitation_status || 'Trống') === value;
           case 'beauty_ai_photos_link':
           case 'red_carpet_video_link':
-            return checkSimpleLink(benefit?.[field]);
+            return checkSimpleLink(benefit?.[field as 'beauty_ai_photos_link' | 'red_carpet_video_link']);
           
           case 'post_event_news_draft':
             return checkNews(benefit?.post_event_news, 'draft');
@@ -160,7 +163,16 @@ export default function RegularMediaBenefitsTab() {
     setAdvancedFilters({});
   };
 
-  const isLoading = isLoadingGuests || isLoadingBenefits;
+  const isLoading = isLoadingGuests || isLoadingBenefits || isLoadingPermissions;
+
+  const benefitsToDisplay = useMemo(() => {
+    const roleSet = new Set(filteredGuests.map(g => g.role));
+    const benefitSet = new Set<string>();
+    roleSet.forEach(role => {
+      (benefitsByRole[role] || []).forEach(benefit => benefitSet.add(benefit));
+    });
+    return allBenefits.filter(b => benefitSet.has(b.name));
+  }, [filteredGuests, benefitsByRole, allBenefits]);
 
   return (
     <div className="space-y-4">
@@ -216,6 +228,7 @@ export default function RegularMediaBenefitsTab() {
           guests={filteredGuests}
           onUpdateBenefit={handleUpdateBenefit}
           onEdit={setEditingGuest}
+          benefitsToDisplay={benefitsToDisplay}
         />
       )}
       <EditAllMediaBenefitsDialog

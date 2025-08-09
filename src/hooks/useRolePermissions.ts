@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMemo } from "react";
+import { BenefitItem } from "@/types/benefit-configuration";
 
 export const useRolePermissions = () => {
   const { data: masterTasks = [], isLoading: isLoadingTasks } = useQuery<{ id: string, name: string }[]>({
@@ -12,10 +13,10 @@ export const useRolePermissions = () => {
     }
   });
 
-  const { data: masterBenefits = [], isLoading: isLoadingBenefits } = useQuery<{ id: string, name: string }[]>({
+  const { data: masterBenefits = [], isLoading: isLoadingBenefits } = useQuery<BenefitItem[]>({
     queryKey: ['media_benefits_master'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('media_benefits_master').select('id, name');
+      const { data, error } = await supabase.from('media_benefits_master').select('*');
       if (error) throw error;
       return data || [];
     }
@@ -63,7 +64,7 @@ export const useRolePermissions = () => {
 
   return {
     allTasks: masterTasks.map(t => t.name),
-    allBenefits: masterBenefits.map(b => b.name),
+    allBenefits: masterBenefits,
     tasksByRole,
     benefitsByRole,
     isLoading: isLoadingTasks || isLoadingBenefits || isLoadingRoleTasks || isLoadingRoleBenefits,

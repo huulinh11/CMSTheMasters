@@ -25,6 +25,7 @@ export type MediaBenefit = {
   red_carpet_video_link?: string | null;
   news_video?: NewsVideo | null;
   beauty_ai_photos_link?: string | null;
+  custom_data?: { [key: string]: any };
 };
 
 // Combined guest type for the page

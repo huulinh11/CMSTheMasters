@@ -64,13 +64,13 @@ const DashboardBenefitsTab = () => {
 
     const benefitsMap = new Map(benefits.map(b => [b.guest_id, b]));
 
-    return allBenefits.map(benefitName => {
-      const guestsWithBenefit = guests.filter(g => benefitsByRole[g.role]?.includes(benefitName));
+    return allBenefits.map(benefit => {
+      const guestsWithBenefit = guests.filter(g => benefitsByRole[g.role]?.includes(benefit.name));
       const total = guestsWithBenefit.length;
-      const completed = guestsWithBenefit.filter(g => isBenefitCompleted(benefitName, benefitsMap.get(g.id))).length;
+      const completed = guestsWithBenefit.filter(g => isBenefitCompleted(benefit.name, benefitsMap.get(g.id))).length;
       
       return {
-        name: benefitName,
+        name: benefit.name,
         total,
         completed,
         uncompleted: total - completed,
