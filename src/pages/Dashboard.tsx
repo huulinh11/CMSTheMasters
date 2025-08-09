@@ -182,26 +182,30 @@ const Dashboard = () => {
         const url = new URL(scannedUrl);
         const guestId = url.searchParams.get('guestId');
         if (guestId) {
-          setIsScannerOpen(false);
           showSuccess(`Đã quét thành công! Đang mở checklist...`);
           const targetUrl = `/event-tasks?guestId=${guestId}`;
           
           const audio = successSoundRef.current;
           if (audio) {
-            audio.play()
-              .then(() => {
-                // Playback started successfully. Wait for it to finish before navigating.
-                const navigateAfterSound = () => {
-                  navigate(targetUrl);
-                  audio.removeEventListener('ended', navigateAfterSound);
-                };
-                audio.addEventListener('ended', navigateAfterSound);
-              })
-              .catch(err => {
-                console.error("Audio play failed, navigating immediately:", err);
-                navigate(targetUrl); // Fallback: navigate immediately if sound fails
-              });
+            const navigateAfterSound = () => {
+              setIsScannerOpen(false);
+              navigate(targetUrl);
+              audio.removeEventListener('ended', navigateAfterSound);
+              audio.removeEventListener('error', navigateAfterSound);
+            };
+  
+            audio.addEventListener('ended', navigateAfterSound);
+            audio.addEventListener('error', (e) => {
+              console.error("Audio playback error:", e);
+              navigateAfterSound(); // Navigate even if sound fails
+            });
+  
+            audio.play().catch(err => {
+              console.error("Audio play() promise rejected:", err);
+              navigateAfterSound(); // Fallback if play() itself fails
+            });
           } else {
+            setIsScannerOpen(false);
             navigate(targetUrl); // No audio object, navigate immediately
           }
         } else {
