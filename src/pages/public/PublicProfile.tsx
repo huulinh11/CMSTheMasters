@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { ContentBlock, TextBlock } from "@/types/profile-content";
 import { Loader2 } from "lucide-react";
 import { ProfileTemplate } from "@/types/profile-template";
@@ -13,6 +13,7 @@ type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?
 
 const PublicProfile = () => {
   const { slug } = useParams();
+  const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
 
   const { data: guest, isLoading: isLoadingGuest } = useQuery<CombinedGuest | null>({
     queryKey: ['public_profile_guest', slug],
@@ -107,33 +108,34 @@ const PublicProfile = () => {
     return { contentBlocks: content || [], activeTemplate: null };
   }, [guest, templates]);
 
-  const isLoading = isLoadingGuest || isLoadingTemplates;
+  const videoBlocks = useMemo(() => contentBlocks.filter(b => b.type === 'video'), [contentBlocks]);
 
-  if (isLoading) {
+  const handleVideoLoad = useCallback((videoId: string) => {
+    setLoadedVideoIds(prev => {
+      if (prev.has(videoId)) {
+        return prev;
+      }
+      const newSet = new Set(prev);
+      newSet.add(videoId);
+      return newSet;
+    });
+  }, []);
+
+  useEffect(() => {
+    setLoadedVideoIds(new Set());
+  }, [guest]);
+
+  const isDataLoading = isLoadingGuest || isLoadingTemplates;
+  const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
+  const showLoader = isDataLoading || (videoBlocks.length > 0 && !areAllVideosLoaded);
+
+  const PageContent = useMemo(() => {
+    if (!guest) return null;
     return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!guest) {
-    return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center p-4">
-        <div className="text-center p-8 bg-white/70 rounded-xl shadow-lg max-w-sm w-full">
-          <h1 className="text-2xl font-bold text-red-600">Không tìm thấy Profile</h1>
-          <p className="text-slate-600 mt-2">Liên kết có thể đã sai hoặc profile đã bị xóa.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full min-h-screen bg-black flex justify-center">
-      <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
-        <div className="flex flex-col">
-          {contentBlocks.length > 0 ? (
-            contentBlocks.map((block) => {
+      <div className="w-full min-h-screen bg-black flex justify-center">
+        <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
+          <div className="flex flex-col">
+            {contentBlocks.map((block) => {
               switch (block.type) {
                 case 'image':
                   const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover" style={{ width: `${block.width || 100}%` }} />;
@@ -149,7 +151,7 @@ const PublicProfile = () => {
                     </div>
                   );
                 case 'video':
-                  return <VideoBlockPlayer key={block.id} block={block} />;
+                  return <VideoBlockPlayer key={block.id} block={block} onVideoLoad={handleVideoLoad} />;
                 case 'text':
                   return (
                     <div key={block.id} className="w-full">
@@ -199,20 +201,48 @@ const PublicProfile = () => {
                 default:
                   return null;
               }
-            })
-          ) : (
-            <div className="p-8 text-center text-slate-500">
-              <p>Chưa có nội dung cho profile này.</p>
+            })}
+          </div>
+          {activeTemplate && (
+            <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+              Template: {activeTemplate.name}
             </div>
           )}
         </div>
-        {activeTemplate && (
-          <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-            Template: {activeTemplate.name}
-          </div>
-        )}
       </div>
-    </div>
+    );
+  }, [guest, contentBlocks, activeTemplate, handleVideoLoad]);
+
+  if (isDataLoading) {
+    return (
+      <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!guest) {
+    return (
+      <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center p-4">
+        <div className="text-center p-8 bg-white/70 rounded-xl shadow-lg max-w-sm w-full">
+          <h1 className="text-2xl font-bold text-red-600">Không tìm thấy Profile</h1>
+          <p className="text-slate-600 mt-2">Liên kết có thể đã sai hoặc profile đã bị xóa.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {showLoader && (
+        <div className="fixed inset-0 w-full h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center z-50">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      )}
+      <div style={{ visibility: showLoader ? 'hidden' : 'visible' }}>
+        {PageContent}
+      </div>
+    </>
   );
 };
 
