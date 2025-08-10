@@ -15,7 +15,7 @@ export const NotificationBell = ({ guestId }: NotificationBellProps) => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="relative inline-flex items-center justify-center rounded-full h-10 w-10 text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+        className="relative inline-flex items-center justify-center rounded-full h-10 w-10 text-black hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
       >
         <Bell className="h-6 w-6" />
         {unreadCount > 0 && (
