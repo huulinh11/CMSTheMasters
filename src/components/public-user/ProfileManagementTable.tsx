@@ -53,7 +53,7 @@ export const ProfileManagementTable = ({ guests, onCopyLink, onEdit, onView, onS
               <TableRow key={guest.id}>
                 <TableCell className="font-medium">{guest.name}</TableCell>
                 <TableCell>{guest.role}</TableCell>
-                <TableCell>{guest.templateName || 'N/A'}</TableCell>
+                <TableCell>{guest.templateName || ''}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-4">
                     <Badge className={cn(getStatusColor(guest.effectiveStatus))}>{guest.effectiveStatus}</Badge>

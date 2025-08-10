@@ -252,12 +252,16 @@ const ProfileManagementTab = () => {
     return allGuests.map(guest => {
       let templateName: string | undefined = undefined;
       const assignedTemplate = templates.find(t => t.id === guest.template_id);
+      
       if (assignedTemplate) {
         templateName = assignedTemplate.name;
       } else {
-        const defaultTemplate = defaultTemplatesByRole.get(guest.role);
-        if (defaultTemplate) {
-          templateName = defaultTemplate.name;
+        const hasCustomContent = guest.profile_content && guest.profile_content.length > 0;
+        if (!hasCustomContent) {
+          const defaultTemplate = defaultTemplatesByRole.get(guest.role);
+          if (defaultTemplate) {
+            templateName = defaultTemplate.name;
+          }
         }
       }
       return { ...guest, templateName };
@@ -309,9 +313,9 @@ const ProfileManagementTab = () => {
   const handleSaveProfile = ({ content, shouldUnlinkTemplate }: { content: ContentBlock[], shouldUnlinkTemplate: boolean }) => {
     if (!editingGuest) return;
     let contentToSave = content;
-    const activeTemplateId = editingGuest.template_id || templates.find(t => t.assigned_roles?.includes(editingGuest.role))?.id;
-    
-    if (activeTemplateId) {
+    const isCurrentlyLinkedToTemplate = !!editingGuest.template_id;
+
+    if (isCurrentlyLinkedToTemplate && !shouldUnlinkTemplate) {
       contentToSave = content.map(block => {
         const dataOnlyBlock: any = { id: block.id, type: block.type };
         if (block.type === 'image') {
@@ -330,6 +334,7 @@ const ProfileManagementTab = () => {
         return dataOnlyBlock;
       });
     }
+    
     profileUpdateMutation.mutate({ guest: editingGuest, content: contentToSave, shouldUnlinkTemplate });
   };
 

@@ -41,7 +41,7 @@ export const ProfileManagementCards = ({ guests, onCopyLink, onEdit, onView, onS
               <div className="border-t border-slate-100 pt-3 space-y-2">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500">Template</span>
-                  <span className="font-medium">{guest.templateName || 'N/A'}</span>
+                  <span className="font-medium">{guest.templateName || ''}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500">Trạng thái Profile</span>
