@@ -34,13 +34,13 @@ const MenuSettings = () => {
   const queryClient = useQueryClient();
   const [menuItems, setMenuItems] = useState<NavItemType[]>([]);
 
-  const { data: savedOrder = [], isLoading, isSuccess } = useQuery<{ item_id: string }[]>({
+  const { data: savedOrder, isLoading, isSuccess } = useQuery<{ item_id: string }[]>({
     queryKey: ['menu_config_order'],
     queryFn: async () => {
       const { data, error } = await supabase.from('menu_config').select('item_id').order('order');
       if (error) throw error;
       return data || [];
-    }
+    },
   });
 
   const upsertDefaultOrderMutation = useMutation({
@@ -54,7 +54,7 @@ const MenuSettings = () => {
   });
 
   useEffect(() => {
-    if (isSuccess) {
+    if (isSuccess && savedOrder) {
       if (savedOrder.length > 0) {
         const orderedItems = savedOrder
           .map(item => allNavItems.find(navItem => navItem.id === item.item_id))
@@ -74,7 +74,7 @@ const MenuSettings = () => {
     }
   }, [isSuccess, savedOrder, upsertDefaultOrderMutation]);
 
-  const saveMutation = useMutation({
+  const reorderMutation = useMutation({
     mutationFn: async (items: { item_id: string; order: number }[]) => {
       const { error } = await supabase.from('menu_config').upsert(items);
       if (error) throw error;
@@ -82,7 +82,7 @@ const MenuSettings = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu_config_order'] });
       queryClient.invalidateQueries({ queryKey: ['auth_state'] }); // To refetch in AuthContext
-      showSuccess("Đã lưu thứ tự menu!");
+      showSuccess("Đã cập nhật thứ tự menu!");
     },
     onError: (error: Error) => showError(error.message),
   });
@@ -97,16 +97,15 @@ const MenuSettings = () => {
     if (over && active.id !== over.id) {
       const oldIndex = menuItems.findIndex((item) => item.id === active.id);
       const newIndex = menuItems.findIndex((item) => item.id === over.id);
-      setMenuItems(arrayMove(menuItems, oldIndex, newIndex));
+      const newOrderItems = arrayMove(menuItems, oldIndex, newIndex);
+      setMenuItems(newOrderItems);
+
+      const newOrder = newOrderItems.map((item, index) => ({ item_id: item.id, order: index }));
+      reorderMutation.mutate(newOrder);
     }
   };
 
-  const handleSave = () => {
-    const newOrder = menuItems.map((item, index) => ({ item_id: item.id, order: index }));
-    saveMutation.mutate(newOrder);
-  };
-
-  if (isLoading) {
+  if (isLoading && menuItems.length === 0) {
     return <Skeleton className="h-96 w-full" />;
   }
 
@@ -115,7 +114,7 @@ const MenuSettings = () => {
       <div className="p-4 border-l-4 border-primary bg-primary/10 rounded-r-lg">
         <h3 className="font-semibold">Hướng dẫn</h3>
         <p className="text-sm text-slate-600">
-          Kéo thả để sắp xếp thứ tự menu. Menu đầu tiên sẽ là trang mặc định sau khi đăng nhập.
+          Kéo thả để sắp xếp thứ tự menu. Thứ tự mới sẽ được lưu tự động.
           Trên di động, 4 mục đầu tiên sẽ hiển thị trên thanh điều hướng, các mục còn lại sẽ nằm trong "Khác".
         </p>
       </div>
@@ -128,11 +127,6 @@ const MenuSettings = () => {
           </div>
         </SortableContext>
       </DndContext>
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saveMutation.isPending}>
-          {saveMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
-        </Button>
-      </div>
     </div>
   );
 };

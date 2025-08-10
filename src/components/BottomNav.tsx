@@ -23,8 +23,8 @@ const BottomNav = () => {
   }, [permissions, menuConfig]);
 
   const leftItems = visibleNavItems.slice(0, 2);
-  const rightItems = visibleNavItems.slice(2, 4);
-  const moreLinks = visibleNavItems.slice(4);
+  const rightItems = visibleNavItems.slice(2, 3);
+  const moreLinks = visibleNavItems.slice(3);
 
   const isMorePageActive = moreLinks.some(link => location.pathname.startsWith(link.to));
 
