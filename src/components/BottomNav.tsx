@@ -13,10 +13,11 @@ const BottomNav = () => {
   const { openScanner } = useQrScanner();
 
   useEffect(() => {
+    // Close sheet on navigation
     if (isSheetOpen) {
       setIsSheetOpen(false);
     }
-  }, [location.pathname, isSheetOpen]);
+  }, [location.pathname]);
 
   const visibleNavItems = useMemo(() => {
     if (!permissions || !menuConfig) return [];
@@ -57,7 +58,7 @@ const BottomNav = () => {
                 <span className="text-xs font-medium">Khác</span>
               </button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="p-0 bg-white flex flex-col h-auto max-h-[60vh]">
+            <SheetContent side="right" className="w-3/4 p-0 bg-white flex flex-col h-auto max-h-[60vh]">
               <SheetHeader className="p-4 text-left border-b flex-shrink-0">
                 <SheetTitle className="text-2xl font-bold text-slate-800">Khác</SheetTitle>
               </SheetHeader>
