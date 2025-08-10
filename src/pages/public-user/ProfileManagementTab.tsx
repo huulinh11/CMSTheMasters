@@ -367,7 +367,7 @@ const ProfileManagementTab = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow"
         />
-        <div className="grid grid-cols-2 md:flex md:items-center gap-2">
+        <div className="grid grid-cols-2 md:flex md:items-center gap-2 w-full md:w-auto">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-full md:w-auto"><SelectValue placeholder="Lọc loại" /></SelectTrigger>
             <SelectContent><SelectItem value="all">Tất cả loại</SelectItem><SelectItem value="Chức vụ">Chức vụ</SelectItem><SelectItem value="Khách mời">Khách mời</SelectItem></SelectContent>
