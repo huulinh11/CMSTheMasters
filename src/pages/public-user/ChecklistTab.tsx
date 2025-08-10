@@ -47,11 +47,14 @@ const ChecklistTab = () => {
   }, [vipGuests, regularGuests]);
 
   const filteredGuests = useMemo(() => {
-    return allGuests.filter(guest => 
-      (guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      guest.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      guest.phone.includes(searchTerm)) && guest.phone
-    );
+    return allGuests.filter(guest => {
+      const searchTermLower = searchTerm.toLowerCase();
+      return (
+        guest.name.toLowerCase().includes(searchTermLower) ||
+        guest.role.toLowerCase().includes(searchTermLower) ||
+        (guest.phone && guest.phone.includes(searchTerm))
+      );
+    });
   }, [allGuests, searchTerm]);
 
   const handleCopyLink = (type: 'id' | 'phone', value: string) => {
@@ -103,12 +106,12 @@ const ChecklistTab = () => {
                 <p className="text-sm text-muted-foreground">{guest.role}</p>
               </CardHeader>
               <CardContent>
-                <p className="text-sm">SĐT: {guest.phone}</p>
+                <p className="text-sm">SĐT: {guest.phone || 'N/A'}</p>
                 <div className="flex gap-2 mt-4">
                   <Button className="flex-1" variant="outline" onClick={() => handleCopyLink('id', guest.id)}>
                     <Copy className="mr-2 h-4 w-4" /> Link ID
                   </Button>
-                  <Button className="flex-1" onClick={() => handleCopyLink('phone', guest.phone)}>
+                  <Button className="flex-1" onClick={() => handleCopyLink('phone', guest.phone)} disabled={!guest.phone}>
                     <Copy className="mr-2 h-4 w-4" /> Link SĐT
                   </Button>
                 </div>
@@ -132,14 +135,14 @@ const ChecklistTab = () => {
                 filteredGuests.map(guest => (
                   <TableRow key={guest.id}>
                     <TableCell className="font-medium">{guest.name}</TableCell>
-                    <TableCell>{guest.phone}</TableCell>
+                    <TableCell>{guest.phone || 'N/A'}</TableCell>
                     <TableCell>{guest.role}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                         <Button variant="outline" size="sm" onClick={() => handleCopyLink('id', guest.id)}>
                           <Copy className="mr-2 h-4 w-4" /> ID
                         </Button>
-                        <Button variant="default" size="sm" onClick={() => handleCopyLink('phone', guest.phone)}>
+                        <Button variant="default" size="sm" onClick={() => handleCopyLink('phone', guest.phone)} disabled={!guest.phone}>
                           <Copy className="mr-2 h-4 w-4" /> SĐT
                         </Button>
                       </div>
@@ -149,7 +152,7 @@ const ChecklistTab = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center">
-                    Không tìm thấy khách mời có SĐT.
+                    Không tìm thấy khách mời.
                   </TableCell>
                 </TableRow>
               )}
