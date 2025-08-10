@@ -13,7 +13,7 @@ import { ProfileManagementCards } from "@/components/public-user/ProfileManageme
 import { ProfileManagementTable } from "@/components/public-user/ProfileManagementTable";
 import { generateGuestSlug } from "@/lib/slug";
 import { EditProfileDialog } from "@/components/public-user/EditProfileDialog";
-import { ContentBlock } from "@/types/profile-content";
+import { ContentBlock, TextBlock } from "@/types/profile-content";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { ProfileTemplate } from "@/types/profile-template";
@@ -36,7 +36,6 @@ const ProfileManagementTab = () => {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
-  // ... (Queries for guests and roles remain the same)
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
     queryFn: async () => {
@@ -73,7 +72,6 @@ const ProfileManagementTab = () => {
     }
   });
 
-  // ... (Mutations for slug backfill, profile update, status update remain the same)
   const backfillSlugsMutation = useMutation({
     mutationFn: async ({ vipUpdates, regularUpdates }: { vipUpdates: { id: string, slug: string }[], regularUpdates: { id: string, slug: string }[] }) => {
       const promises = [];
@@ -151,7 +149,6 @@ const ProfileManagementTab = () => {
     onError: (error: Error) => showError(error.message),
   });
 
-  // New mutations for templates
   const templateMutation = useMutation({
     mutationFn: async (template: Partial<ProfileTemplate>) => {
       const { error } = await supabase.from('profile_templates').upsert(template);
@@ -205,7 +202,6 @@ const ProfileManagementTab = () => {
     onError: (error: Error) => showError(error.message),
   });
 
-  // ... (useEffect for slug backfill remains the same)
   useEffect(() => {
     if (!isLoadingVip && !isLoadingRegular && !backfillSlugsMutation.isPending) {
       const vipGuestsToUpdate = vipGuests
@@ -263,8 +259,10 @@ const ProfileManagementTab = () => {
 
   const handleEditProfile = (guest: CombinedGuest) => {
     let guestContent = guest.profile_content;
-    if (guest.template_id) {
-      const template = templates.find(t => t.id === guest.template_id);
+    const activeTemplateId = guest.template_id || templates.find(t => t.assigned_role === guest.role)?.id;
+    
+    if (activeTemplateId) {
+      const template = templates.find(t => t.id === activeTemplateId);
       if (template) {
         const userContentMap = new Map((guest.profile_content || []).map((b: ContentBlock) => [b.id, b]));
         guestContent = (template.content || []).map((templateBlock: ContentBlock): ContentBlock => {
@@ -322,8 +320,9 @@ const ProfileManagementTab = () => {
   const handleSaveProfile = (content: ContentBlock[]) => {
     if (!editingGuest) return;
     let contentToSave = content;
-    // If in template mode, only save the data fields, not the structure
-    if (editingGuest.template_id) {
+    const activeTemplateId = editingGuest.template_id || templates.find(t => t.assigned_role === editingGuest.role)?.id;
+    
+    if (activeTemplateId) {
       contentToSave = content.map(block => {
         const dataOnlyBlock: any = { id: block.id, type: block.type };
         if (block.type === 'image') {
@@ -418,7 +417,7 @@ const ProfileManagementTab = () => {
         guest={editingGuest}
         onSave={handleSaveProfile}
         isSaving={profileUpdateMutation.isPending}
-        isTemplateMode={!!editingGuest?.template_id}
+        isTemplateMode={!!(editingGuest?.template_id || templates.find(t => t.assigned_role === editingGuest?.role))}
       />
       <TemplateManagementDialog
         open={isTemplateManagerOpen}

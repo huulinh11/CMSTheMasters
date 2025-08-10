@@ -21,6 +21,7 @@ import { ProfileTemplate } from "@/types/profile-template";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { EditProfileDialog } from "./EditProfileDialog";
 import { ContentBlock } from "@/types/profile-content";
+import { AlertTriangle } from "lucide-react";
 
 interface EditTemplateDialogProps {
   open: boolean;
