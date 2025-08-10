@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2 } from "lucide-react";
+import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,6 +40,7 @@ import {
 import BillPreviewDialog from "../Revenue/BillPreviewDialog";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { ProfileStatus } from "@/types/vip-guest";
+import { GuestQrCodeDialog } from "./GuestQrCodeDialog";
 
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
@@ -87,6 +88,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
   const [revenueDialogMode, setRevenueDialogMode] = useState<'edit' | 'upsale'>('edit');
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [billPreviewUrl, setBillPreviewUrl] = useState<string | null>(null);
+  const [isQrCodeDialogOpen, setIsQrCodeDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { profile, user } = useAuth();
   const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
@@ -205,9 +207,16 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         .eq('id', guest.id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['guest_details', guestType, guestId] });
-      queryClient.invalidateQueries({ queryKey: guestType === 'vip' ? ['vip_guests'] : ['guests'] });
+    onSuccess: (data, variables) => {
+      const { guest } = variables;
+      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      if (guest.slug) {
+        queryClient.invalidateQueries({ queryKey: ['public_profile', guest.slug] });
+      }
+      const guestType = guest.type === 'Chức vụ' ? 'vip' : 'regular';
+      queryClient.invalidateQueries({ queryKey: ['guest_details', guestType, guest.id] });
+
       showSuccess("Cập nhật profile thành công!");
       setIsProfileDialogOpen(false);
     },
@@ -316,12 +325,19 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                   </div>
                 )}
                 {guest.phone && (
-                  <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center justify-between py-2 border-b">
                     <p className="text-sm font-medium text-slate-800">Checklist Link</p>
                     <div className="flex items-center gap-1 ml-2">
                       <a href={`/checklist/${guest.phone}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
                       <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.phone}`)}><Copy className="h-4 w-4" /></Button>
                     </div>
+                  </div>
+                )}
+                {guest.role !== 'Vé trải nghiệm' && (
+                  <div className="pt-4">
+                    <Button className="w-full" onClick={() => setIsQrCodeDialogOpen(true)}>
+                      <QrCode className="mr-2 h-4 w-4" /> Xem tất cả mã QR
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -495,6 +511,11 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         imageUrl={billPreviewUrl}
         open={!!billPreviewUrl}
         onOpenChange={() => setBillPreviewUrl(null)}
+      />
+      <GuestQrCodeDialog
+        open={isQrCodeDialogOpen}
+        onOpenChange={setIsQrCodeDialogOpen}
+        guest={guest ? { ...guest, type: guestType === 'vip' ? 'Chức vụ' : 'Khách mời' } : null}
       />
     </>
   );
