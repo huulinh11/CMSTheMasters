@@ -5,9 +5,10 @@ import { VideoBlock } from '@/types/profile-content';
 
 interface VideoBlockPlayerProps {
   block: VideoBlock;
+  onVideoLoad: (videoId: string) => void;
 }
 
-export const VideoBlockPlayer = ({ block }: VideoBlockPlayerProps) => {
+export const VideoBlockPlayer = ({ block, onVideoLoad }: VideoBlockPlayerProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const embedUrl = getVideoEmbedUrl(block.videoUrl);
 
@@ -30,7 +31,10 @@ export const VideoBlockPlayer = ({ block }: VideoBlockPlayerProps) => {
         allowFullScreen
         className="w-full h-full"
         style={{ display: isLoaded ? 'block' : 'none' }}
-        onLoad={() => setIsLoaded(true)}
+        onLoad={() => {
+          setIsLoaded(true);
+          onVideoLoad(block.id);
+        }}
       ></iframe>
     </div>
   );
