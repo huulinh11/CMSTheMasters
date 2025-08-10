@@ -19,9 +19,9 @@ import {
 } from "@/components/ui/select";
 import { ProfileTemplate } from "@/types/profile-template";
 import { RoleConfiguration } from "@/types/role-configuration";
-import { EditProfileDialog } from "./EditProfileDialog";
 import { ContentBlock } from "@/types/profile-content";
 import { AlertTriangle } from "lucide-react";
+import { TemplateEditor } from "./TemplateEditor";
 
 interface EditTemplateDialogProps {
   open: boolean;
@@ -78,15 +78,6 @@ export const EditTemplateDialog = ({
     });
   };
 
-  const mockGuest = {
-    id: "template-editor",
-    name: "Xem trước Template",
-    role: "Template",
-    phone: "",
-    type: "Chức vụ" as const,
-    profile_content: content,
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] p-0 flex flex-col">
@@ -135,16 +126,10 @@ export const EditTemplateDialog = ({
         </div>
 
         <div className="flex-grow min-h-0 px-6 py-4">
-          <EditProfileDialog
-            open={true}
-            onOpenChange={() => {}}
-            guest={mockGuest}
-            onSave={() => {}}
+          <TemplateEditor
+            content={content}
             onContentChange={setContent}
-            isSaving={false}
             onUploadingChange={setIsUploading}
-            isTemplateMode={false}
-            isSubDialog={true}
           />
         </div>
 
