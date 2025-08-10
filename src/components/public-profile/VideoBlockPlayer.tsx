@@ -18,7 +18,7 @@ export const VideoBlockPlayer = ({ block }: VideoBlockPlayerProps) => {
     : '16 / 9';
 
   return (
-    <div className="w-full bg-slate-200" style={{ aspectRatio }}>
+    <div className="w-full bg-black" style={{ aspectRatio }}>
       {!isLoaded && (
         <Skeleton className="w-full h-full" />
       )}
