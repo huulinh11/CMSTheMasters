@@ -7,6 +7,7 @@ const settingsItems = [
   { to: "/settings/roles", label: "Vai trò" },
   { to: "/settings/tasks", label: "Tác vụ" },
   { to: "/settings/benefits", label: "Quyền lợi" },
+  { to: "/settings/menu", label: "Cài đặt menu" },
   { to: "/settings/general", label: "Chung" },
   { to: "/settings/loading-screen", label: "Cấu hình màn hình chờ profile" },
 ];

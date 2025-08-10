@@ -1,59 +1,57 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import {
-  MoreHorizontal,
-  LucideIcon,
-  ChevronRight,
-  LogOut,
-} from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { MoreHorizontal, LucideIcon, ChevronRight, LogOut, QrCode } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "../contexts/AuthContext";
-import { allNavItems } from "@/config/nav";
+import { useQrScanner } from "@/contexts/QrScannerContext";
 
 const BottomNav = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const location = useLocation();
-  const { signOut, permissions } = useAuth();
+  const { signOut, permissions, menuConfig } = useAuth();
+  const { openScanner } = useQrScanner();
 
   useEffect(() => {
     if (isSheetOpen) {
       setIsSheetOpen(false);
     }
-  }, [location.pathname]);
+  }, [location.pathname, isSheetOpen]);
 
   const visibleNavItems = useMemo(() => {
-    if (!permissions) return [];
-    return allNavItems.filter(item => permissions.includes(item.id));
-  }, [permissions]);
+    if (!permissions || !menuConfig) return [];
+    return menuConfig.filter(item => permissions.includes(item.id));
+  }, [permissions, menuConfig]);
 
-  const mainNavItems = useMemo(() => visibleNavItems.filter(item => !item.isMoreLink), [visibleNavItems]);
-  const moreLinks = useMemo(() => visibleNavItems.filter(item => item.isMoreLink), [visibleNavItems]);
+  const leftItems = visibleNavItems.slice(0, 2);
+  const rightItems = visibleNavItems.slice(2, 4);
+  const moreLinks = visibleNavItems.slice(4);
 
   const isMorePageActive = moreLinks.some(link => location.pathname.startsWith(link.to));
 
   return (
     <footer className="bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:hidden flex-shrink-0">
-      <nav className="flex justify-around items-center h-16">
-        {mainNavItems.map((item) => (
-          <NavItem
-            key={item.to}
-            to={item.to}
-            icon={item.icon}
-            label={item.mobileLabel || item.label}
-            end={item.end}
-          />
+      <nav className="flex justify-around items-center h-16 relative">
+        {leftItems.map((item) => (
+          <NavItem key={item.to} to={item.to} icon={item.icon} label={item.mobileLabel || item.label} end={item.end} />
+        ))}
+
+        <div className="w-1/5 flex justify-center">
+          <button
+            onClick={openScanner}
+            className="absolute -top-5 bg-primary text-primary-foreground rounded-full h-16 w-16 flex items-center justify-center shadow-lg border-4 border-white"
+          >
+            <QrCode className="h-8 w-8" />
+          </button>
+        </div>
+
+        {rightItems.map((item) => (
+          <NavItem key={item.to} to={item.to} icon={item.icon} label={item.mobileLabel || item.label} end={item.end} />
         ))}
 
         {moreLinks.length > 0 && (
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
-              <button className={`flex flex-col items-center justify-center w-full h-full transition-colors ${isMorePageActive ? "text-primary" : "text-slate-500"}`}>
+              <button className={`flex flex-col items-center justify-center w-1/5 h-full transition-colors ${isMorePageActive ? "text-primary" : "text-slate-500"}`}>
                 <MoreHorizontal className="w-6 h-6 mb-1" />
                 <span className="text-xs font-medium">Khác</span>
               </button>
@@ -95,7 +93,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, end }) => (
     to={to}
     end={end}
     className={({ isActive }) =>
-      `flex flex-col items-center justify-center w-full h-full transition-colors ${
+      `flex flex-col items-center justify-center w-1/5 h-full transition-colors ${
         isActive ? "text-primary" : "text-slate-500"
       }`
     }

@@ -16,6 +16,7 @@ import RoleSettings from "./pages/settings/RoleSettings";
 import TaskSettings from "./pages/settings/TaskSettings";
 import BenefitSettings from "./pages/settings/BenefitSettings";
 import GeneralSettings from "./pages/settings/GeneralSettings";
+import MenuSettings from "./pages/settings/MenuSettings";
 import LoadingScreenSettings from "./pages/settings/LoadingScreenSettings";
 import NotFound from "./pages/NotFound";
 import PublicUser from "./pages/PublicUser";
@@ -72,6 +73,7 @@ const router = createBrowserRouter([
               { path: "roles", element: <RoleSettings /> },
               { path: "tasks", element: <TaskSettings /> },
               { path: "benefits", element: <BenefitSettings /> },
+              { path: "menu", element: <MenuSettings /> },
               { path: "general", element: <GeneralSettings /> },
               { path: "loading-screen", element: <LoadingScreenSettings /> },
             ]

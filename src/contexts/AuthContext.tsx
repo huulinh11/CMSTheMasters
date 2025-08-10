@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, useContext, ReactNode, useMemo } fr
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getPermissionsForRole } from '@/config/permissions';
+import { allNavItems, NavItemType } from '@/config/nav';
 
 export type Profile = {
   id: string;
@@ -15,6 +16,7 @@ type AuthContextType = {
   user: User | null;
   profile: Profile | null;
   permissions: string[];
+  menuConfig: NavItemType[];
   isLoading: boolean;
   signOut: () => void;
 };
@@ -26,12 +28,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [menuConfig, setMenuConfig] = useState<NavItemType[]>(allNavItems);
 
   useEffect(() => {
-    // Hàm này thực hiện kiểm tra ban đầu và thiết lập listener.
+    const fetchMenuConfig = async () => {
+      const { data: menuOrder, error } = await supabase
+        .from('menu_config')
+        .select('item_id')
+        .order('order', { ascending: true });
+
+      if (error) {
+        console.error("Error fetching menu config, using default.", error);
+        return; // Keep default
+      }
+
+      if (menuOrder && menuOrder.length > 0) {
+        const orderedItems = menuOrder
+          .map(item => allNavItems.find(navItem => navItem.id === item.item_id))
+          .filter((item): item is NavItemType => !!item);
+        
+        // Add any new items from allNavItems that are not in the saved config
+        allNavItems.forEach(defaultItem => {
+          if (!orderedItems.find(item => item.id === defaultItem.id)) {
+            orderedItems.push(defaultItem);
+          }
+        });
+        
+        setMenuConfig(orderedItems);
+      }
+    };
+
     const initializeAuth = async () => {
       try {
-        // 1. Chủ động lấy session hiện tại ngay khi ứng dụng tải.
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError) {
@@ -54,23 +82,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setProfile(userProfile || null);
           }
         }
+        await fetchMenuConfig();
       } catch (e) {
         console.error("Lỗi nghiêm trọng khi khởi tạo auth:", e);
       } finally {
-        // 2. Quan trọng nhất: Tắt màn hình tải sau khi kiểm tra ban đầu hoàn tất.
         setIsLoading(false);
       }
     };
 
     initializeAuth();
 
-    // 3. Bây giờ, mới thiết lập listener cho các thay đổi trong tương lai.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (!session) {
         setProfile(null);
       }
+      // Refetch menu config on auth change in case it's different
+      fetchMenuConfig();
     });
 
     return () => {
@@ -78,9 +107,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Effect này chỉ chịu trách nhiệm tải profile khi user thay đổi (sau lần tải đầu).
   useEffect(() => {
-    if (user && !profile) { // Chỉ fetch nếu chưa có profile
+    if (user && !profile) {
       const fetchProfile = async () => {
         const { data: userProfile, error } = await supabase
           .from('profiles')
@@ -108,7 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
-  const value = { session, user, profile, permissions, isLoading, signOut };
+  const value = { session, user, profile, permissions, menuConfig, isLoading, signOut };
 
   return (
     <AuthContext.Provider value={value}>

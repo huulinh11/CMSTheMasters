@@ -5,33 +5,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Camera } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import QrScannerComponent from "@/components/QrScannerComponent";
-import { useNavigate } from "react-router-dom";
-import { showError } from "@/utils/toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardGuestsTab from "./dashboard/DashboardGuestsTab";
 import DashboardTasksTab from "./dashboard/DashboardTasksTab";
 import DashboardBenefitsTab from "./dashboard/DashboardBenefitsTab";
-
-const audioPlayer = {
-  audio: null as HTMLAudioElement | null,
-  init(url: string) {
-    if (this.audio?.src !== url) {
-      this.audio = new Audio(url);
-    }
-  },
-  play() {
-    this.audio?.play().catch(err => console.error("Audio play failed:", err));
-  }
-};
+import { useQrScanner } from "@/contexts/QrScannerContext";
 
 const DashboardPage = () => {
   const { profile, user } = useAuth();
+  const { openScanner } = useQrScanner();
+  const isMobile = useIsMobile();
   const displayName = profile?.full_name || user?.email?.split('@')[0];
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [isProcessingScan, setIsProcessingScan] = useState(false);
-  const navigate = useNavigate();
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['checklist_settings'],
@@ -41,38 +26,6 @@ const DashboardPage = () => {
       return data;
     }
   });
-
-  useEffect(() => {
-    if (settings?.qr_scan_sound_url) {
-      audioPlayer.init(settings.qr_scan_sound_url);
-    }
-  }, [settings]);
-
-  const handleScan = (scannedUrl: string | null) => {
-    if (isProcessingScan || !scannedUrl) return;
-
-    try {
-      const url = new URL(scannedUrl);
-      const guestId = url.searchParams.get('guestId');
-      if (guestId) {
-        setIsProcessingScan(true);
-        audioPlayer.play();
-        setIsScannerOpen(false);
-        navigate(`/event-tasks?guestId=${guestId}`);
-      } else {
-        showError("Mã QR không hợp lệ (thiếu guestId).");
-      }
-    } catch (error) {
-      showError("Mã QR không phải là một URL hợp lệ.");
-    }
-  };
-
-  const handleScannerOpenChange = (isOpen: boolean) => {
-    setIsScannerOpen(isOpen);
-    if (!isOpen) {
-      setIsProcessingScan(false);
-    }
-  };
 
   if (isLoading) {
     return <div className="p-4 md:p-6"><Skeleton className="h-screen w-full" /></div>;
@@ -87,12 +40,14 @@ const DashboardPage = () => {
           <span className="font-normal">Hello </span>
           <span className="font-bold">{displayName}</span>
         </h1>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => setIsScannerOpen(true)}>
-            <Camera className="mr-2 h-4 w-4" />
-            Quét mã QR
-          </Button>
-        </div>
+        {!isMobile && (
+          <div className="flex items-center gap-2">
+            <Button onClick={openScanner}>
+              <Camera className="mr-2 h-4 w-4" />
+              Quét mã QR
+            </Button>
+          </div>
+        )}
       </header>
 
       <Tabs defaultValue={defaultTab} className="w-full">
@@ -111,12 +66,6 @@ const DashboardPage = () => {
           <DashboardBenefitsTab />
         </TabsContent>
       </Tabs>
-
-      <Dialog open={isScannerOpen} onOpenChange={handleScannerOpenChange}>
-        <DialogContent className="p-0 bg-transparent border-none max-w-md">
-          <QrScannerComponent onScan={handleScan} onClose={() => setIsScannerOpen(false)} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
