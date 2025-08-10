@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { ContentBlock, TextBlock } from "@/types/profile-content";
 import { Loader2 } from "lucide-react";
 import { ProfileTemplate } from "@/types/profile-template";
@@ -13,7 +13,6 @@ type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?
 
 const PublicProfile = () => {
   const { slug } = useParams();
-  const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
 
   const { data: guest, isLoading: isLoadingGuest } = useQuery<CombinedGuest | null>({
     queryKey: ['public_profile_guest', slug],
@@ -108,102 +107,9 @@ const PublicProfile = () => {
     return { contentBlocks: content || [], activeTemplate: null };
   }, [guest, templates]);
 
-  const videoBlocks = useMemo(() => contentBlocks.filter(b => b.type === 'video'), [contentBlocks]);
+  const isLoading = isLoadingGuest || isLoadingTemplates;
 
-  const handleVideoLoad = (videoId: string) => {
-    setLoadedVideoIds(prev => new Set(prev).add(videoId));
-  };
-
-  useEffect(() => {
-    setLoadedVideoIds(new Set());
-  }, [guest]);
-
-  const isDataLoading = isLoadingGuest || isLoadingTemplates;
-  const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
-  const showLoader = isDataLoading || (videoBlocks.length > 0 && !areAllVideosLoaded);
-
-  const PageContent = () => (
-    <div className="w-full min-h-screen bg-black flex justify-center">
-      <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
-        <div className="flex flex-col">
-          {contentBlocks.map((block) => {
-            switch (block.type) {
-              case 'image':
-                const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover" style={{ width: `${block.width || 100}%` }} />;
-                return (
-                  <div key={block.id} className="w-full flex justify-center">
-                    {block.linkUrl ? (
-                      <a href={block.linkUrl} target="_blank" rel="noopener noreferrer" style={{ width: `${block.width || 100}%` }}>
-                        {imageElement}
-                      </a>
-                    ) : (
-                      imageElement
-                    )}
-                  </div>
-                );
-              case 'video':
-                return <VideoBlockPlayer key={block.id} block={block} onVideoLoad={handleVideoLoad} />;
-              case 'text':
-                return (
-                  <div key={block.id} className="w-full">
-                    <div
-                      className="w-full min-h-[16rem] flex flex-col items-center justify-center p-4 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}
-                    >
-                      {(block as TextBlock).items.map(item => (
-                        <div 
-                          key={item.id} 
-                          style={{ 
-                            marginTop: `${item.marginTop || 0}px`,
-                            marginRight: `${item.marginRight || 0}px`,
-                            marginBottom: `${item.marginBottom || 0}px`,
-                            marginLeft: `${item.marginLeft || 0}px`,
-                          }}
-                        >
-                          {item.type === 'text' ? (
-                            <p
-                              className="text-center"
-                              style={{
-                                fontSize: `${item.fontSize || 32}px`,
-                                color: item.color || '#FFFFFF',
-                                fontWeight: item.fontWeight || 'bold',
-                                fontStyle: item.fontStyle || 'normal',
-                                fontFamily: item.fontFamily || 'sans-serif',
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              {item.isGuestName ? guest?.name : item.text}
-                            </p>
-                          ) : (
-                            <img 
-                              src={item.imageUrl} 
-                              alt="Profile item" 
-                              style={{ 
-                                width: `${item.width}%`, 
-                                margin: '0 auto' 
-                              }} 
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              default:
-                return null;
-            }
-          })}
-        </div>
-        {activeTemplate && (
-          <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-            Template: {activeTemplate.name}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  if (isDataLoading) {
+  if (isLoading) {
     return (
       <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -223,16 +129,90 @@ const PublicProfile = () => {
   }
 
   return (
-    <>
-      {showLoader && (
-        <div className="fixed inset-0 w-full h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center z-50">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    <div className="w-full min-h-screen bg-black flex justify-center">
+      <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
+        <div className="flex flex-col">
+          {contentBlocks.length > 0 ? (
+            contentBlocks.map((block) => {
+              switch (block.type) {
+                case 'image':
+                  const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover" style={{ width: `${block.width || 100}%` }} />;
+                  return (
+                    <div key={block.id} className="w-full flex justify-center">
+                      {block.linkUrl ? (
+                        <a href={block.linkUrl} target="_blank" rel="noopener noreferrer" style={{ width: `${block.width || 100}%` }}>
+                          {imageElement}
+                        </a>
+                      ) : (
+                        imageElement
+                      )}
+                    </div>
+                  );
+                case 'video':
+                  return <VideoBlockPlayer key={block.id} block={block} />;
+                case 'text':
+                  return (
+                    <div key={block.id} className="w-full">
+                      <div
+                        className="w-full min-h-[16rem] flex flex-col items-center justify-center p-4 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}
+                      >
+                        {(block as TextBlock).items.map(item => (
+                          <div 
+                            key={item.id} 
+                            style={{ 
+                              marginTop: `${item.marginTop || 0}px`,
+                              marginRight: `${item.marginRight || 0}px`,
+                              marginBottom: `${item.marginBottom || 0}px`,
+                              marginLeft: `${item.marginLeft || 0}px`,
+                            }}
+                          >
+                            {item.type === 'text' ? (
+                              <p
+                                className="text-center"
+                                style={{
+                                  fontSize: `${item.fontSize || 32}px`,
+                                  color: item.color || '#FFFFFF',
+                                  fontWeight: item.fontWeight || 'bold',
+                                  fontStyle: item.fontStyle || 'normal',
+                                  fontFamily: item.fontFamily || 'sans-serif',
+                                  lineHeight: 1.2,
+                                }}
+                              >
+                                {item.isGuestName ? guest.name : item.text}
+                              </p>
+                            ) : (
+                              <img 
+                                src={item.imageUrl} 
+                                alt="Profile item" 
+                                style={{ 
+                                  width: `${item.width}%`, 
+                                  margin: '0 auto' 
+                                }} 
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                default:
+                  return null;
+              }
+            })
+          ) : (
+            <div className="p-8 text-center text-slate-500">
+              <p>Chưa có nội dung cho profile này.</p>
+            </div>
+          )}
         </div>
-      )}
-      <div style={{ visibility: showLoader ? 'hidden' : 'visible' }}>
-        <PageContent />
+        {activeTemplate && (
+          <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+            Template: {activeTemplate.name}
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 

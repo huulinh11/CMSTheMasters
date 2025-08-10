@@ -5,10 +5,9 @@ import { VideoBlock } from '@/types/profile-content';
 
 interface VideoBlockPlayerProps {
   block: VideoBlock;
-  onVideoLoad: (videoId: string) => void;
 }
 
-export const VideoBlockPlayer = ({ block, onVideoLoad }: VideoBlockPlayerProps) => {
+export const VideoBlockPlayer = ({ block }: VideoBlockPlayerProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const embedUrl = getVideoEmbedUrl(block.videoUrl);
 
@@ -21,7 +20,7 @@ export const VideoBlockPlayer = ({ block, onVideoLoad }: VideoBlockPlayerProps) 
   return (
     <div className="w-full bg-black" style={{ aspectRatio }}>
       {!isLoaded && (
-        <Skeleton className="w-full h-full" />
+        <Skeleton className="w-full h-full bg-neutral-800" />
       )}
       <iframe
         src={embedUrl}
@@ -31,10 +30,7 @@ export const VideoBlockPlayer = ({ block, onVideoLoad }: VideoBlockPlayerProps) 
         allowFullScreen
         className="w-full h-full"
         style={{ display: isLoaded ? 'block' : 'none' }}
-        onLoad={() => {
-          setIsLoaded(true);
-          onVideoLoad(block.id);
-        }}
+        onLoad={() => setIsLoaded(true)}
       ></iframe>
     </div>
   );
