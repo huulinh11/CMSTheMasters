@@ -17,7 +17,7 @@ export const NotificationBell = ({ guestId }: NotificationBellProps) => {
       <Button
         variant="ghost"
         size="icon"
-        className="relative h-20 w-20"
+        className="relative h-16 w-16"
         onClick={() => setIsOpen(true)}
       >
         <Bell className="h-12 w-12" />

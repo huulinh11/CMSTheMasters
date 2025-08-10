@@ -3,21 +3,55 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { GuestNotification } from '@/types/notification';
 
-const useGuestNotifications = (guestId: string | null) => {
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+// --- Module-level store for sharing state between hook instances ---
+const readIdsStores: { [guestId: string]: Set<string> } = {};
+const listeners: { [guestId: string]: Set<React.Dispatch<React.SetStateAction<Set<string>>>> } = {};
 
-  useEffect(() => {
-    if (guestId) {
+const updateLocalStorage = (guestId: string, newReadIds: Set<string>) => {
+  try {
+    localStorage.setItem(`read_notifications_${guestId}`, JSON.stringify(Array.from(newReadIds)));
+  } catch (error) {
+    console.error("Failed to save read notifications to localStorage", error);
+  }
+};
+
+const notifyListeners = (guestId: string) => {
+  listeners[guestId]?.forEach(listener => {
+    // We pass a new Set to ensure React detects a state change
+    listener(new Set(readIdsStores[guestId]));
+  });
+};
+
+const useGuestNotifications = (guestId: string | null) => {
+  // Initialize state from the store or localStorage
+  const [readIds, setReadIds] = useState<Set<string>>(() => {
+    if (!guestId) return new Set();
+    if (!readIdsStores[guestId]) {
       try {
         const storedIds = localStorage.getItem(`read_notifications_${guestId}`);
-        if (storedIds) {
-          setReadIds(new Set(JSON.parse(storedIds)));
-        }
-      } catch (error) {
-        console.error("Failed to parse read notifications from localStorage", error);
-        setReadIds(new Set());
+        readIdsStores[guestId] = storedIds ? new Set(JSON.parse(storedIds)) : new Set();
+      } catch {
+        readIdsStores[guestId] = new Set();
       }
     }
+    return readIdsStores[guestId];
+  });
+
+  // Subscribe to the store on mount
+  useEffect(() => {
+    if (!guestId) return;
+
+    if (!listeners[guestId]) {
+      listeners[guestId] = new Set();
+    }
+    listeners[guestId].add(setReadIds);
+
+    // Unsubscribe on unmount
+    return () => {
+      if (guestId && listeners[guestId]) {
+        listeners[guestId].delete(setReadIds);
+      }
+    };
   }, [guestId]);
 
   const { data: notifications = [], isLoading } = useQuery<GuestNotification[]>({
@@ -40,31 +74,24 @@ const useGuestNotifications = (guestId: string | null) => {
     return notifications.filter(n => !readIds.has(n.id)).length;
   }, [notifications, readIds]);
 
-  const updateLocalStorage = (newReadIds: Set<string>) => {
-    if (!guestId) return;
-    try {
-      localStorage.setItem(`read_notifications_${guestId}`, JSON.stringify(Array.from(newReadIds)));
-    } catch (error) {
-      console.error("Failed to save read notifications to localStorage", error);
-    }
-  };
-
   const markOneAsRead = (notificationId: string) => {
-    setReadIds(prevReadIds => {
-      if (prevReadIds.has(notificationId)) {
-        return prevReadIds;
-      }
-      const newReadIds = new Set(prevReadIds);
-      newReadIds.add(notificationId);
-      updateLocalStorage(newReadIds);
-      return newReadIds;
-    });
+    if (!guestId || readIdsStores[guestId]?.has(notificationId)) return;
+
+    const newReadIds = new Set(readIdsStores[guestId]);
+    newReadIds.add(notificationId);
+    readIdsStores[guestId] = newReadIds;
+    
+    updateLocalStorage(guestId, newReadIds);
+    notifyListeners(guestId);
   };
 
   const markAllAsRead = () => {
+    if (!guestId) return;
     const allIds = new Set(notifications.map(n => n.id));
-    setReadIds(allIds);
-    updateLocalStorage(allIds);
+    readIdsStores[guestId] = allIds;
+    
+    updateLocalStorage(guestId, allIds);
+    notifyListeners(guestId);
   };
 
   return {
