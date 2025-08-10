@@ -4,6 +4,7 @@ import { MoreHorizontal, LucideIcon, ChevronRight, LogOut, QrCode } from "lucide
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "../contexts/AuthContext";
 import { useQrScanner } from "@/contexts/QrScannerContext";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const BottomNav = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -56,23 +57,25 @@ const BottomNav = () => {
                 <span className="text-xs font-medium">Khác</span>
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-3/4 p-0 bg-white">
-              <SheetHeader className="p-4 text-left border-b">
+            <SheetContent side="bottom" className="p-0 bg-white flex flex-col h-auto max-h-[60vh]">
+              <SheetHeader className="p-4 text-left border-b flex-shrink-0">
                 <SheetTitle className="text-2xl font-bold text-slate-800">Khác</SheetTitle>
               </SheetHeader>
-              <ul className="divide-y divide-slate-200">
-                {moreLinks.map((link) => (
-                  <li key={link.to}>
-                    <MoreLinkItem to={link.to} icon={link.icon} label={link.label} />
+              <ScrollArea className="flex-grow">
+                <ul className="divide-y divide-slate-200">
+                  {moreLinks.map((link) => (
+                    <li key={link.to}>
+                      <MoreLinkItem to={link.to} icon={link.icon} label={link.label} />
+                    </li>
+                  ))}
+                  <li>
+                    <button onClick={signOut} className="flex items-center p-4 hover:bg-slate-50 transition-colors w-full">
+                      <LogOut className="w-6 h-6 mr-4 text-red-500" />
+                      <span className="flex-1 text-red-500 font-medium text-left">Đăng xuất</span>
+                    </button>
                   </li>
-                ))}
-                <li>
-                  <button onClick={signOut} className="flex items-center p-4 hover:bg-slate-50 transition-colors w-full">
-                    <LogOut className="w-6 h-6 mr-4 text-red-500" />
-                    <span className="flex-1 text-red-500 font-medium text-left">Đăng xuất</span>
-                  </button>
-                </li>
-              </ul>
+                </ul>
+              </ScrollArea>
             </SheetContent>
           </Sheet>
         )}
