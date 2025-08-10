@@ -101,9 +101,12 @@ export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange, t
         <Drawer open={open} onOpenChange={onOpenChange}>
           <DrawerContent className="flex flex-col max-h-[90vh]">
             <DrawerHeader className="flex justify-between items-center p-4 border-b flex-shrink-0">
-              <DrawerTitle>{guest.name}</DrawerTitle>
+              <div className="flex-1 min-w-0 flex justify-between items-baseline">
+                <DrawerTitle className="truncate">{guest.name}</DrawerTitle>
+                <span className="text-sm font-medium text-slate-500 ml-4">{guest.id}</span>
+              </div>
               <DrawerClose asChild>
-                <Button variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
+                <Button variant="ghost" size="icon" className="ml-2"><X className="h-5 w-5" /></Button>
               </DrawerClose>
             </DrawerHeader>
             <div className="flex-1 overflow-y-auto">
@@ -128,7 +131,10 @@ export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange, t
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md flex flex-col max-h-[80vh]">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle>{guest.name}</DialogTitle>
+            <DialogTitle className="flex justify-between items-baseline">
+              <span>{guest.name}</span>
+              <span className="text-sm font-medium text-slate-500">{guest.id}</span>
+            </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto">
             <div className="py-4 pr-6">
