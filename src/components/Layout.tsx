@@ -11,7 +11,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex h-screen bg-transparent">
+    <div className="flex h-[100dvh] bg-transparent">
       {!isMobile && <Sidebar />}
       <div className="flex flex-1 flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto">
