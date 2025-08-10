@@ -12,6 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
+import CustomLoadingScreen from "@/components/public-profile/CustomLoadingScreen";
 
 type LoaderConfig = {
   size: number;
@@ -132,65 +133,83 @@ const LoadingScreenSettings = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Cấu hình Icon Loader</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>Kích thước (px)</Label>
-            <Slider
-              value={[settings.loader_config?.size || 48]}
-              onValueChange={([val]) => handleLoaderConfigChange('size', val)}
-              max={128}
-              step={1}
-            />
-          </div>
-          <div>
-            <Label>Canh lề</Label>
-            <MarginEditor
-              values={settings.loader_config || {}}
-              onChange={handleLoaderConfigChange}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Cấu hình Text</CardTitle>
-          <CardDescription>Thêm và tùy chỉnh các dòng text hiển thị dưới icon loader.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {settings.loading_text_config?.map(item => (
-            <div key={item.id} className="p-4 border rounded-lg space-y-3 relative">
-              <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => removeTextItem(item.id!)}>
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
-              <div className="space-y-2">
-                <Label>Nội dung</Label>
-                <Input value={item.text} onChange={e => handleTextConfigChange(item.id!, 'text', e.target.value)} />
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div><Label>Font</Label><Select value={item.fontFamily || 'sans-serif'} onValueChange={value => handleTextConfigChange(item.id!, 'fontFamily', value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fontFamilies.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent></Select></div>
-                <div><Label>Kiểu</Label><Select value={`${item.fontWeight || 'normal'}-${item.fontStyle || 'normal'}`} onValueChange={value => { const [fontWeight, fontStyle] = value.split('-'); handleTextConfigChange(item.id!, 'fontWeight', fontWeight); handleTextConfigChange(item.id!, 'fontStyle', fontStyle);}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal-normal">Thường</SelectItem><SelectItem value="bold-normal">Đậm</SelectItem><SelectItem value="normal-italic">Nghiêng</SelectItem><SelectItem value="bold-italic">Đậm Nghiêng</SelectItem></SelectContent></Select></div>
-                <div><Label>Cỡ chữ (px)</Label><Input type="number" value={item.fontSize || 16} onChange={e => handleTextConfigChange(item.id!, 'fontSize', Number(e.target.value))} /></div>
-                <div><Label>Màu chữ</Label><Input type="color" value={item.color || '#000000'} onChange={e => handleTextConfigChange(item.id!, 'color', e.target.value)} className="p-1 h-10" /></div>
-              </div>
-              <div><Label>Canh lề</Label><MarginEditor values={item} onChange={(field, value) => handleTextConfigChange(item.id!, field, value)} /></div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Cấu hình Icon Loader</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Kích thước (px)</Label>
+              <Slider
+                value={[settings.loader_config?.size || 48]}
+                onValueChange={([val]) => handleLoaderConfigChange('size', val)}
+                max={128}
+                step={1}
+              />
             </div>
-          ))}
-          <Button variant="outline" onClick={addTextItem}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Thêm dòng text
-          </Button>
-        </CardContent>
-      </Card>
+            <div>
+              <Label>Canh lề</Label>
+              <MarginEditor
+                values={settings.loader_config || {}}
+                onChange={handleLoaderConfigChange}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-      <div className="flex justify-end">
-        <Button onClick={() => mutation.mutate(settings)} disabled={mutation.isPending}>
-          {mutation.isPending ? 'Đang lưu...' : 'Lưu cấu hình'}
-        </Button>
+        <Card>
+          <CardHeader>
+            <CardTitle>Cấu hình Text</CardTitle>
+            <CardDescription>Thêm và tùy chỉnh các dòng text hiển thị dưới icon loader.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {settings.loading_text_config?.map(item => (
+              <div key={item.id} className="p-4 border rounded-lg space-y-3 relative">
+                <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => removeTextItem(item.id!)}>
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+                <div className="space-y-2">
+                  <Label>Nội dung</Label>
+                  <Input value={item.text} onChange={e => handleTextConfigChange(item.id!, 'text', e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div><Label>Font</Label><Select value={item.fontFamily || 'sans-serif'} onValueChange={value => handleTextConfigChange(item.id!, 'fontFamily', value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fontFamilies.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent></Select></div>
+                  <div><Label>Kiểu</Label><Select value={`${item.fontWeight || 'normal'}-${item.fontStyle || 'normal'}`} onValueChange={value => { const [fontWeight, fontStyle] = value.split('-'); handleTextConfigChange(item.id!, 'fontWeight', fontWeight); handleTextConfigChange(item.id!, 'fontStyle', fontStyle);}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal-normal">Thường</SelectItem><SelectItem value="bold-normal">Đậm</SelectItem><SelectItem value="normal-italic">Nghiêng</SelectItem><SelectItem value="bold-italic">Đậm Nghiêng</SelectItem></SelectContent></Select></div>
+                  <div><Label>Cỡ chữ (px)</Label><Input type="number" value={item.fontSize || 16} onChange={e => handleTextConfigChange(item.id!, 'fontSize', Number(e.target.value))} /></div>
+                  <div><Label>Màu chữ</Label><Input type="color" value={item.color || '#000000'} onChange={e => handleTextConfigChange(item.id!, 'color', e.target.value)} className="p-1 h-10" /></div>
+                </div>
+                <div><Label>Canh lề</Label><MarginEditor values={item} onChange={(field, value) => handleTextConfigChange(item.id!, field, value)} /></div>
+              </div>
+            ))}
+            <Button variant="outline" onClick={addTextItem}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Thêm dòng text
+            </Button>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end">
+          <Button onClick={() => mutation.mutate(settings)} disabled={mutation.isPending}>
+            {mutation.isPending ? 'Đang lưu...' : 'Lưu cấu hình'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="lg:sticky lg:top-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Xem trước</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="aspect-video w-full rounded-lg overflow-hidden border">
+              <CustomLoadingScreen
+                loaderConfig={settings.loader_config}
+                textConfig={settings.loading_text_config}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

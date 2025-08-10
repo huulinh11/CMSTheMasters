@@ -25,7 +25,7 @@ const CustomLoadingScreen = ({ loaderConfig, textConfig }: CustomLoadingScreenPr
   };
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#fff5ea] to-[#e5b899] p-4">
+    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#fff5ea] to-[#e5b899] p-4">
       <Loader2 className="animate-spin text-primary" style={loaderStyle} />
       {textConfig?.map(item => (
         <p
