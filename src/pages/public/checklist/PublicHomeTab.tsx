@@ -73,27 +73,33 @@ const PublicHomeTab = () => {
   return (
     <>
       <div className="p-4 space-y-6">
-        <div className="text-center space-y-3">
-          {logoConfig?.imageUrl && (
-            <div style={{
-              marginTop: `${logoConfig.marginTop || 0}px`,
-              marginRight: `${logoConfig.marginRight || 0}px`,
-              marginBottom: `${logoConfig.marginBottom || 0}px`,
-              marginLeft: `${logoConfig.marginLeft || 0}px`,
-            }}>
-              <img 
-                src={logoConfig.imageUrl} 
-                alt="Event Logo" 
-                className="mx-auto h-auto object-contain"
-                style={{ width: `${logoConfig.width || 100}%` }}
-              />
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            {logoConfig?.imageUrl && (
+              <div className="w-1/4 flex-shrink-0" style={{
+                marginTop: `${logoConfig.marginTop || 0}px`,
+                marginRight: `${logoConfig.marginRight || 0}px`,
+                marginBottom: `${logoConfig.marginBottom || 0}px`,
+                marginLeft: `${logoConfig.marginLeft || 0}px`,
+              }}>
+                <img 
+                  src={logoConfig.imageUrl} 
+                  alt="Event Logo" 
+                  className="h-auto object-contain"
+                  style={{ width: `${logoConfig.width || 100}%` }}
+                />
+              </div>
+            )}
+            <div className="flex-grow">
+              {settings?.title_config?.text && (
+                <h1 style={titleStyle} className="text-left">{settings.title_config.text}</h1>
+              )}
             </div>
-          )}
-          {settings?.title_config?.text && (
-            <h1 style={titleStyle}>{settings.title_config.text}</h1>
-          )}
-          <p className="text-lg">Xin chào: <span className="font-bold">{guest.name}</span></p>
-          <p className="text-slate-600">{guest.role} ({guest.id})</p>
+          </div>
+          <div className="text-center pt-3">
+            <p className="text-lg">Xin chào: <span className="font-bold">{guest.name}</span></p>
+            <p className="text-slate-600">{guest.role} ({guest.id})</p>
+          </div>
         </div>
 
         <GuestQrCode guestId={guest.id} guestName={guest.name} />
