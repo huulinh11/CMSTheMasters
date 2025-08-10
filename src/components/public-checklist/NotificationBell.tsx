@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import useGuestNotifications from "@/hooks/useGuestNotifications";
 import { NotificationDialog } from "./NotificationDialog";
@@ -14,18 +13,17 @@ export const NotificationBell = ({ guestId }: NotificationBellProps) => {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        className="relative h-16 w-16 p-0 rounded-full"
+      <button
         onClick={() => setIsOpen(true)}
+        className="relative inline-flex items-center justify-center rounded-full h-16 w-16 text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
       >
         <Bell className="h-12 w-12" />
         {unreadCount > 0 && (
-          <div className="absolute top-2 right-2 bg-red-500 text-white text-base font-bold rounded-full h-7 w-7 flex items-center justify-center border-2 border-white">
+          <div className="absolute top-1 right-1 bg-red-500 text-white text-sm font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </div>
         )}
-      </Button>
+      </button>
       <NotificationDialog
         open={isOpen}
         onOpenChange={setIsOpen}
