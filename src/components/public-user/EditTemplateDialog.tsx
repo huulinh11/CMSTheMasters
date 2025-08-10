@@ -89,8 +89,8 @@ export const EditTemplateDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="p-6 pb-4 flex-shrink-0">
           <DialogTitle>
             {template?.id ? "Chỉnh sửa Template" : "Tạo Template mới"}
           </DialogTitle>
@@ -98,7 +98,8 @@ export const EditTemplateDialog = ({
             Thiết kế cấu trúc và gán vai trò mặc định cho template.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 flex-shrink-0">
           <div>
             <Label htmlFor="template-name">Tên Template</Label>
             <Input
@@ -132,7 +133,8 @@ export const EditTemplateDialog = ({
             )}
           </div>
         </div>
-        <div className="flex-grow min-h-0">
+
+        <div className="flex-grow min-h-0 px-6 py-4">
           <EditProfileDialog
             open={true}
             onOpenChange={() => {}}
@@ -145,7 +147,8 @@ export const EditTemplateDialog = ({
             isSubDialog={true}
           />
         </div>
-        <DialogFooter className="flex-shrink-0 pt-4 border-t">
+
+        <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Hủy
           </Button>
