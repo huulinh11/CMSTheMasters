@@ -5,9 +5,9 @@ import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { useMemo } from "react";
 import { ContentBlock, TextBlock } from "@/types/profile-content";
-import { getVideoEmbedUrl } from "@/lib/video";
 import { Loader2 } from "lucide-react";
 import { ProfileTemplate } from "@/types/profile-template";
+import { VideoBlockPlayer } from "@/components/profile/VideoBlockPlayer";
 
 type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: ContentBlock[] | null };
 
@@ -153,21 +153,7 @@ const PublicProfile = () => {
                     </div>
                   );
                 case 'video':
-                  const embedUrl = getVideoEmbedUrl(block.videoUrl);
-                  if (!embedUrl) return null;
-                  const aspectRatio = block.aspectWidth && block.aspectHeight ? `${block.aspectWidth} / ${block.aspectHeight}` : '16 / 9';
-                  return (
-                    <div key={block.id} className="w-full bg-black" style={{ aspectRatio }}>
-                      <iframe
-                        src={embedUrl}
-                        title="Video player"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="w-full h-full"
-                      ></iframe>
-                    </div>
-                  );
+                  return <VideoBlockPlayer key={block.id} block={block} />;
                 case 'text':
                   return (
                     <div key={block.id} className="w-full">
@@ -204,7 +190,7 @@ const PublicProfile = () => {
                                 src={item.imageUrl} 
                                 alt="Profile item" 
                                 style={{ 
-                                  width: `${item.width || 100}%`, 
+                                  width: `${item.width}%`, 
                                   margin: '0 auto' 
                                 }} 
                               />
