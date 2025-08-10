@@ -367,7 +367,7 @@ const ProfileManagementTab = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow"
         />
-        <div className="flex-grow grid grid-cols-2 md:flex md:flex-grow-0 gap-2">
+        <div className="grid grid-cols-2 md:flex md:items-center gap-2">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-full md:w-auto"><SelectValue placeholder="Lọc loại" /></SelectTrigger>
             <SelectContent><SelectItem value="all">Tất cả loại</SelectItem><SelectItem value="Chức vụ">Chức vụ</SelectItem><SelectItem value="Khách mời">Khách mời</SelectItem></SelectContent>
@@ -380,7 +380,7 @@ const ProfileManagementTab = () => {
             <SelectTrigger className="w-full md:w-auto"><SelectValue placeholder="Lọc trạng thái" /></SelectTrigger>
             <SelectContent><SelectItem value="all">Tất cả trạng thái</SelectItem>{['Trống', 'Đang chỉnh sửa', 'Hoàn tất'].map(status => (<SelectItem key={status} value={status}>{status}</SelectItem>))}</SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => setIsTemplateManagerOpen(true)} className="w-full">
+          <Button variant="outline" onClick={() => setIsTemplateManagerOpen(true)} className="w-full md:w-auto">
             <Layers className="mr-2 h-4 w-4" /> Templates
           </Button>
         </div>
