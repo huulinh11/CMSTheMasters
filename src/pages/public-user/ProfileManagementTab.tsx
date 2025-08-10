@@ -39,7 +39,7 @@ const ProfileManagementTab = () => {
   const { data: vipGuests = [], isLoading: isLoadingVip } = useQuery<VipGuest[]>({
     queryKey: ['vip_guests'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('vip_guests').select('*');
+      const { data, error } = await supabase.from('vip_guests').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     }
@@ -48,7 +48,7 @@ const ProfileManagementTab = () => {
   const { data: regularGuests = [], isLoading: isLoadingRegular } = useQuery<Guest[]>({
     queryKey: ['guests'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('guests').select('*');
+      const { data, error } = await supabase.from('guests').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     }
