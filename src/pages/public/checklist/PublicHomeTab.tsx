@@ -97,7 +97,7 @@ const PublicHomeTab = () => {
               )}
             </div>
           </div>
-          <div className="text-center pt-4">
+          <div className="text-center">
             <p className="text-lg">Xin chào: <span className="font-bold">{guest.name}</span></p>
             <p className="text-slate-600">{guest.role} ({guest.id})</p>
           </div>
