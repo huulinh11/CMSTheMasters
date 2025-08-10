@@ -11,15 +11,18 @@ import { GuestNotification } from "@/types/notification";
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { BellRing, CheckCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface NotificationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   notifications: GuestNotification[];
+  readIds: Set<string>;
+  onMarkOneAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
 }
 
-export const NotificationDialog = ({ open, onOpenChange, notifications, onMarkAllAsRead }: NotificationDialogProps) => {
+export const NotificationDialog = ({ open, onOpenChange, notifications, readIds, onMarkOneAsRead, onMarkAllAsRead }: NotificationDialogProps) => {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex flex-col">
@@ -27,21 +30,31 @@ export const NotificationDialog = ({ open, onOpenChange, notifications, onMarkAl
           <SheetTitle>Thông báo</SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex-grow my-4">
-          <div className="space-y-4 pr-6">
+          <div className="space-y-2 pr-6">
             {notifications.length > 0 ? (
-              notifications.map(notification => (
-                <div key={notification.id} className="flex items-start gap-3">
-                  <div className="bg-primary/10 p-2 rounded-full mt-1">
-                    <BellRing className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-800">{notification.content}</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: vi })}
-                    </p>
-                  </div>
-                </div>
-              ))
+              notifications.map(notification => {
+                const isRead = readIds.has(notification.id);
+                return (
+                  <button
+                    key={notification.id}
+                    className={cn(
+                      "flex items-start gap-3 text-left p-2 rounded-lg w-full transition-colors",
+                      isRead ? "hover:bg-slate-50" : "hover:bg-primary/5"
+                    )}
+                    onClick={() => onMarkOneAsRead(notification.id)}
+                  >
+                    <div className={cn("p-2 rounded-full mt-1", isRead ? "bg-slate-100" : "bg-primary/10")}>
+                      <BellRing className={cn("h-5 w-5", isRead ? "text-slate-400" : "text-primary")} />
+                    </div>
+                    <div>
+                      <p className={cn("text-sm", isRead ? "text-slate-500" : "text-slate-800")}>{notification.content}</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: vi })}
+                      </p>
+                    </div>
+                  </button>
+                )
+              })
             ) : (
               <div className="text-center text-slate-500 py-12">
                 <p>Bạn chưa có thông báo nào.</p>

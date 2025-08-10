@@ -12,7 +12,7 @@ const PublicChecklistLayout: React.FC<PublicChecklistLayoutProps> = ({ children,
     <div className="min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] md:flex md:justify-center md:items-center md:p-4">
       <div className="w-full md:max-w-[420px] md:h-[90vh] md:max-h-[800px] bg-transparent md:shadow-lg relative md:rounded-2xl overflow-hidden flex flex-col min-h-screen md:min-h-0">
         {guestId && (
-          <header className="absolute top-0 right-0 z-20 p-2">
+          <header className="absolute top-0 right-0 z-20 p-4">
             <NotificationBell guestId={guestId} />
           </header>
         )}

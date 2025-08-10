@@ -40,21 +40,39 @@ const useGuestNotifications = (guestId: string | null) => {
     return notifications.filter(n => !readIds.has(n.id)).length;
   }, [notifications, readIds]);
 
-  const markAllAsRead = () => {
+  const updateLocalStorage = (newReadIds: Set<string>) => {
     if (!guestId) return;
-    const allIds = new Set(notifications.map(n => n.id));
-    setReadIds(allIds);
     try {
-      localStorage.setItem(`read_notifications_${guestId}`, JSON.stringify(Array.from(allIds)));
+      localStorage.setItem(`read_notifications_${guestId}`, JSON.stringify(Array.from(newReadIds)));
     } catch (error) {
       console.error("Failed to save read notifications to localStorage", error);
     }
+  };
+
+  const markOneAsRead = (notificationId: string) => {
+    setReadIds(prevReadIds => {
+      if (prevReadIds.has(notificationId)) {
+        return prevReadIds;
+      }
+      const newReadIds = new Set(prevReadIds);
+      newReadIds.add(notificationId);
+      updateLocalStorage(newReadIds);
+      return newReadIds;
+    });
+  };
+
+  const markAllAsRead = () => {
+    const allIds = new Set(notifications.map(n => n.id));
+    setReadIds(allIds);
+    updateLocalStorage(allIds);
   };
 
   return {
     notifications,
     isLoading,
     unreadCount,
+    readIds,
+    markOneAsRead,
     markAllAsRead,
   };
 };
