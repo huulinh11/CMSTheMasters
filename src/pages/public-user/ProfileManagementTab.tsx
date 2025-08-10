@@ -239,8 +239,10 @@ const ProfileManagementTab = () => {
   const guestsWithTemplateInfo = useMemo(() => {
     const defaultTemplatesByRole = new Map<string, ProfileTemplate>();
     templates.forEach(t => {
-      if (t.assigned_role) {
-        defaultTemplatesByRole.set(t.assigned_role, t);
+      if (t.assigned_roles) {
+        t.assigned_roles.forEach(role => {
+          defaultTemplatesByRole.set(role, t);
+        });
       }
     });
 
@@ -282,7 +284,7 @@ const ProfileManagementTab = () => {
 
   const handleEditProfile = (guest: CombinedGuest) => {
     let guestContent = guest.profile_content;
-    const activeTemplateId = guest.template_id || templates.find(t => t.assigned_role === guest.role)?.id;
+    const activeTemplateId = guest.template_id || templates.find(t => t.assigned_roles?.includes(guest.role))?.id;
     
     if (activeTemplateId && (!guest.profile_content || guest.profile_content.length === 0)) {
       const template = templates.find(t => t.id === activeTemplateId);
@@ -304,7 +306,7 @@ const ProfileManagementTab = () => {
   const handleSaveProfile = (content: ContentBlock[]) => {
     if (!editingGuest) return;
     let contentToSave = content;
-    const activeTemplateId = editingGuest.template_id || templates.find(t => t.assigned_role === editingGuest.role)?.id;
+    const activeTemplateId = editingGuest.template_id || templates.find(t => t.assigned_roles?.includes(editingGuest.role))?.id;
     
     if (activeTemplateId) {
       contentToSave = content.map(block => {

@@ -51,9 +51,9 @@ export const TemplateManagementDialog = ({
                   >
                     <div>
                       <p className="font-medium">{template.name}</p>
-                      {template.assigned_role && (
+                      {template.assigned_roles && template.assigned_roles.length > 0 && (
                         <p className="text-xs text-muted-foreground">
-                          Mặc định cho: {template.assigned_role}
+                          Mặc định cho: {template.assigned_roles.join(', ')}
                         </p>
                       )}
                     </div>

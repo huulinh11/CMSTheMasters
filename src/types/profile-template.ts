@@ -4,6 +4,6 @@ export type ProfileTemplate = {
   id: string;
   name: string;
   content: ContentBlock[] | null;
-  assigned_role: string | null;
+  assigned_roles: string[] | null;
   created_at: string;
 };

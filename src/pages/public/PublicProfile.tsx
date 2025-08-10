@@ -41,14 +41,32 @@ const PublicProfile = () => {
       return { contentBlocks: [], activeTemplate: null };
     }
 
-    const activeTemplateId = guest.template_id || templates.find(t => t.assigned_role === guest.role)?.id;
-    const template = templates.find(t => t.id === activeTemplateId) || null;
+    let content: ContentBlock[] | null = null;
+    let template: ProfileTemplate | null = null;
 
-    if (template) {
-        const baseContent = template.content || [];
+    // Priority 1: Custom content on the guest record (if it has content)
+    if (guest.profile_content && guest.profile_content.length > 0) {
+      content = guest.profile_content;
+    } 
+    // Priority 2: Directly assigned template
+    else if (guest.template_id) {
+      template = templates.find(t => t.id === guest.template_id) || null;
+      if (template) {
+        content = template.content;
+      }
+    } 
+    // Priority 3: Default template for the role
+    else {
+      template = templates.find(t => t.assigned_roles?.includes(guest.role)) || null;
+      if (template) {
+        content = template.content;
+      }
+    }
+
+    // If a template is active, merge guest data into it
+    if (template && content) {
         const userContentMap = new Map((guest.profile_content || []).map((b) => [b.id, b]));
-        
-        const mergedContent = baseContent.map((templateBlock): ContentBlock => {
+        const mergedContent = (content || []).map((templateBlock): ContentBlock => {
             const userBlock = userContentMap.get(templateBlock.id);
             if (!userBlock || userBlock.type !== templateBlock.type) {
                 return templateBlock;
@@ -90,7 +108,7 @@ const PublicProfile = () => {
         return { contentBlocks: mergedContent, activeTemplate: template };
     }
 
-    return { contentBlocks: guest.profile_content || [], activeTemplate: null };
+    return { contentBlocks: content || [], activeTemplate: null };
   }, [guest, templates]);
 
   const isLoading = isLoadingGuest || isLoadingTemplates;
