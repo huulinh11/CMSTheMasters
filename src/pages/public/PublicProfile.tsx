@@ -5,9 +5,9 @@ import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { ContentBlock, TextBlock } from "@/types/profile-content";
-import { Loader2 } from "lucide-react";
 import { ProfileTemplate } from "@/types/profile-template";
 import { VideoBlockPlayer } from "@/components/public-profile/VideoBlockPlayer";
+import CustomLoadingScreen from "@/components/public-profile/CustomLoadingScreen";
 
 type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: ContentBlock[] | null };
 
@@ -35,6 +35,15 @@ const PublicProfile = () => {
       if (error) throw error;
       return data || [];
     },
+  });
+
+  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['checklist_settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('checklist_settings').select('loader_config, loading_text_config').limit(1).single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    }
   });
 
   const { contentBlocks, activeTemplate } = useMemo(() => {
@@ -125,7 +134,7 @@ const PublicProfile = () => {
     setLoadedVideoIds(new Set());
   }, [guest]);
 
-  const isDataLoading = isLoadingGuest || isLoadingTemplates;
+  const isDataLoading = isLoadingGuest || isLoadingTemplates || isLoadingSettings;
   const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
   const showLoader = isDataLoading || (videoBlocks.length > 0 && !areAllVideosLoaded);
 
@@ -214,11 +223,7 @@ const PublicProfile = () => {
   }, [guest, contentBlocks, activeTemplate, handleVideoLoad]);
 
   if (isDataLoading) {
-    return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
   }
 
   if (!guest) {
@@ -235,8 +240,8 @@ const PublicProfile = () => {
   return (
     <>
       {showLoader && (
-        <div className="fixed inset-0 w-full h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center z-50">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <div className="fixed inset-0 w-full h-screen z-50">
+          <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />
         </div>
       )}
       <div style={{ visibility: showLoader ? 'hidden' : 'visible' }}>

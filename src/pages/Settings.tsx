@@ -8,6 +8,7 @@ const settingsItems = [
   { to: "/settings/tasks", label: "Tác vụ" },
   { to: "/settings/benefits", label: "Quyền lợi" },
   { to: "/settings/general", label: "Chung" },
+  { to: "/settings/loading-screen", label: "Cấu hình màn hình chờ profile" },
 ];
 
 const SettingsIndex = () => (
