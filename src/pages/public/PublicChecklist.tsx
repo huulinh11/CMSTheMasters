@@ -73,14 +73,22 @@ const PublicChecklist = () => {
 
   useEffect(() => {
     if (!data?.guest.id) return;
+    const guestId = data.guest.id;
 
     const channel = supabase
-      .channel(`public-checklist-${data.guest.id}`)
+      .channel(`public-checklist-${guestId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'guest_tasks', filter: `guest_id=eq.${data.guest.id}` },
+        { event: '*', schema: 'public', table: 'guest_tasks', filter: `guest_id=eq.${guestId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ['public_checklist', identifier] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'guest_notifications', filter: `guest_id=in.(${guestId},all)` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['guest_notifications', guestId] });
         }
       )
       .subscribe();
@@ -110,7 +118,7 @@ const PublicChecklist = () => {
   }
 
   return (
-    <PublicChecklistLayout>
+    <PublicChecklistLayout guestId={contextData.guest.id}>
       <Routes>
         <Route path="/" element={<Outlet context={contextData} />}>
           <Route index element={<PublicHomeTab />} />
