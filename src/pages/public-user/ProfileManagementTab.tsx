@@ -369,15 +369,15 @@ const ProfileManagementTab = () => {
         />
         <div className="flex-grow grid grid-cols-2 md:flex md:flex-grow-0 gap-2">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger><SelectValue placeholder="Lọc loại" /></SelectTrigger>
+            <SelectTrigger className="w-full md:w-auto"><SelectValue placeholder="Lọc loại" /></SelectTrigger>
             <SelectContent><SelectItem value="all">Tất cả loại</SelectItem><SelectItem value="Chức vụ">Chức vụ</SelectItem><SelectItem value="Khách mời">Khách mời</SelectItem></SelectContent>
           </Select>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger><SelectValue placeholder="Lọc vai trò" /></SelectTrigger>
+            <SelectTrigger className="w-full md:w-auto"><SelectValue placeholder="Lọc vai trò" /></SelectTrigger>
             <SelectContent><SelectItem value="all">Tất cả vai trò</SelectItem>{allRoleOptions.map(role => (<SelectItem key={role} value={role}>{role}</SelectItem>))}</SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger><SelectValue placeholder="Lọc trạng thái" /></SelectTrigger>
+            <SelectTrigger className="w-full md:w-auto"><SelectValue placeholder="Lọc trạng thái" /></SelectTrigger>
             <SelectContent><SelectItem value="all">Tất cả trạng thái</SelectItem>{['Trống', 'Đang chỉnh sửa', 'Hoàn tất'].map(status => (<SelectItem key={status} value={status}>{status}</SelectItem>))}</SelectContent>
           </Select>
           <Button variant="outline" onClick={() => setIsTemplateManagerOpen(true)} className="w-full">
