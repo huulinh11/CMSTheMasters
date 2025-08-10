@@ -257,7 +257,7 @@ const ProfileManagementTab = () => {
       } else {
         const defaultTemplate = defaultTemplatesByRole.get(guest.role);
         if (defaultTemplate) {
-          templateName = `${defaultTemplate.name} (Mặc định)`;
+          templateName = defaultTemplate.name;
         }
       }
       return { ...guest, templateName };
@@ -309,7 +309,9 @@ const ProfileManagementTab = () => {
   const handleSaveProfile = ({ content, shouldUnlinkTemplate }: { content: ContentBlock[], shouldUnlinkTemplate: boolean }) => {
     if (!editingGuest) return;
     let contentToSave = content;
-    if (editingGuest.template_id) {
+    const activeTemplateId = editingGuest.template_id || templates.find(t => t.assigned_roles?.includes(editingGuest.role))?.id;
+    
+    if (activeTemplateId) {
       contentToSave = content.map(block => {
         const dataOnlyBlock: any = { id: block.id, type: block.type };
         if (block.type === 'image') {
@@ -418,7 +420,7 @@ const ProfileManagementTab = () => {
       <EditTemplateDialog
         open={isEditTemplateOpen}
         onOpenChange={setIsEditTemplateOpen}
-        template={editingGuest}
+        template={editingTemplate}
         onSave={(template) => templateMutation.mutate(template)}
         isSaving={templateMutation.isPending}
         allRoles={roleConfigs}
