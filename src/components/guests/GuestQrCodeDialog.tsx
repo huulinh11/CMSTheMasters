@@ -53,7 +53,7 @@ export const GuestQrCodeDialog = ({ open, onOpenChange, guest }: GuestQrCodeDial
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const checkinUrl = `${origin}/event-tasks?guestId=${guest.id}`;
-  const checklistUrl = guest.phone ? `${origin}/checklist/${guest.phone}` : null;
+  const checklistUrl = `${origin}/checklist/${guest.id}`;
   const profileUrl = guest.slug ? `${origin}/profile/${guest.slug}` : null;
 
   return (

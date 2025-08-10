@@ -324,15 +324,13 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                     </div>
                   </div>
                 )}
-                {guest.phone && (
-                  <div className="flex items-center justify-between py-2 border-b">
-                    <p className="text-sm font-medium text-slate-800">Checklist Link</p>
-                    <div className="flex items-center gap-1 ml-2">
-                      <a href={`/checklist/${guest.phone}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
-                      <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.phone}`)}><Copy className="h-4 w-4" /></Button>
-                    </div>
+                <div className="flex items-center justify-between py-2 border-b">
+                  <p className="text-sm font-medium text-slate-800">Checklist Link</p>
+                  <div className="flex items-center gap-1 ml-2">
+                    <a href={`/checklist/${guest.id}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
+                    <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.id}`)}><Copy className="h-4 w-4" /></Button>
                   </div>
-                )}
+                </div>
                 {guest.role !== 'Vé trải nghiệm' && (
                   <div className="pt-4">
                     <Button className="w-full" onClick={() => setIsQrCodeDialogOpen(true)}>
