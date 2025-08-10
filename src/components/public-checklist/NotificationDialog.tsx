@@ -46,7 +46,7 @@ export const NotificationDialog = ({ open, onOpenChange, notifications, readIds,
                       onClick={() => onMarkOneAsRead(notification.id)}
                     >
                       <div className={cn("p-2 rounded-full mt-1", isRead ? "bg-slate-100" : "bg-primary/10")}>
-                        <BellRing className={cn("h-6 w-6", isRead ? "text-slate-400" : "text-primary")} />
+                        <BellRing className={cn("h-3 w-3", isRead ? "text-slate-400" : "text-primary")} />
                       </div>
                       <div>
                         <p className={cn("text-sm", isRead ? "text-slate-500" : "text-slate-800")}>{notification.content}</p>
