@@ -17,12 +17,12 @@ export const NotificationBell = ({ guestId }: NotificationBellProps) => {
       <Button
         variant="ghost"
         size="icon"
-        className="relative h-16 w-16"
+        className="relative h-20 w-20"
         onClick={() => setIsOpen(true)}
       >
-        <Bell className="h-10 w-10" />
+        <Bell className="h-12 w-12" />
         {unreadCount > 0 && (
-          <div className="absolute top-2 right-2 bg-red-500 text-white text-sm font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-white">
+          <div className="absolute top-2 right-2 bg-red-500 text-white text-base font-bold rounded-full h-7 w-7 flex items-center justify-center border-2 border-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </div>
         )}

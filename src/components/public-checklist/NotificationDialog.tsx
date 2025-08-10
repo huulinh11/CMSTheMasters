@@ -55,7 +55,7 @@ export const NotificationDialog = ({ open, onOpenChange, notifications, readIds,
                         </p>
                       </div>
                     </button>
-                    {index < notifications.length - 1 && <Separator className="my-2" />}
+                    {index < notifications.length - 1 && <Separator className="my-2 bg-slate-200" />}
                   </React.Fragment>
                 )
               })
