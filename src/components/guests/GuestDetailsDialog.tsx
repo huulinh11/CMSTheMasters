@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import BillPreviewDialog from "../Revenue/BillPreviewDialog";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
+import { ProfileStatus } from "@/types/vip-guest";
 
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
@@ -187,11 +188,20 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
   });
 
   const profileUpdateMutation = useMutation({
-    mutationFn: async ({ guest, content }: { guest: any, content: ContentBlock[] }) => {
+    mutationFn: async ({ guest, content, shouldUnlinkTemplate }: { guest: any, content: ContentBlock[], shouldUnlinkTemplate: boolean }) => {
       const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
+      const updatePayload: { profile_content: ContentBlock[], profile_status?: ProfileStatus, template_id?: string | null } = {
+        profile_content: content,
+      };
+      if (guest.profile_status === 'Trống' || !guest.profile_status) {
+        updatePayload.profile_status = 'Đang chỉnh sửa';
+      }
+      if (shouldUnlinkTemplate) {
+        updatePayload.template_id = null;
+      }
       const { error } = await supabase
         .from(tableName)
-        .update({ profile_content: content })
+        .update(updatePayload)
         .eq('id', guest.id);
       if (error) throw error;
     },
@@ -214,9 +224,9 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
     });
   };
 
-  const handleSaveProfile = (content: ContentBlock[]) => {
+  const handleSaveProfile = ({ content, shouldUnlinkTemplate }: { content: ContentBlock[], shouldUnlinkTemplate: boolean }) => {
     if (!data?.guest) return;
-    profileUpdateMutation.mutate({ guest: { ...data.guest, type: guestType === 'vip' ? 'Chức vụ' : 'Khách mời' }, content });
+    profileUpdateMutation.mutate({ guest: { ...data.guest, type: guestType === 'vip' ? 'Chức vụ' : 'Khách mời' }, content, shouldUnlinkTemplate });
   };
 
   const handleCopyLink = (path: string) => {
@@ -451,6 +461,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         guest={{ ...guest, type: guestType === 'vip' ? 'Chức vụ' : 'Khách mời' }}
         onSave={handleSaveProfile}
         isSaving={profileUpdateMutation.isPending}
+        isTemplateMode={!!guest.template_id}
       />
       {guestType === 'vip' ? (
         <PaymentDialog

@@ -103,13 +103,16 @@ const ProfileManagementTab = () => {
   });
 
   const profileUpdateMutation = useMutation({
-    mutationFn: async ({ guest, content }: { guest: CombinedGuest, content: ContentBlock[] }) => {
+    mutationFn: async ({ guest, content, shouldUnlinkTemplate }: { guest: CombinedGuest, content: ContentBlock[], shouldUnlinkTemplate: boolean }) => {
       const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
-      const updatePayload: { profile_content: ContentBlock[], profile_status?: ProfileStatus } = {
+      const updatePayload: { profile_content: ContentBlock[], profile_status?: ProfileStatus, template_id?: string | null } = {
         profile_content: content,
       };
       if (guest.profile_status === 'Trống' || !guest.profile_status) {
         updatePayload.profile_status = 'Đang chỉnh sửa';
+      }
+      if (shouldUnlinkTemplate) {
+        updatePayload.template_id = null;
       }
       const { error } = await supabase
         .from(tableName)
@@ -303,12 +306,10 @@ const ProfileManagementTab = () => {
     }
   };
 
-  const handleSaveProfile = (content: ContentBlock[]) => {
+  const handleSaveProfile = ({ content, shouldUnlinkTemplate }: { content: ContentBlock[], shouldUnlinkTemplate: boolean }) => {
     if (!editingGuest) return;
     let contentToSave = content;
-    const activeTemplateId = editingGuest.template_id || templates.find(t => t.assigned_roles?.includes(editingGuest.role))?.id;
-    
-    if (activeTemplateId) {
+    if (editingGuest.template_id) {
       contentToSave = content.map(block => {
         const dataOnlyBlock: any = { id: block.id, type: block.type };
         if (block.type === 'image') {
@@ -327,7 +328,7 @@ const ProfileManagementTab = () => {
         return dataOnlyBlock;
       });
     }
-    profileUpdateMutation.mutate({ guest: editingGuest, content: contentToSave });
+    profileUpdateMutation.mutate({ guest: editingGuest, content: contentToSave, shouldUnlinkTemplate });
   };
 
   const handleStatusChange = (guest: CombinedGuest, isCompleted: boolean) => {
@@ -417,7 +418,7 @@ const ProfileManagementTab = () => {
       <EditTemplateDialog
         open={isEditTemplateOpen}
         onOpenChange={setIsEditTemplateOpen}
-        template={editingTemplate}
+        template={editingGuest}
         onSave={(template) => templateMutation.mutate(template)}
         isSaving={templateMutation.isPending}
         allRoles={roleConfigs}
