@@ -13,7 +13,6 @@ const BottomNav = () => {
   const { openScanner } = useQrScanner();
 
   useEffect(() => {
-    // Close sheet on navigation
     if (isSheetOpen) {
       setIsSheetOpen(false);
     }
@@ -58,7 +57,7 @@ const BottomNav = () => {
                 <span className="text-xs font-medium">Khác</span>
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-3/4 p-0 bg-white flex flex-col h-auto max-h-[60vh]">
+            <SheetContent side="right" className="w-3/4 p-0 bg-white flex flex-col h-full">
               <SheetHeader className="p-4 text-left border-b flex-shrink-0">
                 <SheetTitle className="text-2xl font-bold text-slate-800">Khác</SheetTitle>
               </SheetHeader>
@@ -69,14 +68,14 @@ const BottomNav = () => {
                       <MoreLinkItem to={link.to} icon={link.icon} label={link.label} />
                     </li>
                   ))}
-                  <li>
-                    <button onClick={signOut} className="flex items-center p-4 hover:bg-slate-50 transition-colors w-full">
-                      <LogOut className="w-6 h-6 mr-4 text-red-500" />
-                      <span className="flex-1 text-red-500 font-medium text-left">Đăng xuất</span>
-                    </button>
-                  </li>
                 </ul>
               </ScrollArea>
+              <div className="mt-auto p-2 border-t flex-shrink-0">
+                <button onClick={signOut} className="flex items-center p-2 rounded-lg transition-colors w-full text-red-500 hover:bg-red-50">
+                  <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
+                  <span className="font-medium">Đăng xuất</span>
+                </button>
+              </div>
             </SheetContent>
           </Sheet>
         )}
