@@ -76,7 +76,9 @@ const PublicHomeTab = () => {
         <div className="space-y-3">
           <div className="flex items-center gap-4">
             {logoConfig?.imageUrl && (
-              <div className="w-1/4 flex-shrink-0" style={{
+              <div style={{
+                width: `${logoConfig.width || 25}%`,
+                flexShrink: 0,
                 marginTop: `${logoConfig.marginTop || 0}px`,
                 marginRight: `${logoConfig.marginRight || 0}px`,
                 marginBottom: `${logoConfig.marginBottom || 0}px`,
@@ -85,8 +87,7 @@ const PublicHomeTab = () => {
                 <img 
                   src={logoConfig.imageUrl} 
                   alt="Event Logo" 
-                  className="h-auto object-contain"
-                  style={{ width: `${logoConfig.width || 100}%` }}
+                  className="h-auto w-full object-contain"
                 />
               </div>
             )}
