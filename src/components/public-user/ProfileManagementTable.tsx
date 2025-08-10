@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời', profile_status?: ProfileStatus, effectiveStatus: ProfileStatus };
+type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời', profile_status?: ProfileStatus, effectiveStatus: ProfileStatus, templateName?: string };
 
 interface ProfileManagementTableProps {
   guests: CombinedGuest[];
@@ -42,6 +42,7 @@ export const ProfileManagementTable = ({ guests, onCopyLink, onEdit, onView, onS
           <TableRow>
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
+            <TableHead>Template</TableHead>
             <TableHead>Trạng thái Profile</TableHead>
             <TableHead className="text-right">Tác vụ</TableHead>
           </TableRow>
@@ -52,6 +53,7 @@ export const ProfileManagementTable = ({ guests, onCopyLink, onEdit, onView, onS
               <TableRow key={guest.id}>
                 <TableCell className="font-medium">{guest.name}</TableCell>
                 <TableCell>{guest.role}</TableCell>
+                <TableCell>{guest.templateName || 'N/A'}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-4">
                     <Badge className={cn(getStatusColor(guest.effectiveStatus))}>{guest.effectiveStatus}</Badge>
@@ -84,7 +86,7 @@ export const ProfileManagementTable = ({ guests, onCopyLink, onEdit, onView, onS
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={4} className="h-24 text-center">
+              <TableCell colSpan={5} className="h-24 text-center">
                 Không tìm thấy khách mời.
               </TableCell>
             </TableRow>

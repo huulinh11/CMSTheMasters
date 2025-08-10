@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời', profile_status?: ProfileStatus, effectiveStatus: ProfileStatus };
+type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời', profile_status?: ProfileStatus, effectiveStatus: ProfileStatus, templateName?: string };
 
 interface ProfileManagementCardsProps {
   guests: CombinedGuest[];
@@ -39,6 +39,10 @@ export const ProfileManagementCards = ({ guests, onCopyLink, onEdit, onView, onS
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="border-t border-slate-100 pt-3 space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">Template</span>
+                  <span className="font-medium">{guest.templateName || 'N/A'}</span>
+                </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500">Trạng thái Profile</span>
                   <Badge className={cn(getStatusColor(guest.effectiveStatus))}>{guest.effectiveStatus}</Badge>

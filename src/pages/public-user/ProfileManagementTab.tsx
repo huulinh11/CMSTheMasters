@@ -13,7 +13,7 @@ import { ProfileManagementCards } from "@/components/public-user/ProfileManageme
 import { ProfileManagementTable } from "@/components/public-user/ProfileManagementTable";
 import { generateGuestSlug } from "@/lib/slug";
 import { EditProfileDialog } from "@/components/public-user/EditProfileDialog";
-import { ContentBlock, TextBlock } from "@/types/profile-content";
+import { ContentBlock } from "@/types/profile-content";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { ProfileTemplate } from "@/types/profile-template";
@@ -236,8 +236,31 @@ const ProfileManagementTab = () => {
     return 'Đang chỉnh sửa';
   };
 
+  const guestsWithTemplateInfo = useMemo(() => {
+    const defaultTemplatesByRole = new Map<string, ProfileTemplate>();
+    templates.forEach(t => {
+      if (t.assigned_role) {
+        defaultTemplatesByRole.set(t.assigned_role, t);
+      }
+    });
+
+    return allGuests.map(guest => {
+      let templateName: string | undefined = undefined;
+      const assignedTemplate = templates.find(t => t.id === guest.template_id);
+      if (assignedTemplate) {
+        templateName = assignedTemplate.name;
+      } else {
+        const defaultTemplate = defaultTemplatesByRole.get(guest.role);
+        if (defaultTemplate) {
+          templateName = `${defaultTemplate.name} (Mặc định)`;
+        }
+      }
+      return { ...guest, templateName };
+    });
+  }, [allGuests, templates]);
+
   const filteredGuests = useMemo(() => {
-    return allGuests.filter(guest => {
+    return guestsWithTemplateInfo.filter(guest => {
       const searchMatch = 
         guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         guest.role.toLowerCase().includes(searchTerm.toLowerCase());
@@ -249,7 +272,7 @@ const ProfileManagementTab = () => {
 
       return searchMatch && statusMatch && typeMatch && roleMatch;
     });
-  }, [allGuests, searchTerm, statusFilter, typeFilter, roleFilter]);
+  }, [guestsWithTemplateInfo, searchTerm, statusFilter, typeFilter, roleFilter]);
 
   const handleCopyLink = (slug: string) => {
     const url = `${window.location.origin}/profile/${slug}`;
@@ -261,49 +284,10 @@ const ProfileManagementTab = () => {
     let guestContent = guest.profile_content;
     const activeTemplateId = guest.template_id || templates.find(t => t.assigned_role === guest.role)?.id;
     
-    if (activeTemplateId) {
+    if (activeTemplateId && (!guest.profile_content || guest.profile_content.length === 0)) {
       const template = templates.find(t => t.id === activeTemplateId);
       if (template) {
-        const userContentMap = new Map((guest.profile_content || []).map((b: ContentBlock) => [b.id, b]));
-        guestContent = (template.content || []).map((templateBlock: ContentBlock): ContentBlock => {
-          const userBlock = userContentMap.get(templateBlock.id);
-          if (!userBlock || userBlock.type !== templateBlock.type) {
-            return templateBlock;
-          }
-  
-          switch (templateBlock.type) {
-            case 'image':
-              if (userBlock.type === 'image') {
-                return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
-              }
-              break;
-            case 'video':
-              if (userBlock.type === 'video') {
-                return { ...templateBlock, videoUrl: userBlock.videoUrl };
-              }
-              break;
-            case 'text':
-              if (userBlock.type === 'text') {
-                const userItemsMap = new Map((userBlock.items || []).map(item => [item.id, item]));
-                const mergedItems = templateBlock.items.map(templateItem => {
-                  const userItem = userItemsMap.get(templateItem.id);
-                  if (!userItem || userItem.type !== templateItem.type) {
-                    return templateItem;
-                  }
-                  if (templateItem.type === 'text' && userItem.type === 'text') {
-                    return { ...templateItem, text: userItem.text };
-                  }
-                  if (templateItem.type === 'image' && userItem.type === 'image') {
-                    return { ...templateItem, imageUrl: userItem.imageUrl };
-                  }
-                  return templateItem;
-                });
-                return { ...templateBlock, items: mergedItems };
-              }
-              break;
-          }
-          return templateBlock;
-        });
+        guestContent = template.content;
       }
     }
     setEditingGuest({ ...guest, profile_content: guestContent });
@@ -417,7 +401,7 @@ const ProfileManagementTab = () => {
         guest={editingGuest}
         onSave={handleSaveProfile}
         isSaving={profileUpdateMutation.isPending}
-        isTemplateMode={!!(editingGuest?.template_id || templates.find(t => t.assigned_role === editingGuest?.role))}
+        isTemplateMode={!!editingGuest?.template_id}
       />
       <TemplateManagementDialog
         open={isTemplateManagerOpen}
