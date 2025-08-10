@@ -227,7 +227,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
   if (!guest) return null;
 
   const mainContent = (
-    <div className="flex-grow overflow-hidden flex flex-col h-full">
+    <div className="overflow-hidden flex flex-col h-full">
       {isTemplateMode && (
         <div className="p-3 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center text-yellow-800 flex-shrink-0">
           <AlertTriangle className="h-5 w-5 mr-3" />
