@@ -27,7 +27,7 @@ interface NotificationDialogProps {
 export const NotificationDialog = ({ open, onOpenChange, notifications, readIds, onMarkOneAsRead, onMarkAllAsRead }: NotificationDialogProps) => {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col">
+      <SheetContent side="bottom" className="flex flex-col h-[75vh]">
         <SheetHeader>
           <SheetTitle>Thông báo</SheetTitle>
         </SheetHeader>
