@@ -73,7 +73,7 @@ const PublicHomeTab = () => {
   return (
     <>
       <div className="p-4 space-y-6">
-        <div className="space-y-3">
+        <div>
           <div className="flex items-center gap-4">
             {logoConfig?.imageUrl && (
               <div style={{
@@ -97,7 +97,7 @@ const PublicHomeTab = () => {
               )}
             </div>
           </div>
-          <div className="text-center pt-3">
+          <div className="text-center pt-4">
             <p className="text-lg">Xin chào: <span className="font-bold">{guest.name}</span></p>
             <p className="text-slate-600">{guest.role} ({guest.id})</p>
           </div>
