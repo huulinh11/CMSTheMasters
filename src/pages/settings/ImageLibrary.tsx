@@ -27,7 +27,7 @@ const ImageLibrary = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
-  const { session } = useAuth();
+  const { session: authSession } = useAuth();
 
   const { data: files = [], isLoading } = useQuery({
     queryKey: ['image-library-files'],
@@ -69,7 +69,11 @@ const ImageLibrary = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (fileName: string) => {
-      if (!session) throw new Error("Not authenticated");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error("Xác thực không hợp lệ.");
+      }
+
       const { data, error } = await supabase.functions.invoke('manage-images', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,

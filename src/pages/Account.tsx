@@ -24,14 +24,18 @@ import { PageHeader } from "@/components/PageHeader";
 const AccountPage = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
-  const { session } = useAuth();
+  const { session: authSession } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
 
   const { data: users = [], isLoading, error: queryError } = useQuery<AppUser[]>({
     queryKey: ['app_users'],
     queryFn: async () => {
-      if (!session) return [];
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error("Xác thực không hợp lệ.");
+      }
+
       const { data, error } = await supabase.functions.invoke('manage-users', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -48,12 +52,16 @@ const AccountPage = () => {
       }
       return data;
     },
-    enabled: !!session,
+    enabled: !!authSession,
   });
 
   const mutation = useMutation({
     mutationFn: async (payload: { method: string, payload: any }) => {
-      if (!session) throw new Error("Not authenticated");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error("Xác thực không hợp lệ.");
+      }
+
       const { data, error } = await supabase.functions.invoke('manage-users', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
