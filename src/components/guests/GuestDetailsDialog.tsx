@@ -45,11 +45,11 @@ import { GuestQrCodeDialog } from "./GuestQrCodeDialog";
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
   return (
-    <div className="flex items-start py-1.5 md:py-2 border-b last:border-b-0">
-      <Icon className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-slate-500" />
-      <div className="flex-1">
+    <div className="flex items-center py-2.5 border-b last:border-b-0">
+      <Icon className="h-4 w-4 mr-3 flex-shrink-0 text-slate-500" />
+      <div className="flex-1 flex justify-between items-center gap-4">
         <p className="text-sm text-slate-500">{label}</p>
-        {value && <p className="font-medium text-slate-800 whitespace-pre-wrap">{value}</p>}
+        {value && <p className="font-medium text-slate-800 text-right whitespace-pre-wrap">{value}</p>}
         {children}
       </div>
     </div>
@@ -535,13 +535,13 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
     <>
       {isMobile ? (
         <Drawer open={open} onOpenChange={onOpenChange}>
-          <DrawerContent className="h-[calc(100dvh-60px)]">
+          <DrawerContent className="h-[calc(100dvh-60px)] bg-gradient-to-br from-[#fff5ea] to-[#e5b899]">
             {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DrawerContent>
         </Drawer>
       ) : (
         <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="max-w-7xl h-[90vh] p-0">
+          <DialogContent className="max-w-7xl h-[90vh] p-0 bg-gradient-to-br from-[#fff5ea] to-[#e5b899]">
             {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DialogContent>
         </Dialog>
