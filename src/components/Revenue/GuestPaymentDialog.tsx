@@ -47,7 +47,7 @@ const GuestPaymentDialog = ({ guest, open, onOpenChange }: GuestPaymentDialogPro
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["guest_revenue"] });
+      queryClient.invalidateQueries({ queryKey: ["guest_revenue_details"] });
       showSuccess("Thanh toán thành công!");
     },
     onError: (error) => {
