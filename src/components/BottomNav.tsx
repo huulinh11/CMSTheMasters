@@ -54,12 +54,12 @@ const BottomNav = () => {
 
   return (
     <footer className="bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:hidden flex-shrink-0">
-      <nav className="flex justify-around items-center h-16 relative">
+      <nav className="flex items-center h-16 relative">
         {leftItems.map((item) => (
           <NavItem key={item.to} to={item.to} icon={item.icon} label={item.mobileLabel || item.label} end={item.end} />
         ))}
 
-        <div className="w-1/5 flex justify-center">
+        <div className="flex-1 flex justify-center">
           <button
             onClick={openScanner}
             className="absolute -top-5 bg-primary text-primary-foreground rounded-full h-16 w-16 flex items-center justify-center shadow-lg border-4 border-white"
@@ -75,7 +75,7 @@ const BottomNav = () => {
         {moreLinks.length > 0 && (
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
-              <button className={`flex flex-col items-center justify-center w-1/5 h-full transition-colors ${isMorePageActive ? "text-primary" : "text-slate-500"}`}>
+              <button className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${isMorePageActive ? "text-primary" : "text-slate-500"}`}>
                 <MoreHorizontal className="w-6 h-6 mb-1" />
                 <span className="text-xs font-medium">Khác</span>
               </button>
@@ -119,7 +119,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, end }) => (
     to={to}
     end={end}
     className={({ isActive }) =>
-      `flex flex-col items-center justify-center w-full h-full transition-colors ${
+      `flex flex-col items-center justify-center flex-1 h-full transition-colors ${
         isActive ? "text-primary" : "text-slate-500"
       }`
     }
