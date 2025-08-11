@@ -47,9 +47,9 @@ const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementTy
   return (
     <div className="flex items-center py-2.5 border-b last:border-b-0">
       <Icon className="h-4 w-4 mr-3 flex-shrink-0 text-slate-500" />
-      <div className="flex-1 flex justify-between items-center gap-4">
-        <p className="text-sm text-slate-500">{label}</p>
-        {value && <p className="font-medium text-slate-800 text-right whitespace-pre-wrap">{value}</p>}
+      <p className="text-sm text-slate-500 flex-shrink-0">{label}</p>
+      <div className="flex-1 flex justify-end items-center gap-2 ml-4">
+        {value && <p className="font-medium text-slate-800 text-right">{value}</p>}
         {children}
       </div>
     </div>
@@ -77,7 +77,7 @@ const MaterialsViewerDialog = ({ open, onOpenChange, content, guestName, onEdit 
   </Dialog>
 );
 
-const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs }: { guestId: string, guestType: 'vip' | 'regular', onEdit: (guest: any) => void, onDelete: (guestId: string) => void, roleConfigs: any[] }) => {
+const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs, isMobile }: { guestId: string, guestType: 'vip' | 'regular', onEdit: (guest: any) => void, onDelete: (guestId: string) => void, roleConfigs: any[], isMobile: boolean }) => {
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(false);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [isMediaDialogOpen, setIsMediaDialogOpen] = useState(false);
@@ -279,7 +279,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                     <p className="text-slate-500 mt-1">{guest.role} ({guest.id})</p>
                 </div>
             </div>
-            {canDelete && (
+            {canDelete && !isMobile && (
               <Button variant="destructive" onClick={() => setIsDeleteAlertOpen(true)}>
                 <Trash2 className="mr-2 h-4 w-4" /> Xóa
               </Button>
@@ -301,8 +301,8 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                 {guest.secondaryInfo && <InfoRow icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} />}
                 <InfoRow icon={FileText} label="Ghi chú" value={guest.notes} />
                 <InfoRow icon={FileText} label="Tư liệu">
-                  <div className="flex justify-between items-center w-full">
-                    <p className="font-medium text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px] sm:max-w-[200px]">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] sm:max-w-[150px]">
                       {guest.materials || "Chưa có"}
                     </p>
                     <Button variant="outline" size="sm" onClick={() => setIsMaterialsOpen(true)} disabled={!guest.materials}>Xem</Button>
@@ -326,15 +326,13 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                   <InfoRow icon={Info} label="Nguồn thanh toán" value={revenue.payment_source} />
                   {revenue.is_upsaled && (
                     <InfoRow icon={FileText} label="Bill">
-                      <div className="flex justify-between items-center w-full">
-                        {revenue.bill_image_url ? (
-                          <Button variant="link" className="p-0 h-auto font-medium" onClick={() => setBillPreviewUrl(revenue.bill_image_url)}>
-                            Xem bill
-                          </Button>
-                        ) : (
-                          <p className="font-medium text-slate-500">Trống</p>
-                        )}
-                      </div>
+                      {revenue.bill_image_url ? (
+                        <Button variant="link" className="p-0 h-auto font-medium" onClick={() => setBillPreviewUrl(revenue.bill_image_url)}>
+                          Xem bill
+                        </Button>
+                      ) : (
+                        <p className="font-medium text-slate-500">Trống</p>
+                      )}
                     </InfoRow>
                   )}
                   <div className="flex gap-2 mt-4">
@@ -359,12 +357,17 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                     )}
                   </div>
                   <div className="mt-4">
-                    <h4 className="font-semibold mb-2 flex items-center"><History className="mr-2 h-4 w-4" /> Lịch sử giao dịch</h4>
-                    <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
-                      {payments.map((p: any) => (<div key={p.id} className="flex justify-between"><span>Thanh toán ({format(new Date(p.created_at), 'dd/MM/yy')})</span><span className="font-medium text-green-600">{formatCurrency(p.amount)}</span></div>))}
-                      {upsaleHistory.map((u: any) => (<div key={u.id} className="flex justify-between"><span>Upsale ({format(new Date(u.created_at), 'dd/MM/yy')})</span><span className="font-medium text-blue-600">{formatCurrency(u.to_sponsorship - u.from_sponsorship)}</span></div>))}
-                      {payments.length === 0 && upsaleHistory.length === 0 && <p className="text-slate-500">Chưa có giao dịch.</p>}
-                    </div>
+                    {payments.length === 0 && upsaleHistory.length === 0 ? (
+                      <InfoRow icon={History} label="Lịch sử giao dịch" value="Chưa có giao dịch." />
+                    ) : (
+                      <>
+                        <h4 className="font-semibold mb-2 flex items-center"><History className="mr-2 h-4 w-4" /> Lịch sử giao dịch</h4>
+                        <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
+                          {payments.map((p: any) => (<div key={p.id} className="flex justify-between"><span>Thanh toán ({format(new Date(p.created_at), 'dd/MM/yy')})</span><span className="font-medium text-green-600">{formatCurrency(p.amount)}</span></div>))}
+                          {upsaleHistory.map((u: any) => (<div key={u.id} className="flex justify-between"><span>Upsale ({format(new Date(u.created_at), 'dd/MM/yy')})</span><span className="font-medium text-blue-600">{formatCurrency(u.to_sponsorship - u.from_sponsorship)}</span></div>))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -423,6 +426,13 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
           </div>
         </div>
       </ScrollArea>
+      {isMobile && canDelete && (
+        <div className="p-4 border-t flex-shrink-0 bg-white/50">
+          <Button variant="destructive" className="w-full" onClick={() => setIsDeleteAlertOpen(true)}>
+            <Trash2 className="mr-2 h-4 w-4" /> Xóa khách mời
+          </Button>
+        </div>
+      )}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -535,14 +545,14 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
     <>
       {isMobile ? (
         <Drawer open={open} onOpenChange={onOpenChange}>
-          <DrawerContent className="h-[calc(100dvh-60px)] bg-gradient-to-br from-[#fff5ea] to-[#e5b899]">
-            {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
+          <DrawerContent className="h-[calc(100dvh-60px)] bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col">
+            {guestId && guestType && <GuestDetailsContent isMobile={isMobile} guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DrawerContent>
         </Drawer>
       ) : (
         <Dialog open={open} onOpenChange={onOpenChange}>
           <DialogContent className="max-w-7xl h-[90vh] p-0 bg-gradient-to-br from-[#fff5ea] to-[#e5b899]">
-            {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
+            {guestId && guestType && <GuestDetailsContent isMobile={isMobile} guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DialogContent>
         </Dialog>
       )}
