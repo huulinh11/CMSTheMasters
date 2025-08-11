@@ -16,6 +16,7 @@ import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import BillPreviewDialog from "./BillPreviewDialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface GuestHistoryDialogProps {
   guest: GuestRevenue | null;
@@ -23,43 +24,12 @@ interface GuestHistoryDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type PaymentHistoryItem = {
-  type: 'payment';
-  id: string;
-  created_at: string;
-  amount: number;
-};
-
-type UpsaleHistoryItem = {
-  type: 'upsale';
-  id: string;
-  created_at: string;
-  from_role: string;
-  from_sponsorship: number;
-  to_role: string;
-  to_sponsorship: number;
-  upsaled_by?: string | null;
-  bill_image_url?: string | null;
-};
-
-type ServiceHistoryItem = {
-  type: 'service';
-  id: string;
-  created_at: string;
-  service_name: string;
-  price: number;
-};
-
-type ServicePaymentHistoryItem = {
-  type: 'service_payment';
-  id: string;
-  created_at: string;
-  amount: number;
-  service_name: string;
-  bill_image_url?: string | null;
-};
-
-type CombinedHistoryItem = PaymentHistoryItem | UpsaleHistoryItem | ServiceHistoryItem | ServicePaymentHistoryItem;
+type PaymentHistoryItem = { type: 'payment'; id: string; created_at: string; amount: number; };
+type UpsaleHistoryItem = { type: 'upsale'; id: string; created_at: string; from_role: string; from_sponsorship: number; to_role: string; to_sponsorship: number; upsaled_by?: string | null; bill_image_url?: string | null; };
+type ServicePaymentHistoryItem = { type: 'service_payment'; id: string; created_at: string; amount: number; service_name: string; bill_image_url?: string | null; };
+type ServiceCreatedHistoryItem = { type: 'service_created'; id: string; created_at: string; service_name: string; price: number; is_free_trial: boolean; };
+type ServiceConvertedHistoryItem = { type: 'service_converted'; id: string; created_at: string; service_name: string; from_price: number; to_price: number; };
+type CombinedHistoryItem = PaymentHistoryItem | UpsaleHistoryItem | ServicePaymentHistoryItem | ServiceCreatedHistoryItem | ServiceConvertedHistoryItem;
 
 const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogProps) => {
   const [billPreviewUrl, setBillPreviewUrl] = useState<string | null>(null);
@@ -71,36 +41,41 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
       
       const paymentsPromise = supabase.from('guest_payments').select('id, created_at, amount').eq('guest_id', guest.id);
       const upsaleHistoryPromise = supabase.from('guest_upsale_history').select('id, created_at, from_role, to_role, from_sponsorship, to_sponsorship, upsaled_by, bill_image_url').eq('guest_id', guest.id);
-      const guestServicesPromise = supabase.from('guest_services').select('id, created_at, service_id, price').eq('guest_id', guest.id);
+      const guestServicesPromise = supabase.from('guest_services').select('id, service_id').eq('guest_id', guest.id);
 
-      const [{ data: payments, error: paymentsError }, { data: upsaleEvents, error: upsaleError }, { data: guestServices, error: guestServicesError }] = await Promise.all([paymentsPromise, upsaleHistoryPromise, guestServicesPromise]);
-
-      if (paymentsError) throw paymentsError;
-      if (upsaleError) throw upsaleError;
-      if (guestServicesError) throw guestServicesError;
-
-      const serviceIds = (guestServices || []).map(s => s.service_id);
-      let serviceNamesMap = new Map<string, string>();
-      if (serviceIds.length > 0) {
-        const { data: serviceDetails, error: serviceDetailsError } = await supabase.from('services').select('id, name').in('id', serviceIds);
-        if (serviceDetailsError) throw serviceDetailsError;
-        serviceNamesMap = new Map(serviceDetails.map(s => [s.id, s.name]));
-      }
-
+      const [{ data: payments }, { data: upsaleEvents }, { data: guestServices }] = await Promise.all([paymentsPromise, upsaleHistoryPromise, guestServicesPromise]);
+      
       const guestServiceIds = (guestServices || []).map(gs => gs.id);
-      const { data: servicePayments, error: servicePaymentsError } = guestServiceIds.length > 0
-        ? await supabase.from('service_payments').select('*').in('guest_service_id', guestServiceIds)
-        : { data: [], error: null };
-      if (servicePaymentsError) throw servicePaymentsError;
+      const serviceEventsPromise = guestServiceIds.length > 0 ? supabase.from('guest_service_event_log').select('*').in('guest_service_id', guestServiceIds) : Promise.resolve({ data: [], error: null });
+      const servicePaymentsPromise = guestServiceIds.length > 0 ? supabase.from('service_payments').select('*').in('guest_service_id', guestServiceIds) : Promise.resolve({ data: [], error: null });
+      
+      const [{ data: serviceEvents }, { data: servicePayments }] = await Promise.all([serviceEventsPromise, servicePaymentsPromise]);
 
-      const guestServiceIdToServiceIdMap = new Map((guestServices || []).map(gs => [gs.id, gs.service_id]));
+      const allServiceIds = (serviceEvents || []).map(e => e.details.service_id);
+      let serviceNamesMap = new Map<string, string>();
+      if (allServiceIds.length > 0) {
+        const { data: serviceDetails } = await supabase.from('services').select('id, name').in('id', allServiceIds);
+        serviceNamesMap = new Map((serviceDetails || []).map(s => [s.id, s.name]));
+      }
+      
+      const guestServiceIdToServiceIdMap = new Map((serviceEvents || []).map(e => [e.guest_service_id, e.details.service_id]));
 
       const paymentHistory: CombinedHistoryItem[] = (payments || []).map(p => ({ type: 'payment', ...p }));
       const upsaleHistory: CombinedHistoryItem[] = (upsaleEvents || []).map(u => ({ type: 'upsale', ...u }));
-      const serviceHistory: CombinedHistoryItem[] = (guestServices || []).map(s => ({ type: 'service', ...s, service_name: serviceNamesMap.get(s.service_id) || 'Dịch vụ không xác định' }));
       const servicePaymentHistory: CombinedHistoryItem[] = (servicePayments || []).map(p => ({ type: 'service_payment', ...p, service_name: serviceNamesMap.get(guestServiceIdToServiceIdMap.get(p.guest_service_id) || '') || 'Dịch vụ không xác định' }));
+      
+      const serviceEventsHistory = (serviceEvents || []).reduce<CombinedHistoryItem[]>((acc, e) => {
+        const serviceName = serviceNamesMap.get(e.details.service_id) || 'Dịch vụ không xác định';
+        if (e.event_type === 'created') {
+          acc.push({ type: 'service_created', id: e.id, created_at: e.created_at, service_name: serviceName, price: e.details.price, is_free_trial: e.details.is_free_trial });
+        }
+        if (e.event_type === 'converted_from_trial') {
+          acc.push({ type: 'service_converted', id: e.id, created_at: e.created_at, service_name: serviceName, from_price: e.details.from.price, to_price: e.details.to.price });
+        }
+        return acc;
+      }, []);
 
-      const combined = [...paymentHistory, ...upsaleHistory, ...serviceHistory, ...servicePaymentHistory];
+      const combined = [...paymentHistory, ...upsaleHistory, ...servicePaymentHistory, ...serviceEventsHistory];
       combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
       return combined;
@@ -132,7 +107,8 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
                         <TableCell>
                           {item.type === 'payment' && (<div><div className="font-semibold">Thanh toán tài trợ</div><div className="text-green-600 font-medium">{formatCurrency(item.amount)}</div></div>)}
                           {item.type === 'upsale' && (<div><div className="font-semibold text-blue-600">Upsale</div><div className="flex items-center text-sm flex-wrap"><span>{item.from_role} ({formatCurrency(item.from_sponsorship)})</span><ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" /><span>{item.to_role} ({formatCurrency(item.to_sponsorship)})</span></div>{item.upsaled_by && (<div className="text-xs text-muted-foreground mt-1">bởi {item.upsaled_by}</div>)}{item.bill_image_url && (<Button variant="link" className="text-sm p-0 h-auto mt-1" onClick={() => setBillPreviewUrl(item.bill_image_url)}>Xem bill</Button>)}</div>)}
-                          {item.type === 'service' && (<div><div className="font-semibold text-purple-600">Mua Dịch vụ</div><div>{item.service_name}</div><div className="text-purple-600 font-medium">{formatCurrency(item.price)}</div></div>)}
+                          {item.type === 'service_created' && (<div><div className="font-semibold text-purple-600">Mua Dịch vụ</div><div>{item.service_name} {item.is_free_trial && <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}</div><div className="text-purple-600 font-medium">{formatCurrency(item.price)}</div></div>)}
+                          {item.type === 'service_converted' && (<div><div className="font-semibold text-orange-600">Chuyển đổi Dịch vụ</div><div>{item.service_name}</div><div className="text-orange-600 font-medium">Từ {formatCurrency(item.from_price)} thành {formatCurrency(item.to_price)}</div></div>)}
                           {item.type === 'service_payment' && (<div><div className="font-semibold text-teal-600">Thanh toán Dịch vụ</div><div>{item.service_name}</div><div className="text-green-600 font-medium">{formatCurrency(item.amount)}</div>{item.bill_image_url && (<Button variant="link" className="text-sm p-0 h-auto mt-1" onClick={() => setBillPreviewUrl(item.bill_image_url)}>Xem bill</Button>)}</div>)}
                         </TableCell>
                       </TableRow>
