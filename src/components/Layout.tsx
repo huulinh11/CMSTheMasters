@@ -10,23 +10,12 @@ import { showError } from "@/utils/toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-const audioPlayer = {
-  audio: null as HTMLAudioElement | null,
-  init(url: string) {
-    if (this.audio?.src !== url) {
-      this.audio = new Audio(url);
-    }
-  },
-  play() {
-    this.audio?.play().catch(err => console.error("Audio play failed:", err));
-  }
-};
-
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isMobile = useIsMobile();
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const isProcessingScanRef = useRef(false);
   const navigate = useNavigate();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: settings } = useQuery({
     queryKey: ['checklist_settings_for_scanner'],
@@ -39,11 +28,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   useEffect(() => {
     if (settings?.qr_scan_sound_url) {
-      audioPlayer.init(settings.qr_scan_sound_url);
+      if (!audioRef.current) {
+        audioRef.current = new Audio(settings.qr_scan_sound_url);
+      } else if (audioRef.current.src !== settings.qr_scan_sound_url) {
+        audioRef.current.src = settings.qr_scan_sound_url;
+      }
     }
   }, [settings]);
 
-  // Effect này sẽ đặt lại khóa xử lý một cách đáng tin cậy mỗi khi máy quét được đóng.
   useEffect(() => {
     if (!isScannerOpen) {
       isProcessingScanRef.current = false;
@@ -58,9 +50,32 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       const guestId = url.searchParams.get('guestId');
       if (guestId) {
         isProcessingScanRef.current = true;
-        audioPlayer.play();
-        setIsScannerOpen(false);
-        navigate(`/event-tasks?guestId=${guestId}`);
+        
+        const navigateToGuest = () => {
+          setIsScannerOpen(false);
+          navigate(`/event-tasks?guestId=${guestId}`);
+        };
+
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          const playPromise = audioRef.current.play();
+
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                // Give the sound a moment to be heard before navigating
+                setTimeout(navigateToGuest, 200);
+              })
+              .catch(error => {
+                console.error("Audio play failed:", error);
+                navigateToGuest(); // Navigate even if sound fails
+              });
+          } else {
+            navigateToGuest(); // Fallback for older browsers
+          }
+        } else {
+          navigateToGuest(); // Navigate if no sound is configured
+        }
       } else {
         showError("Mã QR không hợp lệ (thiếu guestId).");
       }
@@ -70,7 +85,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }, [navigate]);
 
   const openScanner = () => {
-    // Đặt lại khóa ngay lập tức khi mở, để đảm bảo an toàn.
     isProcessingScanRef.current = false;
     setIsScannerOpen(true);
   };
@@ -87,7 +101,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
         <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
           <DialogContent className="p-0 bg-transparent border-none max-w-md">
-            {/* Chỉ render máy quét khi nó được mở */}
             {isScannerOpen && <QrScannerComponent onScan={handleScan} onClose={() => setIsScannerOpen(false)} />}
           </DialogContent>
         </Dialog>
