@@ -310,36 +310,6 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                 </InfoRow>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><LinkIcon className="mr-2" /> Liên kết</CardTitle></CardHeader>
-              <CardContent className="p-3 md:p-4 pt-0">
-                {guest.slug && (
-                  <div className="flex items-center justify-between py-2 border-b">
-                    <p className="text-sm font-medium text-slate-800">Profile Link</p>
-                    <div className="flex items-center gap-1 ml-2">
-                      <Button size="icon" variant="outline" onClick={() => setIsProfileDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
-                      <a href={`/profile/${guest.slug}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
-                      <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/profile/${guest.slug}`)}><Copy className="h-4 w-4" /></Button>
-                    </div>
-                  </div>
-                )}
-                <div className="flex items-center justify-between py-2 border-b">
-                  <p className="text-sm font-medium text-slate-800">Checklist Link</p>
-                  <div className="flex items-center gap-1 ml-2">
-                    <a href={`/checklist/${guest.id}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
-                    <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.id}`)}><Copy className="h-4 w-4" /></Button>
-                  </div>
-                </div>
-                {guest.role !== 'Vé trải nghiệm' && (
-                  <div className="pt-4">
-                    <Button className="w-full" onClick={() => setIsQrCodeDialogOpen(true)}>
-                      <QrCode className="mr-2 h-4 w-4" /> Xem tất cả mã QR
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
           <div className="space-y-6">
@@ -419,6 +389,35 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                   {tasksForRole.map(taskName => (<div key={taskName} className="flex items-center space-x-2"><Checkbox id={taskName} checked={tasks.find(t => t.task_name === taskName)?.is_completed} disabled /><Label htmlFor={taskName}>{taskName}</Label></div>))}
                   {tasksForRole.length === 0 && <p className="text-slate-500">Không có tác vụ nào cho vai trò này.</p>}
                 </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><LinkIcon className="mr-2" /> Liên kết</CardTitle></CardHeader>
+              <CardContent className="p-3 md:p-4 pt-0">
+                {guest.slug && (
+                  <div className="flex items-center justify-between py-2 border-b">
+                    <p className="text-sm font-medium text-slate-800">Profile Link</p>
+                    <div className="flex items-center gap-1 ml-2">
+                      <Button size="icon" variant="outline" onClick={() => setIsProfileDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
+                      <a href={`/profile/${guest.slug}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
+                      <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/profile/${guest.slug}`)}><Copy className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center justify-between py-2 border-b">
+                  <p className="text-sm font-medium text-slate-800">Checklist Link</p>
+                  <div className="flex items-center gap-1 ml-2">
+                    <a href={`/checklist/${guest.id}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
+                    <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.id}`)}><Copy className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+                {guest.role !== 'Vé trải nghiệm' && (
+                  <div className="pt-4">
+                    <Button className="w-full" onClick={() => setIsQrCodeDialogOpen(true)}>
+                      <QrCode className="mr-2 h-4 w-4" /> Xem tất cả mã QR
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
