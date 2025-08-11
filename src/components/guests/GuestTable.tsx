@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Trash2, Edit, Eye } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { Guest } from "@/types/guest";
 import { RoleConfiguration } from "@/types/role-configuration";
 
@@ -108,10 +108,6 @@ export const GuestTable = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onView(guest)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        Xem chi tiết
-                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onEdit(guest)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Sửa

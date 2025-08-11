@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CombinedGuestRevenue } from "@/pages/Revenue";
 import { formatCurrency } from "@/lib/utils";
-import { Eye, Edit, CreditCard, History, TrendingUp } from "lucide-react";
+import { Edit, CreditCard, History, TrendingUp } from "lucide-react";
 
 interface CombinedRevenueCardsProps {
   guests: CombinedGuestRevenue[];
@@ -27,7 +27,11 @@ export const CombinedRevenueCards = ({ guests, onView, onEdit, onPay, onHistory,
         guests.map((guest) => (
           <Card key={guest.id} className="bg-white shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold text-slate-800">{guest.name}</CardTitle>
+              <CardTitle className="text-lg font-semibold text-slate-800">
+                <button onClick={() => onView(guest)} className="text-left hover:underline">
+                  {guest.name}
+                </button>
+              </CardTitle>
               <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
@@ -38,7 +42,6 @@ export const CombinedRevenueCards = ({ guests, onView, onEdit, onPay, onHistory,
                 {guest.type === 'Khách mời' && <InfoRow label="Nguồn TT" value={guest.payment_source || 'N/A'} />}
               </div>
               <div className="flex gap-2 pt-2">
-                <Button className="flex-1" variant="outline" size="sm" onClick={() => onView(guest)}><Eye className="mr-2 h-4 w-4" /> Xem</Button>
                 <Button className="flex-1" variant="outline" size="sm" onClick={() => onEdit(guest)}><Edit className="mr-2 h-4 w-4" /> Sửa</Button>
                 <Button className="flex-1" size="sm" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}><CreditCard className="mr-2 h-4 w-4" /> TT</Button>
               </div>

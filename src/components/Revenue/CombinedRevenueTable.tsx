@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CombinedGuestRevenue } from "@/pages/Revenue";
 import { formatCurrency } from "@/lib/utils";
-import { Eye, Edit, CreditCard, History, TrendingUp } from "lucide-react";
+import { Edit, CreditCard, History, TrendingUp } from "lucide-react";
 
 interface CombinedRevenueTableProps {
   guests: CombinedGuestRevenue[];
@@ -42,7 +42,11 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
             guests.map((guest) => (
               <TableRow key={guest.id}>
                 <TableCell>{guest.id}</TableCell>
-                <TableCell className="font-medium">{guest.name}</TableCell>
+                <TableCell className="font-medium">
+                  <button onClick={() => onView(guest)} className="text-left hover:underline">
+                    {guest.name}
+                  </button>
+                </TableCell>
                 <TableCell>{guest.role}</TableCell>
                 <TableCell>{guest.type}</TableCell>
                 <TableCell>{formatCurrency(guest.sponsorship)}</TableCell>
@@ -50,7 +54,6 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
                 <TableCell className="text-red-600">{formatCurrency(guest.unpaid)}</TableCell>
                 <TableCell>{guest.type === 'Khách mời' ? guest.payment_source : 'N/A'}</TableCell>
                 <TableCell className="text-right space-x-1">
-                  <Button variant="ghost" size="icon" onClick={() => onView(guest)}><Eye className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}><Edit className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}><CreditCard className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => onHistory(guest)}><History className="h-4 w-4" /></Button>
