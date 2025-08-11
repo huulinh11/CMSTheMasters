@@ -24,7 +24,7 @@ import { PageHeader } from "@/components/PageHeader";
 const AccountPage = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
 
@@ -93,8 +93,12 @@ const AccountPage = () => {
     mutation.mutate({ method, payload: user });
   };
 
-  const handleDeleteUser = (id: string) => {
-    mutation.mutate({ method: 'DELETE_USER', payload: { id } });
+  const handleDeleteUser = (userToDelete: AppUser) => {
+    if (profile?.id === userToDelete.id) {
+      showError("Bạn không thể tự xóa tài khoản của mình.");
+      return;
+    }
+    mutation.mutate({ method: 'DELETE_USER', payload: { id: userToDelete.id } });
   };
 
   const handleOpenDialog = (user: AppUser | null) => {
@@ -128,7 +132,7 @@ const AccountPage = () => {
                 <p><strong>Bộ phận:</strong> {user.department}</p>
                 <div className="flex gap-2 pt-2">
                   <Button variant="outline" size="sm" onClick={() => handleOpenDialog(user)}><Edit className="mr-2 h-4 w-4" /> Sửa</Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user.id)}><Trash2 className="mr-2 h-4 w-4" /> Xóa</Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user)} disabled={profile?.id === user.id}><Trash2 className="mr-2 h-4 w-4" /> Xóa</Button>
                 </div>
               </CardContent>
             </Card>
@@ -155,7 +159,7 @@ const AccountPage = () => {
                   <TableCell><Badge>{user.role}</Badge></TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="sm" onClick={() => handleOpenDialog(user)}>Sửa</Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user.id)}>Xóa</Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user)} disabled={profile?.id === user.id}>Xóa</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -170,6 +174,7 @@ const AccountPage = () => {
         onSave={handleSaveUser}
         isSaving={mutation.isPending}
         user={editingUser}
+        currentUserRole={profile?.role}
       />
     </div>
   );

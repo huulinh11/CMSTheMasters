@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AppUser, USER_ROLES } from "@/types/app-user";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 interface AddEditUserDialogProps {
   open: boolean;
@@ -19,14 +19,26 @@ interface AddEditUserDialogProps {
   onSave: (user: Partial<AppUser> & { password?: string }) => void;
   isSaving: boolean;
   user: AppUser | null;
+  currentUserRole?: AppUser['role'];
 }
 
-export const AddEditUserDialog = ({ open, onOpenChange, onSave, isSaving, user }: AddEditUserDialogProps) => {
+export const AddEditUserDialog = ({ open, onOpenChange, onSave, isSaving, user, currentUserRole }: AddEditUserDialogProps) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [department, setDepartment] = useState('');
   const [role, setRole] = useState<AppUser['role']>('Nhân viên');
+
+  const availableRoles = useMemo(() => {
+    if (currentUserRole === 'QL ekip') {
+      if (user) { // Editing
+        return USER_ROLES.filter(r => r !== 'Admin' && r !== 'Quản lý');
+      } else { // Creating
+        return ['Nhân viên'];
+      }
+    }
+    return USER_ROLES;
+  }, [currentUserRole, user]);
 
   useEffect(() => {
     if (user) {
@@ -40,9 +52,9 @@ export const AddEditUserDialog = ({ open, onOpenChange, onSave, isSaving, user }
       setPassword('');
       setFullName('');
       setDepartment('');
-      setRole('Nhân viên');
+      setRole(currentUserRole === 'QL ekip' ? 'Nhân viên' : 'Nhân viên');
     }
-  }, [user, open]);
+  }, [user, open, currentUserRole]);
 
   const handleSave = () => {
     const userData: Partial<AppUser> & { password?: string } = {
@@ -91,7 +103,7 @@ export const AddEditUserDialog = ({ open, onOpenChange, onSave, isSaving, user }
                 <SelectValue placeholder="Chọn quyền" />
               </SelectTrigger>
               <SelectContent>
-                {USER_ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                {availableRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

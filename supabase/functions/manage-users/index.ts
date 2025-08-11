@@ -17,14 +17,14 @@ function createErrorResponse(message: string, status: number) {
 
 // --- Action Handlers with individual error handling ---
 
-async function listUsers(supabaseAdmin: SupabaseClient) {
+async function listUsers(supabaseAdmin: SupabaseClient, requesterRole: string) {
   const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
   if (usersError) throw new Error(`Lỗi lấy danh sách người dùng: ${usersError.message}`);
 
   const { data: profiles, error: profilesError } = await supabaseAdmin.from('profiles').select('*');
   if (profilesError) throw new Error(`Lỗi lấy hồ sơ người dùng: ${profilesError.message}`);
 
-  const combined = users.map(u => {
+  let combined = users.map(u => {
     const profile = profiles.find(p => p.id === u.id);
     return {
       id: u.id,
@@ -33,13 +33,24 @@ async function listUsers(supabaseAdmin: SupabaseClient) {
       ...profile,
     };
   });
+
+  // If requester is 'QL ekip', filter out 'Admin' and 'Quản lý'
+  if (requesterRole === 'QL ekip') {
+    combined = combined.filter(u => u.role !== 'Admin' && u.role !== 'Quản lý');
+  }
+
   return new Response(JSON.stringify(combined), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
 
-async function createUser(supabaseAdmin: SupabaseClient, payload: any) {
+async function createUser(supabaseAdmin: SupabaseClient, payload: any, requesterRole: string) {
   const { username, password, full_name, department, role } = payload;
   if (!password || password.length < 6) throw new Error("Mật khẩu phải có ít nhất 6 ký tự.");
   if (!username) throw new Error("Username không được để trống.");
+  
+  // 'QL ekip' can only create 'Nhân viên'
+  if (requesterRole === 'QL ekip' && role !== 'Nhân viên') {
+    throw new Error("Bạn chỉ có quyền tạo tài khoản loại 'Nhân viên'.");
+  }
   
   const email = `${username}@event.app`;
 
@@ -54,8 +65,20 @@ async function createUser(supabaseAdmin: SupabaseClient, payload: any) {
   return new Response(JSON.stringify(data.user), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
 
-async function updateUser(supabaseAdmin: SupabaseClient, payload: any) {
+async function updateUser(supabaseAdmin: SupabaseClient, payload: any, requesterRole: string) {
   const { id, password, full_name, department, role } = payload;
+  
+  if (requesterRole === 'QL ekip') {
+    const { data: targetProfile, error } = await supabaseAdmin.from('profiles').select('role').eq('id', id).single();
+    if (error) throw new Error(`Không tìm thấy hồ sơ người dùng: ${error.message}`);
+    if (targetProfile.role === 'Admin' || targetProfile.role === 'Quản lý') {
+      throw new Error("Bạn không có quyền chỉnh sửa tài khoản này.");
+    }
+    // Prevent promotion to a higher role
+    if (role && (role === 'Admin' || role === 'Quản lý' || role === 'QL ekip')) {
+        throw new Error("Bạn không có quyền gán vai trò này.");
+    }
+  }
   
   if (password) {
     if (password.length < 6) throw new Error("Mật khẩu mới phải có ít nhất 6 ký tự.");
@@ -72,8 +95,18 @@ async function updateUser(supabaseAdmin: SupabaseClient, payload: any) {
   return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
 
-async function deleteUser(supabaseAdmin: SupabaseClient, payload: any) {
+async function deleteUser(supabaseAdmin: SupabaseClient, payload: any, requesterRole: string) {
   const { id } = payload;
+
+  // 'QL ekip' cannot delete 'Admin' or 'Quản lý'
+  if (requesterRole === 'QL ekip') {
+    const { data: targetProfile, error } = await supabaseAdmin.from('profiles').select('role').eq('id', id).single();
+    if (error) throw new Error(`Không tìm thấy hồ sơ người dùng: ${error.message}`);
+    if (targetProfile.role === 'Admin' || targetProfile.role === 'Quản lý') {
+      throw new Error("Bạn không có quyền xóa tài khoản này.");
+    }
+  }
+
   const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
   if (error) throw new Error(`Lỗi xóa người dùng: ${error.message}`);
   return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -125,15 +158,17 @@ serve(async (req) => {
     if (profileError || !profile) {
       return createErrorResponse('Không thể lấy thông tin phân quyền.', 403);
     }
-    if (!['Admin', 'Quản lý'].includes(profile.role)) {
+    if (!['Admin', 'Quản lý', 'QL ekip'].includes(profile.role)) {
       return createErrorResponse('Bạn không có quyền thực hiện hành động này.', 403);
     }
 
+    const requesterRole = profile.role;
+
     switch (method) {
-      case 'LIST_USERS': return await listUsers(supabaseAdmin);
-      case 'CREATE_USER': return await createUser(supabaseAdmin, payload);
-      case 'UPDATE_USER': return await updateUser(supabaseAdmin, payload);
-      case 'DELETE_USER': return await deleteUser(supabaseAdmin, payload);
+      case 'LIST_USERS': return await listUsers(supabaseAdmin, requesterRole);
+      case 'CREATE_USER': return await createUser(supabaseAdmin, payload, requesterRole);
+      case 'UPDATE_USER': return await updateUser(supabaseAdmin, payload, requesterRole);
+      case 'DELETE_USER': return await deleteUser(supabaseAdmin, payload, requesterRole);
       default: return createErrorResponse('Phương thức không hợp lệ.', 400);
     }
   } catch (error) {

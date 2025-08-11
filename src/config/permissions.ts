@@ -14,7 +14,7 @@ export const permissionsByRole: Record<AppUser['role'], string[]> = {
     "event-tasks",
     "information",
     "revenue",
-    "service-sales", // Thêm quyền
+    "service-sales",
     "commission",
     "timeline",
     "public-user",
@@ -31,6 +31,19 @@ export const permissionsByRole: Record<AppUser['role'], string[]> = {
     "timeline",
     "public-user",
     "settings"
+  ],
+  
+  // QL ekip có quyền của nhân viên + quản lý tài khoản nhân viên
+  'QL ekip': [
+    "dashboard",
+    "guests",
+    "media-benefits",
+    "event-tasks",
+    "information",
+    "timeline",
+    "public-user",
+    "settings",
+    "account"
   ],
 };
 
