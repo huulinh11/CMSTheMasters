@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { MoreHorizontal, LucideIcon, ChevronRight, LogOut, QrCode } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -12,12 +12,18 @@ const BottomNav = () => {
   const location = useLocation();
   const { signOut, permissions, menuConfig } = useAuth();
   const { openScanner } = useQrScanner();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isSheetOpen) {
       setIsSheetOpen(false);
     }
   }, [location.pathname]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login', { replace: true });
+  };
 
   const visibleNavItems = useMemo(() => {
     if (!permissions || !menuConfig) return [];
@@ -88,7 +94,7 @@ const BottomNav = () => {
                 </ul>
               </ScrollArea>
               <div className="mt-auto p-2 border-t flex-shrink-0">
-                <button onClick={signOut} className="flex items-center p-2 rounded-lg transition-colors w-full text-red-500 hover:bg-red-50">
+                <button onClick={handleSignOut} className="flex items-center p-2 rounded-lg transition-colors w-full text-red-500 hover:bg-red-50">
                   <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
                   <span className="font-medium">Đăng xuất</span>
                 </button>
@@ -113,7 +119,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, end }) => (
     to={to}
     end={end}
     className={({ isActive }) =>
-      `flex flex-col items-center justify-center w-1/5 h-full transition-colors ${
+      `flex flex-col items-center justify-center w-full h-full transition-colors ${
         isActive ? "text-primary" : "text-slate-500"
       }`
     }

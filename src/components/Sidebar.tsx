@@ -1,15 +1,21 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 import { LogOut, LucideIcon } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 const Sidebar = () => {
   const { signOut, permissions, menuConfig } = useAuth();
+  const navigate = useNavigate();
 
   const navItems = useMemo(() => {
     if (!permissions || !menuConfig) return [];
     return menuConfig.filter(item => permissions.includes(item.id));
   }, [permissions, menuConfig]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <aside className="w-64 flex-shrink-0 bg-white border-r border-slate-200 p-4 hidden md:flex flex-col">
@@ -27,7 +33,7 @@ const Sidebar = () => {
       </div>
       <div className="mt-auto">
         <button
-          onClick={signOut}
+          onClick={handleSignOut}
           className="flex items-center p-2 my-1 rounded-lg transition-colors w-full text-slate-600 hover:bg-slate-100"
         >
           <LogOut className="w-5 h-5 mr-3 flex-shrink-0" />
