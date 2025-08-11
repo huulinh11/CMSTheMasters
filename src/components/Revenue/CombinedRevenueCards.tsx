@@ -43,7 +43,7 @@ export const CombinedRevenueCards = ({ guests, onView, onEdit, onPay, onHistory,
               </div>
               <div className="flex gap-2 pt-2">
                 <Button className="flex-1" variant="outline" size="sm" onClick={() => onEdit(guest)}><Edit className="mr-2 h-4 w-4" /> Sửa</Button>
-                <Button className="flex-1" size="sm" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}><CreditCard className="mr-2 h-4 w-4" /> TT</Button>
+                <Button className="flex-1" size="sm" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}><CreditCard className="mr-2 h-4 w-4" /> Thanh toán</Button>
               </div>
               <div className="flex gap-2">
                 <Button className="flex-1" variant="secondary" size="sm" onClick={() => onHistory(guest)}><History className="mr-2 h-4 w-4" /> Lịch sử</Button>
