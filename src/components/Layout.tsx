@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Sidebar from "./Sidebar";
 import BottomNav from "./BottomNav";
@@ -25,7 +25,7 @@ const audioPlayer = {
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isMobile = useIsMobile();
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [isProcessingScan, setIsProcessingScan] = useState(false);
+  const isProcessingScanRef = useRef(false);
   const navigate = useNavigate();
 
   const { data: settings } = useQuery({
@@ -43,14 +43,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [settings]);
 
-  const handleScan = (scannedUrl: string | null) => {
-    if (isProcessingScan || !scannedUrl) return;
+  const handleScan = useCallback((scannedUrl: string | null) => {
+    if (isProcessingScanRef.current || !scannedUrl) return;
 
     try {
       const url = new URL(scannedUrl);
       const guestId = url.searchParams.get('guestId');
       if (guestId) {
-        setIsProcessingScan(true);
+        isProcessingScanRef.current = true;
         audioPlayer.play();
         setIsScannerOpen(false);
         navigate(`/event-tasks?guestId=${guestId}`);
@@ -60,12 +60,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     } catch (error) {
       showError("Mã QR không phải là một URL hợp lệ.");
     }
-  };
+  }, [navigate]);
 
   const handleScannerOpenChange = (isOpen: boolean) => {
     setIsScannerOpen(isOpen);
     if (!isOpen) {
-      setIsProcessingScan(false);
+      isProcessingScanRef.current = false;
     }
   };
 
