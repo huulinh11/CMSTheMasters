@@ -16,7 +16,8 @@ import { GuestServicesCards } from "@/components/service-sales/GuestServicesCard
 import { showError, showSuccess } from "@/utils/toast";
 import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
 import { RoleConfiguration } from "@/types/role-configuration";
-import { ServicePaymentHistoryDialog } from "@/components/service-sales/ServicePaymentHistoryDialog";
+import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
+import { GuestRevenue } from "@/types/guest-revenue";
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -25,7 +26,7 @@ const ServiceSalesPage = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [payingItem, setPayingItem] = useState<GuestService | null>(null);
-  const [historyItem, setHistoryItem] = useState<GuestService | null>(null);
+  const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
   const [viewingGuest, setViewingGuest] = useState<GuestService | null>(null);
 
   const { data: guestServices = [], isLoading } = useQuery<GuestService[]>({
@@ -97,6 +98,10 @@ const ServiceSalesPage = () => {
 
   const totalUnpaid = stats.totalRevenue - stats.totalPaid;
 
+  const handleHistory = (item: GuestService) => {
+    setHistoryGuest({ id: item.guest_id, name: item.guest_name } as GuestRevenue);
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex justify-between items-center">
@@ -125,7 +130,7 @@ const ServiceSalesPage = () => {
           onPay={setPayingItem}
           onConvertTrial={(id) => convertTrialMutation.mutate(id)}
           onViewGuest={setViewingGuest}
-          onHistory={setHistoryItem}
+          onHistory={handleHistory}
         />
       ) : (
         <GuestServicesTable
@@ -135,14 +140,14 @@ const ServiceSalesPage = () => {
           onPay={setPayingItem}
           onConvertTrial={(id) => convertTrialMutation.mutate(id)}
           onViewGuest={setViewingGuest}
-          onHistory={setHistoryItem}
+          onHistory={handleHistory}
         />
       )}
 
       <ServiceSettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       <AddGuestServiceDialog open={isAddOpen} onOpenChange={setIsAddOpen} />
       <PayServiceDialog item={payingItem} open={!!payingItem} onOpenChange={() => setPayingItem(null)} />
-      <ServicePaymentHistoryDialog item={historyItem} open={!!historyItem} onOpenChange={() => setHistoryItem(null)} />
+      <GuestHistoryDialog guest={historyGuest} open={!!historyGuest} onOpenChange={() => setHistoryGuest(null)} />
       <GuestDetailsDialog
         guestId={viewingGuest?.guest_id || null}
         guestType={viewingGuest?.guest_type === 'Chức vụ' ? 'vip' : 'regular'}
