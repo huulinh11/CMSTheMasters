@@ -76,7 +76,7 @@ const RegularGuestTab = () => {
     }
   });
 
-  const { data: vipGuests = [] } = useQuery<VipGuest[]>({
+  const { data: vipGuests = [] } = useQuery<Pick<VipGuest, 'id' | 'name'>[]>({
     queryKey: ['vip_guests_for_referrer'],
     queryFn: async () => {
       const { data, error } = await supabase.from('vip_guests').select('id, name').order('created_at', { ascending: false });

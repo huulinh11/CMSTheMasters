@@ -27,6 +27,7 @@ import Login, { action as loginAction } from "./pages/Login";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PermissionProtectedRoute from "./components/PermissionProtectedRoute";
+import CommissionPage from "./pages/Commission";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const router = createBrowserRouter([
       { element: <PermissionProtectedRoute permissionId="event-tasks" />, children: [{ path: "event-tasks", element: <EventTasks /> }] },
       { element: <PermissionProtectedRoute permissionId="information" />, children: [{ path: "information", element: <Information /> }] },
       { element: <PermissionProtectedRoute permissionId="revenue" />, children: [{ path: "revenue", element: <Revenue /> }] },
+      { element: <PermissionProtectedRoute permissionId="commission" />, children: [{ path: "commission", element: <CommissionPage /> }] },
       { element: <PermissionProtectedRoute permissionId="timeline" />, children: [{ path: "timeline", element: <Timeline /> }] },
       { element: <PermissionProtectedRoute permissionId="public-user" />, children: [{ path: "public-user", element: <PublicUser /> }] },
       { element: <PermissionProtectedRoute permissionId="account" />, children: [{ path: "account", element: <Account /> }] },

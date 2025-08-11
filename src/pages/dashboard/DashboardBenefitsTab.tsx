@@ -39,7 +39,7 @@ const DashboardBenefitsTab = () => {
   const [sortOrder, setSortOrder] = useState<'default' | 'progress-asc' | 'progress-desc'>('default');
   const { allBenefits, benefitsByRole, isLoading: isLoadingPermissions } = useRolePermissions();
 
-  const { data: guests = [], isLoading: isLoadingGuests } = useQuery<(VipGuest | Guest)[]>({
+  const { data: guests = [], isLoading: isLoadingGuests } = useQuery<Pick<VipGuest | Guest, 'id' | 'role'>[]>({
     queryKey: ['all_guests_for_benefit_stats'],
     queryFn: async () => {
       const { data: vips, error: vipError } = await supabase.from('vip_guests').select('id, role');

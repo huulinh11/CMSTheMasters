@@ -21,7 +21,7 @@ const CSV_DISPLAY_HEADERS = [
 ];
 
 // Helper to generate a unique ID for new guests
-const generateNewId = (role: string, type: 'Chức vụ' | 'Khách mời', existingGuests: (VipGuest | Guest)[]): string => {
+const generateNewId = (role: string, type: 'Chức vụ' | 'Khách mời', existingGuests: { id: string }[]): string => {
     const prefixMap: Record<string, string> = {
         // VIP
         "Prime Speaker": "PS", "Guest Speaker": "GS", "Mentor kiến tạo": "ME", "Phó BTC": "PB",
@@ -209,8 +209,8 @@ export const ImportExportActions = () => {
 
           if (rows.length === 0) throw new Error("File không có dữ liệu.");
 
-          const { data: existingVipGuests } = await supabase.from('vip_guests').select('id, role');
-          const { data: existingGuests } = await supabase.from('guests').select('id, role');
+          const { data: existingVipGuests } = await supabase.from('vip_guests').select('id');
+          const { data: existingGuests } = await supabase.from('guests').select('id');
           const { data: roleConfigs, error: roleError } = await supabase.from('role_configurations').select('name, type');
           if (roleError) throw new Error(`Không thể tải cấu hình vai trò: ${roleError.message}`);
 

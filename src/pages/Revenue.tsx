@@ -1,28 +1,245 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import VipGuestRevenueTab from "./Revenue/VipGuestRevenueTab";
-import RegularGuestRevenueTab from "./Revenue/RegularGuestRevenueTab";
-import CommissionTab from "./Revenue/CommissionTab";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { RoleConfiguration } from "@/types/role-configuration";
+import { useAuth } from "@/contexts/AuthContext";
+import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
+import { AddVipGuestDialog } from "@/components/vip-guests/AddVipGuestDialog";
+import { VipGuest, VipGuestFormValues } from "@/types/vip-guest";
+import { AddGuestDialog } from "@/components/guests/AddGuestDialog";
+import { Guest, GuestFormValues } from "@/types/guest";
+import { generateGuestSlug } from "@/lib/slug";
+import { showSuccess, showError } from "@/utils/toast";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import RevenueStats from "@/components/dashboard/RevenueStats";
+import { VipGuestRevenue } from "@/types/vip-guest-revenue";
+import { GuestRevenue } from "@/types/guest-revenue";
+import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
+import PaymentDialog from "@/components/Revenue/PaymentDialog";
+import HistoryDialog from "@/components/Revenue/HistoryDialog";
+import GuestPaymentDialog from "@/components/Revenue/GuestPaymentDialog";
+import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
+import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog";
+
+export type CombinedGuestRevenue = (GuestRevenue | VipGuestRevenue) & { type: 'Chức vụ' | 'Khách mời' };
+
+type UpsaleHistory = {
+  guest_id: string;
+  from_sponsorship: number;
+  from_payment_source: string | null;
+  created_at: string;
+};
 
 const RevenuePage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<'all' | 'Chức vụ' | 'Khách mời'>('all');
+  const isMobile = useIsMobile();
+  const { profile, user } = useAuth();
+
+  const [payingGuest, setPayingGuest] = useState<CombinedGuestRevenue | null>(null);
+  const [historyGuest, setHistoryGuest] = useState<CombinedGuestRevenue | null>(null);
+  const [editingGuest, setEditingGuest] = useState<CombinedGuestRevenue | null>(null);
+  const [upsaleGuest, setUpsaleGuest] = useState<GuestRevenue | null>(null);
+  const [viewingGuest, setViewingGuest] = useState<CombinedGuestRevenue | null>(null);
+
+  const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
+  const canViewSummaryStats = !!(userRole && ['Admin', 'Quản lý'].includes(userRole));
+
+  const { data: vipGuestsData = [], isLoading: isLoadingVip } = useQuery<VipGuestRevenue[]>({
+    queryKey: ['vip_revenue'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_vip_guest_revenue_details');
+      if (error) throw new Error(error.message);
+      return (data || []).map(g => ({
+        ...g,
+        sponsorship: g.sponsorship || 0,
+        paid: g.paid_amount || 0,
+        unpaid: (g.sponsorship || 0) - (g.paid_amount || 0),
+        secondaryInfo: g.secondary_info,
+        commission: 0,
+      }));
+    }
+  });
+
+  const { data: regularGuestsData = [], isLoading: isLoadingRegular } = useQuery<any[]>({
+    queryKey: ['guest_revenue_details'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_guest_revenue_details');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const { data: upsaleHistory = [], isLoading: isLoadingHistory } = useQuery<UpsaleHistory[]>({
+    queryKey: ['guest_upsale_history'],
+    queryFn: async () => {
+        const { data, error } = await supabase.from('guest_upsale_history').select('guest_id, from_sponsorship, from_payment_source, created_at');
+        if (error) throw error;
+        return data || [];
+    }
+  });
+
+  const { data: roleConfigs = [], isLoading: isLoadingRoles } = useQuery<RoleConfiguration[]>({
+    queryKey: ['role_configurations'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('role_configurations').select('*');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const regularGuests = useMemo((): GuestRevenue[] => {
+    if (isLoadingRegular || isLoadingHistory) return [];
+
+    const historyMap = new Map<string, UpsaleHistory[]>();
+    upsaleHistory.forEach(h => {
+        const history = historyMap.get(h.guest_id) || [];
+        history.push(h);
+        historyMap.set(h.guest_id, history);
+    });
+
+    return regularGuestsData.map(g => {
+      const originalSponsorship = g.sponsorship || 0;
+      let effectiveSponsorship = originalSponsorship;
+
+      if (g.is_upsaled) {
+        const guestHistory = historyMap.get(g.id);
+        if (guestHistory && guestHistory.length > 0) {
+          const firstUpsale = guestHistory.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+          if (firstUpsale.from_payment_source === 'Chỉ tiêu') {
+            effectiveSponsorship = originalSponsorship - firstUpsale.from_sponsorship;
+          }
+        }
+      } else if (g.payment_source === 'Chỉ tiêu') {
+        effectiveSponsorship = 0;
+      }
+
+      return {
+        ...g,
+        original_sponsorship: originalSponsorship,
+        sponsorship: effectiveSponsorship,
+        paid: g.paid_amount || 0,
+        unpaid: effectiveSponsorship - (g.paid_amount || 0),
+        is_upsaled: g.is_upsaled || false,
+        commission: 0,
+      };
+    });
+  }, [regularGuestsData, upsaleHistory, isLoadingRegular, isLoadingHistory]);
+
+  const combinedGuests = useMemo(() => {
+    const vips: CombinedGuestRevenue[] = vipGuestsData.map(g => ({ ...g, type: 'Chức vụ' }));
+    const regulars: CombinedGuestRevenue[] = regularGuests.map(g => ({ ...g, type: 'Khách mời' }));
+    return [...vips, ...regulars].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [vipGuestsData, regularGuests]);
+
+  const filteredGuests = useMemo(() => {
+    return combinedGuests.filter(guest => {
+      const searchMatch = guest.name.toLowerCase().includes(searchTerm.toLowerCase()) || guest.id.toLowerCase().includes(searchTerm.toLowerCase());
+      const typeMatch = typeFilter === 'all' || guest.type === typeFilter;
+      return searchMatch && typeMatch;
+    });
+  }, [combinedGuests, searchTerm, typeFilter]);
+
+  const revenueStats = useMemo(() => {
+    return filteredGuests.reduce(
+      (acc, guest) => {
+        acc.totalSponsorship += guest.sponsorship;
+        acc.totalPaid += guest.paid;
+        acc.totalUnpaid += guest.unpaid;
+        return acc;
+      },
+      { totalSponsorship: 0, totalPaid: 0, totalUnpaid: 0 }
+    );
+  }, [filteredGuests]);
+
+  const isLoading = isLoadingVip || isLoadingRegular || isLoadingRoles || isLoadingHistory;
+
   return (
     <div className="p-4 md:p-6">
       <h1 className="text-2xl font-bold text-slate-800 mb-4">Quản lý doanh thu</h1>
-      <Tabs defaultValue="vip" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:w-auto md:inline-flex bg-primary/10 p-1 h-12 rounded-xl">
-          <TabsTrigger value="vip" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Chức vụ</TabsTrigger>
-          <TabsTrigger value="regular" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Khách mời</TabsTrigger>
-          <TabsTrigger value="commission" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Hoa hồng</TabsTrigger>
-        </TabsList>
-        <TabsContent value="vip" className="mt-4">
-          <VipGuestRevenueTab />
-        </TabsContent>
-        <TabsContent value="regular" className="mt-4">
-          <RegularGuestRevenueTab />
-        </TabsContent>
-        <TabsContent value="commission" className="mt-4">
-          <CommissionTab />
-        </TabsContent>
-      </Tabs>
+      
+      {canViewSummaryStats && <RevenueStats {...revenueStats} />}
+
+      <div className="my-4 flex flex-col md:flex-row gap-4 justify-between">
+        <RadioGroup defaultValue="all" onValueChange={(value) => setTypeFilter(value as any)} className="flex items-center space-x-4 bg-primary/10 p-1 rounded-lg">
+          <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="r1" /><Label htmlFor="r1">All</Label></div>
+          <div className="flex items-center space-x-2"><RadioGroupItem value="Chức vụ" id="r2" /><Label htmlFor="r2">Chức vụ</Label></div>
+          <div className="flex items-center space-x-2"><RadioGroupItem value="Khách mời" id="r3" /><Label htmlFor="r3">Khách mời</Label></div>
+        </RadioGroup>
+        <Input
+          placeholder="Tìm kiếm theo tên, ID..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="bg-white/80"
+        />
+      </div>
+
+      <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
+
+      {isLoading ? (
+        <Skeleton className="h-96 w-full rounded-lg mt-4" />
+      ) : (
+        <div className="mt-4">
+          {/* Here you would have your combined table/cards component */}
+          <p className="text-center p-8 bg-slate-100 rounded-lg">
+            Combined guest list will be displayed here.
+          </p>
+        </div>
+      )}
+
+      {/* Dialogs */}
+      <PaymentDialog
+        guest={payingGuest?.type === 'Chức vụ' ? payingGuest as VipGuestRevenue : null}
+        open={!!payingGuest && payingGuest.type === 'Chức vụ'}
+        onOpenChange={(open) => !open && setPayingGuest(null)}
+      />
+      <GuestPaymentDialog
+        guest={payingGuest?.type === 'Khách mời' ? payingGuest as GuestRevenue : null}
+        open={!!payingGuest && payingGuest.type === 'Khách mời'}
+        onOpenChange={(open) => !open && setPayingGuest(null)}
+      />
+      <HistoryDialog
+        guest={historyGuest?.type === 'Chức vụ' ? historyGuest as VipGuestRevenue : null}
+        open={!!historyGuest && historyGuest.type === 'Chức vụ'}
+        onOpenChange={(open) => !open && setHistoryGuest(null)}
+      />
+      <GuestHistoryDialog
+        guest={historyGuest?.type === 'Khách mời' ? historyGuest as GuestRevenue : null}
+        open={!!historyGuest && historyGuest.type === 'Khách mời'}
+        onOpenChange={(open) => !open && setHistoryGuest(null)}
+      />
+      <EditSponsorshipDialog
+        guest={editingGuest?.type === 'Chức vụ' ? editingGuest as VipGuestRevenue : null}
+        open={!!editingGuest && editingGuest.type === 'Chức vụ'}
+        onOpenChange={(open) => !open && setEditingGuest(null)}
+      />
+      <EditGuestRevenueDialog
+        guest={editingGuest?.type === 'Khách mời' ? editingGuest as GuestRevenue : null}
+        open={!!editingGuest && editingGuest.type === 'Khách mời'}
+        onOpenChange={(open) => !open && setEditingGuest(null)}
+        mode="edit"
+        roleConfigs={roleConfigs}
+      />
+      <EditGuestRevenueDialog
+        guest={upsaleGuest}
+        open={!!upsaleGuest}
+        onOpenChange={(open) => !open && setUpsaleGuest(null)}
+        mode="upsale"
+        roleConfigs={roleConfigs}
+      />
+      <GuestDetailsDialog
+        guestId={viewingGuest?.id || null}
+        guestType={viewingGuest?.type === 'Chức vụ' ? 'vip' : 'regular'}
+        open={!!viewingGuest}
+        onOpenChange={(isOpen) => !isOpen && setViewingGuest(null)}
+        onEdit={() => {}}
+        onDelete={() => {}}
+        roleConfigs={roleConfigs}
+      />
     </div>
   );
 };

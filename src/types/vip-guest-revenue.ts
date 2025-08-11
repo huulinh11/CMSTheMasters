@@ -10,6 +10,7 @@ export type VipGuestRevenue = {
   unpaid: number;
   referrer?: string;
   commission: number; // Placeholder
+  created_at: string;
 };
 
 export type Payment = {

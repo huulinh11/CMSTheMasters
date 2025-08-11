@@ -68,7 +68,7 @@ const Timeline = () => {
       return data || [];
     }
   });
-  const { data: vipGuests = [] } = useQuery<VipGuest[]>({
+  const { data: vipGuests = [] } = useQuery<Pick<VipGuest, 'id' | 'name'>[]>({
     queryKey: ['vip_guests'],
     queryFn: async () => {
       const { data, error } = await supabase.from('vip_guests').select('id, name');
@@ -76,7 +76,7 @@ const Timeline = () => {
       return data || [];
     }
   });
-  const { data: regularGuests = [] } = useQuery<Guest[]>({
+  const { data: regularGuests = [] } = useQuery<Pick<Guest, 'id' | 'name'>[]>({
     queryKey: ['guests'],
     queryFn: async () => {
       const { data, error } = await supabase.from('guests').select('id, name');

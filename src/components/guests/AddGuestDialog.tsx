@@ -62,7 +62,7 @@ interface AddGuestDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: GuestFormValues) => void;
   defaultValues?: (Guest & { sponsorship_amount?: number, paid_amount?: number, payment_source?: PaymentSource }) | null;
-  allVipGuests: VipGuest[];
+  allVipGuests: Pick<VipGuest, 'id' | 'name'>[];
   roleConfigs: RoleConfiguration[];
 }
 
