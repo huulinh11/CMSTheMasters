@@ -43,6 +43,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [settings]);
 
+  // Effect này sẽ đặt lại khóa xử lý một cách đáng tin cậy mỗi khi máy quét được đóng.
+  useEffect(() => {
+    if (!isScannerOpen) {
+      isProcessingScanRef.current = false;
+    }
+  }, [isScannerOpen]);
+
   const handleScan = useCallback((scannedUrl: string | null) => {
     if (isProcessingScanRef.current || !scannedUrl) return;
 
@@ -62,14 +69,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [navigate]);
 
-  const handleScannerOpenChange = (isOpen: boolean) => {
-    setIsScannerOpen(isOpen);
-    if (!isOpen) {
-      isProcessingScanRef.current = false;
-    }
+  const openScanner = () => {
+    // Đặt lại khóa ngay lập tức khi mở, để đảm bảo an toàn.
+    isProcessingScanRef.current = false;
+    setIsScannerOpen(true);
   };
-
-  const openScanner = () => setIsScannerOpen(true);
 
   return (
     <QrScannerProvider openScanner={openScanner}>
@@ -81,9 +85,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </main>
           {isMobile && <BottomNav />}
         </div>
-        <Dialog open={isScannerOpen} onOpenChange={handleScannerOpenChange}>
+        <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
           <DialogContent className="p-0 bg-transparent border-none max-w-md">
-            <QrScannerComponent onScan={handleScan} onClose={() => setIsScannerOpen(false)} />
+            {/* Chỉ render máy quét khi nó được mở */}
+            {isScannerOpen && <QrScannerComponent onScan={handleScan} onClose={() => setIsScannerOpen(false)} />}
           </DialogContent>
         </Dialog>
       </div>
