@@ -265,7 +265,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
 
   return (
     <>
-      <header className="p-4 md:p-6">
+      <header className="p-4 md:p-6 flex-shrink-0">
         <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4 flex-1 min-w-0">
                 <button onClick={() => setIsImagePreviewOpen(true)}>
@@ -287,7 +287,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         </div>
       </header>
 
-      <ScrollArea className="h-[calc(100% - 120px)]">
+      <ScrollArea className="flex-grow min-h-0">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-0">
           <div className="space-y-6">
             <Card>
@@ -536,7 +536,7 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
     <>
       {isMobile ? (
         <Drawer open={open} onOpenChange={onOpenChange}>
-          <DrawerContent className="h-[90vh]">
+          <DrawerContent className="h-[calc(100vh-60px)] mt-[60px]">
             {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DrawerContent>
         </Drawer>
