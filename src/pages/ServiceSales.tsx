@@ -53,6 +53,18 @@ const ServiceSalesPage = () => {
     onError: (err: Error) => showError(err.message),
   });
 
+  const convertTrialMutation = useMutation({
+    mutationFn: async (guestServiceId: string) => {
+      const { error } = await supabase.rpc('convert_free_trial', { guest_service_id_in: guestServiceId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guest_service_details'] });
+      showSuccess("Chuyển đổi thành công!");
+    },
+    onError: (err: Error) => showError(err.message),
+  });
+
   const filteredServices = useMemo(() => {
     return guestServices.filter(item =>
       item.guest_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,6 +109,7 @@ const ServiceSalesPage = () => {
           services={services}
           onStatusChange={(id, status) => statusUpdateMutation.mutate({ id, status })}
           onPay={setPayingItem}
+          onConvertTrial={(id) => convertTrialMutation.mutate(id)}
         />
       ) : (
         <GuestServicesTable
@@ -104,6 +117,7 @@ const ServiceSalesPage = () => {
           services={services}
           onStatusChange={(id, status) => statusUpdateMutation.mutate({ id, status })}
           onPay={setPayingItem}
+          onConvertTrial={(id) => convertTrialMutation.mutate(id)}
         />
       )}
 

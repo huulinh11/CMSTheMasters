@@ -4,6 +4,7 @@ export type Service = {
   price: number;
   statuses: string[];
   created_at: string;
+  allow_free_trial?: boolean;
 };
 
 export type GuestService = {
@@ -22,6 +23,7 @@ export type GuestService = {
   referrer_name: string | null;
   status: string | null;
   created_at: string;
+  is_free_trial?: boolean;
 };
 
 export type ServiceCommissionSummary = {

@@ -36,6 +36,7 @@ import { VipGuest } from "@/types/vip-guest";
 import { AppUser } from "@/types/app-user";
 import { Input } from "../ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type CombinedGuest = (Guest | VipGuest) & { type: 'guest' };
 type Referrer = (CombinedGuest | (AppUser & { type: 'sale' })) & { name: string };
@@ -56,6 +57,7 @@ export const AddGuestServiceDialog = ({ open, onOpenChange, defaultGuestId }: Ad
   const [selectedReferrerId, setSelectedReferrerId] = useState<string>("");
   const [paidAmount, setPaidAmount] = useState(0);
   const [formattedPaidAmount, setFormattedPaidAmount] = useState("0");
+  const [isFreeTrial, setIsFreeTrial] = useState(false);
   const [isGuestPopoverOpen, setIsGuestPopoverOpen] = useState(false);
   const [isReferrerPopoverOpen, setIsReferrerPopoverOpen] = useState(false);
 
@@ -88,14 +90,16 @@ export const AddGuestServiceDialog = ({ open, onOpenChange, defaultGuestId }: Ad
     mutationFn: async () => {
       if (!selectedGuestId || !selectedServiceId) throw new Error("Vui lòng chọn khách mời và dịch vụ.");
       const referrer = referrers.find(r => r.id === selectedReferrerId);
+      const price = isFreeTrial ? 0 : selectedService?.price || 0;
       const { error } = await supabase.from('guest_services').insert({
         guest_id: selectedGuestId,
         service_id: selectedServiceId,
-        price: selectedService?.price || 0,
+        price: price,
         paid_amount: paidAmount,
         referrer_id: referrer?.id || null,
         referrer_type: referrer?.type || null,
         status: selectedService?.statuses?.[0] || null,
+        is_free_trial: isFreeTrial,
       });
       if (error) throw error;
     },
@@ -114,6 +118,7 @@ export const AddGuestServiceDialog = ({ open, onOpenChange, defaultGuestId }: Ad
       setSelectedReferrerId("");
       setPaidAmount(0);
       setFormattedPaidAmount("0");
+      setIsFreeTrial(false);
     } else {
       if (defaultGuestId) {
         setSelectedGuestId(defaultGuestId);
@@ -126,10 +131,11 @@ export const AddGuestServiceDialog = ({ open, onOpenChange, defaultGuestId }: Ad
 
   useEffect(() => {
     if (selectedService) {
-      setPaidAmount(selectedService.price);
-      setFormattedPaidAmount(new Intl.NumberFormat('vi-VN').format(selectedService.price));
+      const price = isFreeTrial ? 0 : selectedService.price;
+      setPaidAmount(price);
+      setFormattedPaidAmount(new Intl.NumberFormat('vi-VN').format(price));
     }
-  }, [selectedService]);
+  }, [selectedService, isFreeTrial]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
@@ -154,6 +160,12 @@ export const AddGuestServiceDialog = ({ open, onOpenChange, defaultGuestId }: Ad
             <Label>Dịch vụ</Label>
             <Select value={selectedServiceId} onValueChange={setSelectedServiceId}><SelectTrigger><SelectValue placeholder="Chọn dịch vụ" /></SelectTrigger><SelectContent>{services.map(s => <SelectItem key={s.id} value={s.id}>{s.name} - {s.price.toLocaleString()}đ</SelectItem>)}</SelectContent></Select>
           </div>
+          {selectedService?.allow_free_trial && (
+            <div className="flex items-center space-x-2">
+              <Checkbox id="free-trial" checked={isFreeTrial} onCheckedChange={(checked) => setIsFreeTrial(!!checked)} />
+              <Label htmlFor="free-trial">Trải nghiệm free</Label>
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Người giới thiệu (tùy chọn)</Label>
             <Popover open={isReferrerPopoverOpen} onOpenChange={setIsReferrerPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between">{selectedReferrerId ? referrers.find(r => r.id === selectedReferrerId)?.name : "Chọn người giới thiệu..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Tìm người giới thiệu..." /><CommandList><CommandEmpty>Không tìm thấy.</CommandEmpty><CommandGroup heading="Nhân viên Sale">{sales.map(s => (<CommandItem value={s.full_name} key={s.id} onSelect={() => { setSelectedReferrerId(s.id); setIsReferrerPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", s.id === selectedReferrerId ? "opacity-100" : "opacity-0")} />{s.full_name}</CommandItem>))}</CommandGroup><CommandGroup heading="Khách mời">{guests.map(g => (<CommandItem value={g.name} key={g.id} onSelect={() => { setSelectedReferrerId(g.id); setIsReferrerPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", g.id === selectedReferrerId ? "opacity-100" : "opacity-0")} />{g.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>

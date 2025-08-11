@@ -10,16 +10,18 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GuestService, Service } from "@/types/service-sales";
 import { formatCurrency } from "@/lib/utils";
-import { CreditCard } from "lucide-react";
+import { CreditCard, RefreshCw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface GuestServicesTableProps {
   items: GuestService[];
   services: Service[];
   onStatusChange: (id: string, status: string) => void;
   onPay: (item: GuestService) => void;
+  onConvertTrial: (id: string) => void;
 }
 
-export const GuestServicesTable = ({ items, services, onStatusChange, onPay }: GuestServicesTableProps) => {
+export const GuestServicesTable = ({ items, services, onStatusChange, onPay, onConvertTrial }: GuestServicesTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -32,7 +34,7 @@ export const GuestServicesTable = ({ items, services, onStatusChange, onPay }: G
             <TableHead>Còn lại</TableHead>
             <TableHead>Người giới thiệu</TableHead>
             <TableHead>Trạng thái</TableHead>
-            <TableHead className="text-right">Thanh toán</TableHead>
+            <TableHead className="text-right">Tác vụ</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -45,7 +47,10 @@ export const GuestServicesTable = ({ items, services, onStatusChange, onPay }: G
                     <div className="font-medium">{item.guest_name}</div>
                     <div className="text-sm text-muted-foreground">{item.guest_phone}</div>
                   </TableCell>
-                  <TableCell>{item.service_name}</TableCell>
+                  <TableCell>
+                    {item.service_name}
+                    {item.is_free_trial && <Badge variant="outline" className="ml-2">Free</Badge>}
+                  </TableCell>
                   <TableCell>{formatCurrency(item.price)}</TableCell>
                   <TableCell className="text-green-600">{formatCurrency(item.paid_amount)}</TableCell>
                   <TableCell className="text-red-600">{formatCurrency(item.unpaid_amount)}</TableCell>
@@ -69,16 +74,22 @@ export const GuestServicesTable = ({ items, services, onStatusChange, onPay }: G
                       <span>N/A</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onPay(item)}
-                      disabled={item.unpaid_amount <= 0}
-                    >
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Thanh toán
-                    </Button>
+                  <TableCell className="text-right space-x-1">
+                    {item.is_free_trial ? (
+                      <Button variant="secondary" size="sm" onClick={() => onConvertTrial(item.id)}>
+                        <RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPay(item)}
+                        disabled={item.unpaid_amount <= 0}
+                      >
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Thanh toán
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );

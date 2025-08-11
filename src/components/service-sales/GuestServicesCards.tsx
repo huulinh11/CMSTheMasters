@@ -3,14 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GuestService, Service } from "@/types/service-sales";
 import { formatCurrency } from "@/lib/utils";
-import { CreditCard } from "lucide-react";
+import { CreditCard, RefreshCw } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 interface GuestServicesCardsProps {
   items: GuestService[];
   services: Service[];
   onStatusChange: (id: string, status: string) => void;
   onPay: (item: GuestService) => void;
+  onConvertTrial: (id: string) => void;
 }
 
 const InfoRow = ({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) => (
@@ -20,7 +22,7 @@ const InfoRow = ({ label, value, valueClass }: { label: string; value: string; v
   </div>
 );
 
-export const GuestServicesCards = ({ items, services, onStatusChange, onPay }: GuestServicesCardsProps) => {
+export const GuestServicesCards = ({ items, services, onStatusChange, onPay, onConvertTrial }: GuestServicesCardsProps) => {
   return (
     <div className="space-y-4">
       {items.map((item) => {
@@ -29,7 +31,10 @@ export const GuestServicesCards = ({ items, services, onStatusChange, onPay }: G
           <Card key={item.id}>
             <CardHeader>
               <CardTitle>{item.guest_name}</CardTitle>
-              <p className="text-sm text-muted-foreground">{item.service_name}</p>
+              <p className="text-sm text-muted-foreground">
+                {item.service_name}
+                {item.is_free_trial && <Badge variant="outline" className="ml-2">Free</Badge>}
+              </p>
             </CardHeader>
             <CardContent className="space-y-3">
               <InfoRow label="Giá" value={formatCurrency(item.price)} />
@@ -56,14 +61,20 @@ export const GuestServicesCards = ({ items, services, onStatusChange, onPay }: G
                   <p className="text-sm text-muted-foreground">N/A</p>
                 )}
               </div>
-              <Button
-                className="w-full mt-2"
-                onClick={() => onPay(item)}
-                disabled={item.unpaid_amount <= 0}
-              >
-                <CreditCard className="mr-2 h-4 w-4" />
-                Thanh toán
-              </Button>
+              {item.is_free_trial ? (
+                <Button className="w-full mt-2" variant="secondary" onClick={() => onConvertTrial(item.id)}>
+                  <RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi
+                </Button>
+              ) : (
+                <Button
+                  className="w-full mt-2"
+                  onClick={() => onPay(item)}
+                  disabled={item.unpaid_amount <= 0}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Thanh toán
+                </Button>
+              )}
             </CardContent>
           </Card>
         );
