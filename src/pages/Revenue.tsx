@@ -170,8 +170,8 @@ const RevenuePage = () => {
       
       {canViewSummaryStats && <RevenueStats {...revenueStats} />}
 
-      <div className="my-4 flex flex-col md:flex-row gap-4 justify-between">
-        <RadioGroup defaultValue="all" onValueChange={(value) => setTypeFilter(value as any)} className="flex items-center space-x-4 bg-primary/10 p-1 rounded-lg">
+      <div className="my-4 flex flex-col md:flex-row gap-4 md:items-center">
+        <RadioGroup defaultValue="all" onValueChange={(value) => setTypeFilter(value as any)} className="flex items-center space-x-4 bg-primary/10 p-1 rounded-lg flex-shrink-0">
           <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="r1" /><Label htmlFor="r1">All</Label></div>
           <div className="flex items-center space-x-2"><RadioGroupItem value="Chức vụ" id="r2" /><Label htmlFor="r2">Chức vụ</Label></div>
           <div className="flex items-center space-x-2"><RadioGroupItem value="Khách mời" id="r3" /><Label htmlFor="r3">Khách mời</Label></div>
@@ -180,7 +180,7 @@ const RevenuePage = () => {
           placeholder="Tìm kiếm theo tên, ID..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="bg-white/80"
+          className="bg-white/80 flex-grow"
         />
       </div>
 
