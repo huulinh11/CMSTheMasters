@@ -43,9 +43,10 @@ type Referrer = (CombinedGuest | (AppUser & { type: 'sale' })) & { name: string 
 interface AddGuestServiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultGuestId?: string;
 }
 
-export const AddGuestServiceDialog = ({ open, onOpenChange }: AddGuestServiceDialogProps) => {
+export const AddGuestServiceDialog = ({ open, onOpenChange, defaultGuestId }: AddGuestServiceDialogProps) => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const isSale = profile?.role === 'Sale';
@@ -113,10 +114,15 @@ export const AddGuestServiceDialog = ({ open, onOpenChange }: AddGuestServiceDia
       setSelectedReferrerId("");
       setPaidAmount(0);
       setFormattedPaidAmount("0");
-    } else if (isSale && profile) {
-      setSelectedReferrerId(profile.id);
+    } else {
+      if (defaultGuestId) {
+        setSelectedGuestId(defaultGuestId);
+      }
+      if (isSale && profile) {
+        setSelectedReferrerId(profile.id);
+      }
     }
-  }, [open, isSale, profile]);
+  }, [open, isSale, profile, defaultGuestId]);
 
   useEffect(() => {
     if (selectedService) {
@@ -142,7 +148,7 @@ export const AddGuestServiceDialog = ({ open, onOpenChange }: AddGuestServiceDia
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Khách mời</Label>
-            <Popover open={isGuestPopoverOpen} onOpenChange={setIsGuestPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between">{selectedGuestId ? guests.find(g => g.id === selectedGuestId)?.name : "Chọn khách mời..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Tìm khách..." /><CommandList><CommandEmpty>Không tìm thấy.</CommandEmpty><CommandGroup>{guests.map(guest => (<CommandItem value={guest.name} key={guest.id} onSelect={() => { setSelectedGuestId(guest.id); setIsGuestPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", guest.id === selectedGuestId ? "opacity-100" : "opacity-0")} />{guest.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
+            <Popover open={isGuestPopoverOpen} onOpenChange={setIsGuestPopoverOpen}><PopoverTrigger asChild><Button variant="outline" role="combobox" className="w-full justify-between" disabled={!!defaultGuestId}>{selectedGuestId ? guests.find(g => g.id === selectedGuestId)?.name : "Chọn khách mời..."}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command><CommandInput placeholder="Tìm khách..." /><CommandList><CommandEmpty>Không tìm thấy.</CommandEmpty><CommandGroup>{guests.map(guest => (<CommandItem value={guest.name} key={guest.id} onSelect={() => { setSelectedGuestId(guest.id); setIsGuestPopoverOpen(false); }}><Check className={cn("mr-2 h-4 w-4", guest.id === selectedGuestId ? "opacity-100" : "opacity-0")} />{guest.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover>
           </div>
           <div className="space-y-2">
             <Label>Dịch vụ</Label>

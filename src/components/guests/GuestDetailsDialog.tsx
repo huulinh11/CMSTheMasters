@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2, QrCode, Briefcase } from "lucide-react";
+import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2, QrCode, Briefcase, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,6 +41,7 @@ import BillPreviewDialog from "../Revenue/BillPreviewDialog";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { ProfileStatus } from "@/types/vip-guest";
 import { GuestQrCodeDialog } from "./GuestQrCodeDialog";
+import { AddGuestServiceDialog } from "@/components/service-sales/AddGuestServiceDialog";
 
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
@@ -91,6 +92,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [billPreviewUrl, setBillPreviewUrl] = useState<string | null>(null);
   const [isQrCodeDialogOpen, setIsQrCodeDialogOpen] = useState(false);
+  const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
   const queryClient = useQueryClient();
   const { profile, user } = useAuth();
   const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
@@ -318,7 +320,10 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><Briefcase className="mr-2" /> Dịch vụ đã bán</CardTitle></CardHeader>
+                <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center text-base md:text-lg"><Briefcase className="mr-2" /> Dịch vụ đã bán</CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setIsAddServiceOpen(true)}><PlusCircle className="h-4 w-4" /></Button>
+                </CardHeader>
                 <CardContent className="p-3 md:p-4 pt-0">
                   {services.length > 0 ? (
                     <div className="space-y-2">
@@ -553,6 +558,11 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         open={isQrCodeDialogOpen}
         onOpenChange={setIsQrCodeDialogOpen}
         guest={guest ? { ...guest, type: guestType === 'vip' ? 'Chức vụ' : 'Khách mời' } : null}
+      />
+      <AddGuestServiceDialog
+        open={isAddServiceOpen}
+        onOpenChange={setIsAddServiceOpen}
+        defaultGuestId={guest.id}
       />
     </>
   );
