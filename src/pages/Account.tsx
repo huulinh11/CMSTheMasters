@@ -24,15 +24,14 @@ import { PageHeader } from "@/components/PageHeader";
 const AccountPage = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
-  const { session: authSession } = useAuth();
+  const { session } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
 
   const { data: users = [], isLoading, error: queryError } = useQuery<AppUser[]>({
-    queryKey: ['app_users'],
+    queryKey: ['app_users', session?.access_token],
     queryFn: async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
+      if (!session) {
         throw new Error("Xác thực không hợp lệ.");
       }
 
@@ -52,13 +51,12 @@ const AccountPage = () => {
       }
       return data;
     },
-    enabled: !!authSession,
+    enabled: !!session,
   });
 
   const mutation = useMutation({
     mutationFn: async (payload: { method: string, payload: any }) => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
+      if (!session) {
         throw new Error("Xác thực không hợp lệ.");
       }
 
