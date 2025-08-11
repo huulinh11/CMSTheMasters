@@ -36,12 +36,10 @@ export const CombinedRevenueCards = ({ guests, onView, onEdit, onPay, onHistory,
                 </CardTitle>
                 <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
               </div>
-              {guest.type === 'Chức vụ' && (
-                <Avatar>
-                  <AvatarImage src={guest.image_url || ''} alt={guest.name} />
-                  <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-              )}
+              <Avatar>
+                <AvatarImage src={guest.image_url || ''} alt={guest.name} />
+                <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+              </Avatar>
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="border-t border-slate-100 pt-3 space-y-2">
