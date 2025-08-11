@@ -45,10 +45,12 @@ import { GuestQrCodeDialog } from "./GuestQrCodeDialog";
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
   return (
-    <div className="flex items-center py-2.5 border-b last:border-b-0">
-      <Icon className="h-4 w-4 mr-3 flex-shrink-0 text-slate-500" />
-      <p className="text-sm text-slate-500 flex-shrink-0">{label}</p>
-      <div className="flex-1 flex justify-end items-center gap-2 ml-4">
+    <div className="flex items-center justify-between py-2.5 border-b last:border-b-0">
+      <div className="flex items-center">
+        <Icon className="h-4 w-4 mr-3 flex-shrink-0 text-slate-500" />
+        <p className="text-sm text-slate-500">{label}</p>
+      </div>
+      <div className="flex items-center gap-2 ml-4">
         {value && <p className="font-medium text-slate-800 text-right">{value}</p>}
         {children}
       </div>
@@ -288,7 +290,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       </header>
 
       <ScrollArea className="flex-grow min-h-0">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-0 lg:pb-6 pb-24">
           <div className="space-y-6">
             <Card>
               <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
@@ -357,17 +359,16 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                     )}
                   </div>
                   <div className="mt-4">
-                    {payments.length === 0 && upsaleHistory.length === 0 ? (
-                      <InfoRow icon={History} label="Lịch sử giao dịch" value="Chưa có giao dịch." />
-                    ) : (
-                      <>
-                        <h4 className="font-semibold mb-2 flex items-center"><History className="mr-2 h-4 w-4" /> Lịch sử giao dịch</h4>
-                        <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
-                          {payments.map((p: any) => (<div key={p.id} className="flex justify-between"><span>Thanh toán ({format(new Date(p.created_at), 'dd/MM/yy')})</span><span className="font-medium text-green-600">{formatCurrency(p.amount)}</span></div>))}
-                          {upsaleHistory.map((u: any) => (<div key={u.id} className="flex justify-between"><span>Upsale ({format(new Date(u.created_at), 'dd/MM/yy')})</span><span className="font-medium text-blue-600">{formatCurrency(u.to_sponsorship - u.from_sponsorship)}</span></div>))}
+                    <InfoRow icon={History} label="Lịch sử giao dịch">
+                      {payments.length === 0 && upsaleHistory.length === 0 ? (
+                        <p className="font-medium text-slate-800">Chưa có giao dịch.</p>
+                      ) : (
+                        <div className="max-h-40 overflow-y-auto space-y-2 text-sm text-right">
+                          {payments.map((p: any) => (<div key={p.id} className="flex justify-end"><span>Thanh toán ({format(new Date(p.created_at), 'dd/MM/yy')})</span><span className="font-medium text-green-600 ml-2">{formatCurrency(p.amount)}</span></div>))}
+                          {upsaleHistory.map((u: any) => (<div key={u.id} className="flex justify-end"><span>Upsale ({format(new Date(u.created_at), 'dd/MM/yy')})</span><span className="font-medium text-blue-600 ml-2">{formatCurrency(u.to_sponsorship - u.from_sponsorship)}</span></div>))}
                         </div>
-                      </>
-                    )}
+                      )}
+                    </InfoRow>
                   </div>
                 </CardContent>
               </Card>
@@ -427,7 +428,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         </div>
       </ScrollArea>
       {isMobile && canDelete && (
-        <div className="p-4 border-t flex-shrink-0 bg-white/50">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200/50 bg-gradient-to-t from-[#e5b899]/80 via-[#e5b899]/50 to-transparent backdrop-blur-sm">
           <Button variant="destructive" className="w-full" onClick={() => setIsDeleteAlertOpen(true)}>
             <Trash2 className="mr-2 h-4 w-4" /> Xóa khách mời
           </Button>
@@ -545,7 +546,7 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
     <>
       {isMobile ? (
         <Drawer open={open} onOpenChange={onOpenChange}>
-          <DrawerContent className="h-[calc(100dvh-60px)] bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col">
+          <DrawerContent className="h-[calc(100dvh-60px)] bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col relative [&>div:first-child]:bg-slate-400">
             {guestId && guestType && <GuestDetailsContent isMobile={isMobile} guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DrawerContent>
         </Drawer>
