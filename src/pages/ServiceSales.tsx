@@ -14,6 +14,8 @@ import { showError, showSuccess } from "@/utils/toast";
 import { GuestServiceSummaryTable } from "@/components/service-sales/GuestServiceSummaryTable";
 import { GuestServiceSummaryCards } from "@/components/service-sales/GuestServiceSummaryCards";
 import { ServiceDetailsDialog } from "@/components/service-sales/ServiceDetailsDialog";
+import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
+import { GuestRevenue } from "@/types/guest-revenue";
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -22,6 +24,7 @@ const ServiceSalesPage = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [viewingGuestSummary, setViewingGuestSummary] = useState<GuestServiceSummary | null>(null);
+  const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
 
   const { data: guestServices = [], isLoading } = useQuery<GuestService[]>({
     queryKey: ['guest_service_details'],
@@ -112,6 +115,10 @@ const ServiceSalesPage = () => {
 
   const totalUnpaid = stats.totalRevenue - stats.totalPaid;
 
+  const handleHistory = (summary: GuestServiceSummary) => {
+    setHistoryGuest({ id: summary.guest_id, name: summary.guest_name } as GuestRevenue);
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex justify-between items-center">
@@ -136,11 +143,13 @@ const ServiceSalesPage = () => {
         <GuestServiceSummaryCards
           summaries={filteredSummaries}
           onViewDetails={setViewingGuestSummary}
+          onHistory={handleHistory}
         />
       ) : (
         <GuestServiceSummaryTable
           summaries={filteredSummaries}
           onViewDetails={setViewingGuestSummary}
+          onHistory={handleHistory}
         />
       )}
 
@@ -154,6 +163,7 @@ const ServiceSalesPage = () => {
         onStatusChange={(id, status) => statusUpdateMutation.mutate({ id, status })}
         onConvertTrial={(id) => convertTrialMutation.mutate(id)}
       />
+      <GuestHistoryDialog guest={historyGuest} open={!!historyGuest} onOpenChange={() => setHistoryGuest(null)} />
     </div>
   );
 };
