@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2, QrCode } from "lucide-react";
+import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2, QrCode, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -110,6 +110,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       const tasksPromise = supabase.from('guest_tasks').select('*').eq('guest_id', guestId);
       const paymentsPromise = supabase.from(paymentTable).select('*').eq('guest_id', guestId);
       const upsaleHistoryPromise = supabase.from('guest_upsale_history').select('*').eq('guest_id', guestId);
+      const servicesPromise = supabase.from('guest_services').select('*, services(name)').eq('guest_id', guestId);
 
       const [
         { data: guestData, error: guestError },
@@ -118,7 +119,8 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         { data: tasksData, error: tasksError },
         { data: paymentsData, error: paymentsError },
         { data: upsaleHistoryData, error: upsaleHistoryError },
-      ] = await Promise.all([guestPromise, revenuePromise, mediaBenefitPromise, tasksPromise, paymentsPromise, upsaleHistoryPromise]);
+        { data: servicesData, error: servicesError },
+      ] = await Promise.all([guestPromise, revenuePromise, mediaBenefitPromise, tasksPromise, paymentsPromise, upsaleHistoryPromise, servicesPromise]);
 
       if (guestError) throw new Error(`Guest Error: ${guestError.message}`);
       if (revenueError) throw new Error(`Revenue Error: ${revenueError.message}`);
@@ -126,6 +128,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       if (tasksError) throw new Error(`Tasks Error: ${tasksError.message}`);
       if (paymentsError) throw new Error(`Payments Error: ${paymentsError.message}`);
       if (upsaleHistoryError) throw new Error(`Upsale History Error: ${upsaleHistoryError.message}`);
+      if (servicesError) throw new Error(`Services Error: ${servicesError.message}`);
 
       const revenueData = allRevenueData.find((r: any) => r.id === guestId);
       
@@ -149,6 +152,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         tasks: tasksData || [],
         payments: paymentsData || [],
         upsaleHistory: upsaleHistoryData || [],
+        services: servicesData || [],
       };
     },
     enabled: !!guestType && !!guestId,
@@ -260,7 +264,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
     return <div className="p-4 md:p-6">Không tìm thấy thông tin khách mời.</div>;
   }
 
-  const { guest, revenue, mediaBenefit, tasks, payments, upsaleHistory } = data;
+  const { guest, revenue, mediaBenefit, tasks, payments, upsaleHistory, services } = data;
   const benefitsForRole = benefitsByRole[guest.role] || [];
   const tasksForRole = tasksByRole[guest.role] || [];
   const guestWithRevenue = { ...guest, ...revenue };
@@ -311,6 +315,29 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                       <Button variant="outline" size="sm" onClick={() => setIsMaterialsOpen(true)} disabled={!guest.materials}>Xem</Button>
                     </div>
                   </InfoRow>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><Briefcase className="mr-2" /> Dịch vụ đã bán</CardTitle></CardHeader>
+                <CardContent className="p-3 md:p-4 pt-0">
+                  {services.length > 0 ? (
+                    <div className="space-y-2">
+                      {services.map((service: any) => (
+                        <div key={service.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                          <div>
+                            <p className="font-medium">{service.services.name}</p>
+                            <p className="text-sm text-slate-500">{service.status || 'Chưa có trạng thái'}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">{formatCurrency(service.price)}</p>
+                            <p className="text-xs text-green-600">Đã trả: {formatCurrency(service.paid_amount)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-sm">Chưa bán dịch vụ nào.</p>
+                  )}
                 </CardContent>
               </Card>
             </div>

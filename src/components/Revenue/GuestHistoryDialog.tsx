@@ -42,7 +42,15 @@ type UpsaleHistoryItem = {
   bill_image_url?: string | null;
 };
 
-type CombinedHistoryItem = PaymentHistoryItem | UpsaleHistoryItem;
+type ServiceHistoryItem = {
+  type: 'service';
+  id: string;
+  created_at: string;
+  service_name: string;
+  price: number;
+};
+
+type CombinedHistoryItem = PaymentHistoryItem | UpsaleHistoryItem | ServiceHistoryItem;
 
 const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogProps) => {
   const [billPreviewUrl, setBillPreviewUrl] = useState<string | null>(null);
@@ -62,10 +70,24 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
         .select('id, created_at, from_role, to_role, from_sponsorship, to_sponsorship, upsaled_by, bill_image_url')
         .eq('guest_id', guest.id);
 
-      const [{ data: payments, error: paymentsError }, { data: upsaleEvents, error: upsaleError }] = await Promise.all([paymentsPromise, upsaleHistoryPromise]);
+      const servicesPromise = supabase
+        .from('guest_services')
+        .select('id, created_at, service_id, price')
+        .eq('guest_id', guest.id);
+
+      const [{ data: payments, error: paymentsError }, { data: upsaleEvents, error: upsaleError }, { data: services, error: servicesError }] = await Promise.all([paymentsPromise, upsaleHistoryPromise, servicesPromise]);
 
       if (paymentsError) throw paymentsError;
       if (upsaleError) throw upsaleError;
+      if (servicesError) throw servicesError;
+
+      const serviceIds = (services || []).map(s => s.service_id);
+      let serviceNamesMap = new Map<string, string>();
+      if (serviceIds.length > 0) {
+        const { data: serviceDetails, error: serviceDetailsError } = await supabase.from('services').select('id, name').in('id', serviceIds);
+        if (serviceDetailsError) throw serviceDetailsError;
+        serviceNamesMap = new Map(serviceDetails.map(s => [s.id, s.name]));
+      }
 
       const paymentHistory: CombinedHistoryItem[] = (payments || []).map(p => ({
         type: 'payment',
@@ -86,7 +108,15 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
         bill_image_url: u.bill_image_url,
       }));
 
-      const combined = [...paymentHistory, ...upsaleHistory];
+      const serviceHistory: CombinedHistoryItem[] = (services || []).map(s => ({
+        type: 'service',
+        id: s.id,
+        created_at: s.created_at,
+        service_name: serviceNamesMap.get(s.service_id) || 'Dịch vụ không xác định',
+        price: s.price,
+      }));
+
+      const combined = [...paymentHistory, ...upsaleHistory, ...serviceHistory];
       combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
       return combined;
@@ -134,7 +164,7 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
                               <div className="font-semibold">Thanh toán</div>
                               <div className="text-green-600 font-medium">{formatCurrency(item.amount)}</div>
                             </div>
-                          ) : (
+                          ) : item.type === 'upsale' ? (
                             <div>
                               <div className="font-semibold text-blue-600">Upsale</div>
                               <div className="flex items-center text-sm flex-wrap">
@@ -156,6 +186,12 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
                                   Xem bill
                                 </Button>
                               )}
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="font-semibold text-purple-600">Dịch vụ</div>
+                              <div>{item.service_name}</div>
+                              <div className="text-purple-600 font-medium">{formatCurrency(item.price)}</div>
                             </div>
                           )}
                         </TableCell>

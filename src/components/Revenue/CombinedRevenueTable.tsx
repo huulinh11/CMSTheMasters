@@ -31,6 +31,8 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
             <TableHead>Vai trò</TableHead>
             <TableHead>Loại</TableHead>
             <TableHead>Tài trợ</TableHead>
+            <TableHead>Tiền dịch vụ</TableHead>
+            <TableHead>Tổng tiền</TableHead>
             <TableHead>Đã thanh toán</TableHead>
             <TableHead>Chưa thanh toán</TableHead>
             <TableHead>Nguồn TT</TableHead>
@@ -47,16 +49,33 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
                     {guest.name}
                   </button>
                 </TableCell>
-                <TableCell>{guest.role}</TableCell>
+                <TableCell>
+                  {guest.role}
+                  {guest.type === 'Khách mời' && guest.is_upsaled && (
+                    <div className="text-xs text-red-500 font-semibold mt-1">Đã upsale</div>
+                  )}
+                </TableCell>
                 <TableCell>{guest.type}</TableCell>
-                <TableCell>{formatCurrency(guest.sponsorship)}</TableCell>
+                <TableCell>
+                  {guest.type === 'Khách mời' && guest.is_upsaled ? (
+                    <span className="bg-red-600 text-white font-bold px-2 py-1 rounded-md text-xs">
+                      {formatCurrency(guest.sponsorship)}
+                    </span>
+                  ) : (
+                    formatCurrency(guest.sponsorship)
+                  )}
+                </TableCell>
+                <TableCell>{formatCurrency(guest.service_revenue)}</TableCell>
+                <TableCell className="font-bold">{formatCurrency(guest.total_revenue)}</TableCell>
                 <TableCell className="text-green-600">{formatCurrency(guest.paid)}</TableCell>
                 <TableCell className="text-red-600">{formatCurrency(guest.unpaid)}</TableCell>
                 <TableCell>{guest.type === 'Khách mời' ? guest.payment_source : 'N/A'}</TableCell>
                 <TableCell className="text-right space-x-1">
                   <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}><Edit className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}><CreditCard className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => onHistory(guest)}><History className="h-4 w-4" /></Button>
+                  {guest.has_history && (
+                    <Button variant="ghost" size="icon" onClick={() => onHistory(guest)}><History className="h-4 w-4" /></Button>
+                  )}
                   {guest.type === 'Khách mời' && (
                     <Button variant="ghost" size="icon" onClick={() => onUpsale(guest)}><TrendingUp className="h-4 w-4" /></Button>
                   )}
@@ -65,7 +84,7 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={9} className="h-24 text-center">
+              <TableCell colSpan={11} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>

@@ -36,17 +36,33 @@ export const CombinedRevenueCards = ({ guests, onView, onEdit, onPay, onHistory,
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="border-t border-slate-100 pt-3 space-y-2">
-                <InfoRow label="Tài trợ" value={formatCurrency(guest.sponsorship)} />
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">Tài trợ</span>
+                  {guest.type === 'Khách mời' && guest.is_upsaled ? (
+                    <span className="bg-red-600 text-white font-bold px-2 py-1 rounded-md text-xs">
+                      {formatCurrency(guest.sponsorship)}
+                    </span>
+                  ) : (
+                    <span className="font-medium text-slate-800">{formatCurrency(guest.sponsorship)}</span>
+                  )}
+                </div>
+                <InfoRow label="Tiền dịch vụ" value={formatCurrency(guest.service_revenue)} />
+                <InfoRow label="Tổng tiền" value={formatCurrency(guest.total_revenue)} valueClass="font-bold text-primary" />
                 <InfoRow label="Đã thanh toán" value={formatCurrency(guest.paid)} valueClass="text-green-600" />
                 <InfoRow label="Chưa thanh toán" value={formatCurrency(guest.unpaid)} valueClass="text-red-600" />
                 {guest.type === 'Khách mời' && <InfoRow label="Nguồn TT" value={guest.payment_source || 'N/A'} />}
+                {guest.type === 'Khách mời' && guest.is_upsaled && (
+                  <InfoRow label="Trạng thái" value="Đã upsale" valueClass="text-red-500 font-semibold" />
+                )}
               </div>
               <div className="flex gap-2 pt-2">
                 <Button className="flex-1" variant="outline" size="sm" onClick={() => onEdit(guest)}><Edit className="mr-2 h-4 w-4" /> Sửa</Button>
                 <Button className="flex-1" size="sm" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}><CreditCard className="mr-2 h-4 w-4" /> Thanh toán</Button>
               </div>
               <div className="flex gap-2">
-                <Button className="flex-1" variant="secondary" size="sm" onClick={() => onHistory(guest)}><History className="mr-2 h-4 w-4" /> Lịch sử</Button>
+                {guest.has_history && (
+                  <Button className="flex-1" variant="secondary" size="sm" onClick={() => onHistory(guest)}><History className="mr-2 h-4 w-4" /> Lịch sử</Button>
+                )}
                 {guest.type === 'Khách mời' && (
                   <Button className="flex-1" variant="secondary" size="sm" onClick={() => onUpsale(guest)}><TrendingUp className="mr-2 h-4 w-4" /> Upsale</Button>
                 )}

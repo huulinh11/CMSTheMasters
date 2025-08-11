@@ -20,8 +20,13 @@ import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog";
 import { CombinedRevenueTable } from "@/components/Revenue/CombinedRevenueTable";
 import { CombinedRevenueCards } from "@/components/Revenue/CombinedRevenueCards";
+import { GuestService } from "@/types/service-sales";
 
-export type CombinedGuestRevenue = (GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' });
+export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
+  service_revenue: number;
+  total_revenue: number;
+  has_history: boolean;
+};
 
 type UpsaleHistory = {
   guest_id: string;
@@ -88,6 +93,15 @@ const RevenuePage = () => {
     }
   });
 
+  const { data: guestServices = [], isLoading: isLoadingServices } = useQuery<GuestService[]>({
+    queryKey: ['guest_service_details_all_for_revenue'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_guest_service_details');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   const regularGuests = useMemo((): GuestRevenue[] => {
     if (isLoadingRegular || isLoadingHistory) return [];
 
@@ -127,10 +141,29 @@ const RevenuePage = () => {
   }, [regularGuestsData, upsaleHistory, isLoadingRegular, isLoadingHistory]);
 
   const combinedGuests = useMemo(() => {
-    const vips: CombinedGuestRevenue[] = vipGuestsData.map(g => ({ ...g, type: 'Chức vụ' }));
-    const regulars: CombinedGuestRevenue[] = regularGuests.map(g => ({ ...g, type: 'Khách mời' }));
+    const serviceRevenueByGuest = new Map<string, number>();
+    const serviceCountByGuest = new Map<string, number>();
+    guestServices.forEach(service => {
+        serviceRevenueByGuest.set(service.guest_id, (serviceRevenueByGuest.get(service.guest_id) || 0) + service.price);
+        serviceCountByGuest.set(service.guest_id, (serviceCountByGuest.get(service.guest_id) || 0) + 1);
+    });
+
+    const vips: CombinedGuestRevenue[] = vipGuestsData.map(g => ({ 
+        ...g, 
+        type: 'Chức vụ',
+        service_revenue: serviceRevenueByGuest.get(g.id) || 0,
+        total_revenue: (g.sponsorship || 0) + (serviceRevenueByGuest.get(g.id) || 0),
+        has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0
+    }));
+    const regulars: CombinedGuestRevenue[] = regularGuests.map(g => ({ 
+        ...g, 
+        type: 'Khách mời',
+        service_revenue: serviceRevenueByGuest.get(g.id) || 0,
+        total_revenue: g.sponsorship + (serviceRevenueByGuest.get(g.id) || 0),
+        has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0
+    }));
     return [...vips, ...regulars].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [vipGuestsData, regularGuests]);
+  }, [vipGuestsData, regularGuests, guestServices, upsaleHistory]);
 
   const filteredGuests = useMemo(() => {
     return combinedGuests.filter(guest => {
@@ -152,7 +185,7 @@ const RevenuePage = () => {
     );
   }, [filteredGuests]);
 
-  const isLoading = isLoadingVip || isLoadingRegular || isLoadingRoles || isLoadingHistory;
+  const isLoading = isLoadingVip || isLoadingRegular || isLoadingRoles || isLoadingHistory || isLoadingServices;
 
   const handleView = (guest: CombinedGuestRevenue) => setViewingGuest(guest);
   const handleEdit = (guest: CombinedGuestRevenue) => setEditingGuest(guest);
