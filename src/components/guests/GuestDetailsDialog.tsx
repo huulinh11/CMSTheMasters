@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2, QrCode, Briefcase, PlusCircle } from "lucide-react";
+import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2, QrCode, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -42,8 +42,9 @@ import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { ProfileStatus } from "@/types/vip-guest";
 import { GuestQrCodeDialog } from "./GuestQrCodeDialog";
 import { AddGuestServiceDialog } from "@/components/service-sales/AddGuestServiceDialog";
-import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
+import GuestHistoryDialog from "../Revenue/GuestHistoryDialog";
+import { ServiceDetailsDialog } from "./ServiceDetailsDialog";
 
 const InfoRow = ({ icon: Icon, label, value, children, valueClass }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode, valueClass?: string }) => {
   if (!value && !children) return null;
@@ -95,6 +96,8 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
   const [billPreviewUrl, setBillPreviewUrl] = useState<string | null>(null);
   const [isQrCodeDialogOpen, setIsQrCodeDialogOpen] = useState(false);
   const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isServiceDetailsOpen, setIsServiceDetailsOpen] = useState(false);
   const queryClient = useQueryClient();
   const { profile, user } = useAuth();
   const canDelete = profile && (profile.role === 'Admin' || profile.role === 'Quản lý');
@@ -300,6 +303,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
   const totalPaid = (revenue?.paid || 0) + servicePaid;
   const totalUnpaid = totalRevenue - totalPaid;
   const guestWithRevenue = { ...guest, ...revenue, unpaid: totalUnpaid };
+  const hasHistory = payments.length > 0 || upsaleHistory.length > 0 || services.length > 0;
 
   return (
     <>
@@ -357,7 +361,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                   <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
                     <CardTitle className="flex items-center text-base md:text-lg"><DollarSign className="mr-2" /> Doanh thu</CardTitle>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => setIsAddServiceOpen(true)}><PlusCircle className="h-4 w-4" /></Button>
+                      <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white" onClick={() => setIsAddServiceOpen(true)}>Thêm DV</Button>
                       <Button variant="ghost" size="icon" onClick={() => { setRevenueDialogMode('edit'); setIsRevenueDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
                     </div>
                   </CardHeader>
@@ -369,10 +373,10 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                     <InfoRow icon={AlertCircle} label="Chưa thanh toán" value={formatCurrency(totalUnpaid)} valueClass="text-red-600" />
                     {guestType === 'regular' && <InfoRow icon={Info} label="Nguồn thanh toán" value={revenue.payment_source} />}
                     {revenue.is_upsaled && (
-                      <InfoRow icon={FileText} label="Bill">
+                      <InfoRow icon={FileText} label="Hình bill">
                         {revenue.bill_image_url ? (
                           <Button variant="link" className="p-0 h-auto font-medium" onClick={() => setBillPreviewUrl(revenue.bill_image_url)}>
-                            Xem bill
+                            Xem hình bill
                           </Button>
                         ) : (
                           <p className="font-medium text-slate-500">Trống</p>
@@ -382,22 +386,9 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                     
                     {services.length > 0 && (
                       <div className="mt-4 pt-4 border-t">
-                        <h4 className="text-sm font-semibold mb-2">Chi tiết dịch vụ</h4>
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                          {services.map((service: any) => (
-                            <div key={service.id} className="text-sm p-2 rounded-md bg-slate-50">
-                              <div className="flex justify-between font-medium">
-                                <span>{service.services.name}</span>
-                                <span>{formatCurrency(service.price)}</span>
-                              </div>
-                              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                                <span>{service.status || 'Chưa có trạng thái'}</span>
-                                <span>Đã trả: {formatCurrency(service.paid_amount)}</span>
-                              </div>
-                              {service.referrer_name && <div className="text-xs text-muted-foreground mt-1">Người giới thiệu: {service.referrer_name}</div>}
-                            </div>
-                          ))}
-                        </div>
+                        <Button className="w-full" variant="secondary" onClick={() => setIsServiceDetailsOpen(true)}>
+                          Xem chi tiết dịch vụ ({services.length})
+                        </Button>
                       </div>
                     )}
 
@@ -422,19 +413,11 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                           </Button>
                       )}
                     </div>
-                    <div className="mt-4">
-                      <InfoRow icon={History} label="Lịch sử giao dịch">
-                        {payments.length === 0 && upsaleHistory.length === 0 && services.length === 0 ? (
-                          <p className="font-medium text-slate-800">Chưa có giao dịch.</p>
-                        ) : (
-                          <div className="max-h-40 overflow-y-auto space-y-2 text-sm text-right">
-                            {payments.map((p: any) => (<div key={p.id} className="flex justify-end"><span>Thanh toán ({format(new Date(p.created_at), 'dd/MM/yy')})</span><span className="font-medium text-green-600 ml-2">{formatCurrency(p.amount)}</span></div>))}
-                            {upsaleHistory.map((u: any) => (<div key={u.id} className="flex justify-end"><span>Upsale ({format(new Date(u.created_at), 'dd/MM/yy')})</span><span className="font-medium text-blue-600 ml-2">{formatCurrency(u.to_sponsorship - u.from_sponsorship)}</span></div>))}
-                            {services.map((s: any) => (<div key={s.id} className="flex justify-end"><span>Dịch vụ: {s.services.name} ({format(new Date(s.created_at), 'dd/MM/yy')})</span><span className="font-medium text-purple-600 ml-2">{formatCurrency(s.price)}</span></div>))}
-                          </div>
-                        )}
-                      </InfoRow>
-                    </div>
+                    {hasHistory && (
+                      <Button className="w-full mt-2" variant="outline" onClick={() => setIsHistoryOpen(true)}>
+                        <History className="mr-2 h-4 w-4" /> Xem lịch sử giao dịch
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -595,6 +578,17 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         open={isAddServiceOpen}
         onOpenChange={setIsAddServiceOpen}
         defaultGuestId={guest.id}
+      />
+      <GuestHistoryDialog
+        guest={guest ? { ...guest, ...revenue, unpaid: totalUnpaid } : null}
+        open={isHistoryOpen}
+        onOpenChange={setIsHistoryOpen}
+      />
+      <ServiceDetailsDialog
+        guestName={guest.name}
+        services={services}
+        open={isServiceDetailsOpen}
+        onOpenChange={setIsServiceDetailsOpen}
       />
     </>
   );
