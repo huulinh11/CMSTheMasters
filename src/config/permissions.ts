@@ -14,6 +14,7 @@ export const permissionsByRole: Record<AppUser['role'], string[]> = {
     "event-tasks",
     "information",
     "revenue",
+    "service-sales", // Thêm quyền
     "commission",
     "timeline",
     "public-user",

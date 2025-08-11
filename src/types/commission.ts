@@ -1,3 +1,5 @@
+import { ServiceCommissionDetail, ServiceCommissionSummary } from "./service-sales";
+
 export type CommissionSummary = {
   referrer_name: string;
   commissionable_referrals_count: number;
@@ -29,3 +31,6 @@ export type UpsaleCommissionDetail = {
   from_role: string;
   to_role: string;
 };
+
+// Add new types for service commission
+export type { ServiceCommissionSummary, ServiceCommissionDetail };

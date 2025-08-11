@@ -14,6 +14,7 @@ type GeneralSettingsData = {
   id: string;
   qr_scan_sound_url?: string | null;
   default_dashboard_tab?: 'khach-moi' | 'tac-vu' | 'quyen-loi' | null;
+  service_commission_rate?: number | null; // Thêm trường mới
 };
 
 const GeneralSettings = () => {
@@ -25,7 +26,7 @@ const GeneralSettings = () => {
   const { data, isLoading } = useQuery<GeneralSettingsData | null>({
     queryKey: ['general_settings'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('checklist_settings').select('id, qr_scan_sound_url, default_dashboard_tab').limit(1).single();
+      const { data, error } = await supabase.from('checklist_settings').select('id, qr_scan_sound_url, default_dashboard_tab, service_commission_rate').limit(1).single();
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     }
@@ -120,6 +121,24 @@ const GeneralSettings = () => {
               <SelectItem value="quyen-loi">Quyền lợi</SelectItem>
             </SelectContent>
           </Select>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Cấu hình Hoa hồng</CardTitle>
+          <CardDescription>Cài đặt tỷ lệ hoa hồng cho các dịch vụ bán thêm.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Label htmlFor="commission-rate">Tỷ lệ hoa hồng dịch vụ (%)</Label>
+          <Input
+            id="commission-rate"
+            type="number"
+            value={(settings.service_commission_rate || 0) * 100}
+            onChange={(e) => handleConfigChange('service_commission_rate', Number(e.target.value) / 100)}
+            className="max-w-xs"
+            placeholder="Ví dụ: 10"
+          />
         </CardContent>
       </Card>
 
