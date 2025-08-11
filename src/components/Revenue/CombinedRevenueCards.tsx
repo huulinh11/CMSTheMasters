@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { CombinedGuestRevenue } from "@/pages/Revenue";
 import { formatCurrency } from "@/lib/utils";
 import { Edit, CreditCard, History, TrendingUp } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CombinedRevenueCardsProps {
   guests: CombinedGuestRevenue[];
@@ -26,13 +27,21 @@ export const CombinedRevenueCards = ({ guests, onView, onEdit, onPay, onHistory,
       {guests.length > 0 ? (
         guests.map((guest) => (
           <Card key={guest.id} className="bg-white shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold text-slate-800">
-                <button onClick={() => onView(guest)} className="text-left hover:underline">
-                  {guest.name}
-                </button>
-              </CardTitle>
-              <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
+            <CardHeader className="pb-2 flex flex-row items-start justify-between">
+              <div>
+                <CardTitle className="text-lg font-semibold text-slate-800">
+                  <button onClick={() => onView(guest)} className="text-left hover:underline">
+                    {guest.name}
+                  </button>
+                </CardTitle>
+                <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
+              </div>
+              {guest.type === 'Chức vụ' && (
+                <Avatar>
+                  <AvatarImage src={guest.image_url || ''} alt={guest.name} />
+                  <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+              )}
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="border-t border-slate-100 pt-3 space-y-2">

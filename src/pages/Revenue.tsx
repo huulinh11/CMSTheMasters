@@ -21,11 +21,13 @@ import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog"
 import { CombinedRevenueTable } from "@/components/Revenue/CombinedRevenueTable";
 import { CombinedRevenueCards } from "@/components/Revenue/CombinedRevenueCards";
 import { GuestService } from "@/types/service-sales";
+import { VipGuest } from "@/types/vip-guest";
 
 export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
   service_revenue: number;
   total_revenue: number;
   has_history: boolean;
+  image_url?: string | null;
 };
 
 type UpsaleHistory = {
@@ -81,7 +83,7 @@ const RevenuePage = () => {
         const { data, error } = await supabase.from('guest_upsale_history').select('guest_id, from_sponsorship, from_payment_source, created_at');
         if (error) throw error;
         return data || [];
-    }
+    },
   });
 
   const { data: roleConfigs = [], isLoading: isLoadingRoles } = useQuery<RoleConfiguration[]>({
@@ -98,6 +100,15 @@ const RevenuePage = () => {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_guest_service_details');
       if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: vipGuestsWithImages = [], isLoading: isLoadingVipImages } = useQuery<Pick<VipGuest, 'id' | 'image_url'>[]>({
+    queryKey: ['vip_guests_images_for_revenue'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('vip_guests').select('id, image_url');
+      if (error) throw new Error(error.message);
       return data || [];
     }
   });
@@ -148,9 +159,12 @@ const RevenuePage = () => {
         serviceCountByGuest.set(service.guest_id, (serviceCountByGuest.get(service.guest_id) || 0) + 1);
     });
 
+    const vipImagesMap = new Map(vipGuestsWithImages.map(g => [g.id, g.image_url]));
+
     const vips: CombinedGuestRevenue[] = vipGuestsData.map(g => ({ 
         ...g, 
         type: 'Chức vụ',
+        image_url: vipImagesMap.get(g.id),
         service_revenue: serviceRevenueByGuest.get(g.id) || 0,
         total_revenue: (g.sponsorship || 0) + (serviceRevenueByGuest.get(g.id) || 0),
         has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0
@@ -158,12 +172,13 @@ const RevenuePage = () => {
     const regulars: CombinedGuestRevenue[] = regularGuests.map(g => ({ 
         ...g, 
         type: 'Khách mời',
+        image_url: undefined,
         service_revenue: serviceRevenueByGuest.get(g.id) || 0,
         total_revenue: g.sponsorship + (serviceRevenueByGuest.get(g.id) || 0),
         has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0
     }));
     return [...vips, ...regulars].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [vipGuestsData, regularGuests, guestServices, upsaleHistory]);
+  }, [vipGuestsData, regularGuests, guestServices, upsaleHistory, vipGuestsWithImages]);
 
   const filteredGuests = useMemo(() => {
     return combinedGuests.filter(guest => {
@@ -185,7 +200,7 @@ const RevenuePage = () => {
     );
   }, [filteredGuests]);
 
-  const isLoading = isLoadingVip || isLoadingRegular || isLoadingRoles || isLoadingHistory || isLoadingServices;
+  const isLoading = isLoadingVip || isLoadingRegular || isLoadingRoles || isLoadingHistory || isLoadingServices || isLoadingVipImages;
 
   const handleView = (guest: CombinedGuestRevenue) => setViewingGuest(guest);
   const handleEdit = (guest: CombinedGuestRevenue) => setEditingGuest(guest);
