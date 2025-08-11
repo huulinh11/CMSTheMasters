@@ -14,12 +14,14 @@ import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
 
 interface ServiceCommissionDetailsDialogProps {
-  referrer: { id: string; name: string } | null;
+  referrer: { id: string; name: string; hideCommission?: boolean } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export const ServiceCommissionDetailsDialog = ({ referrer, open, onOpenChange }: ServiceCommissionDetailsDialogProps) => {
+  const hideCommission = referrer?.hideCommission;
+
   const { data: details = [], isLoading } = useQuery<ServiceCommissionDetail[]>({
     queryKey: ['service_commission_details', referrer?.id],
     queryFn: async () => {
@@ -54,7 +56,7 @@ export const ServiceCommissionDetailsDialog = ({ referrer, open, onOpenChange }:
                 <TableRow>
                   <TableHead>Khách hàng</TableHead>
                   <TableHead>Dịch vụ</TableHead>
-                  <TableHead className="text-right">Hoa hồng</TableHead>
+                  {!hideCommission && <TableHead className="text-right">Hoa hồng</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -63,23 +65,25 @@ export const ServiceCommissionDetailsDialog = ({ referrer, open, onOpenChange }:
                     <TableRow key={index}>
                       <TableCell>{item.guest_name}</TableCell>
                       <TableCell>{item.service_name}</TableCell>
-                      <TableCell className="text-right font-medium">{formatCurrency(item.commission_earned)}</TableCell>
+                      {!hideCommission && <TableCell className="text-right font-medium">{formatCurrency(item.commission_earned)}</TableCell>}
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
+                    <TableCell colSpan={hideCommission ? 2 : 3} className="h-24 text-center">
                       Không có dữ liệu chi tiết.
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={2} className="font-bold">Tổng hoa hồng</TableCell>
-                  <TableCell className="text-right font-bold">{formatCurrency(totalCommission)}</TableCell>
-                </TableRow>
-              </TableFooter>
+              {!hideCommission && (
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={2} className="font-bold">Tổng hoa hồng</TableCell>
+                    <TableCell className="text-right font-bold">{formatCurrency(totalCommission)}</TableCell>
+                  </TableRow>
+                </TableFooter>
+              )}
             </Table>
           )}
         </div>
