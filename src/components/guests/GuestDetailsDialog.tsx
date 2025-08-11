@@ -42,8 +42,10 @@ import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { ProfileStatus } from "@/types/vip-guest";
 import { GuestQrCodeDialog } from "./GuestQrCodeDialog";
 import { AddGuestServiceDialog } from "@/components/service-sales/AddGuestServiceDialog";
+import { Separator } from "../ui/separator";
+import { cn } from "@/lib/utils";
 
-const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
+const InfoRow = ({ icon: Icon, label, value, children, valueClass }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode, valueClass?: string }) => {
   if (!value && !children) return null;
   return (
     <div className="flex items-center justify-between py-2.5 border-b last:border-b-0 gap-4">
@@ -52,7 +54,7 @@ const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementTy
         <p className="text-sm text-slate-500">{label}</p>
       </div>
       <div className="flex items-center justify-end gap-2 text-right min-w-0">
-        {value && <p className="font-medium text-slate-800 truncate">{value}</p>}
+        {value && <p className={cn("font-medium text-slate-800 truncate", valueClass)}>{value}</p>}
         {children}
       </div>
     </div>
@@ -269,7 +271,35 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
   const { guest, revenue, mediaBenefit, tasks, payments, upsaleHistory, services } = data;
   const benefitsForRole = benefitsByRole[guest.role] || [];
   const tasksForRole = tasksByRole[guest.role] || [];
-  const guestWithRevenue = { ...guest, ...revenue };
+  
+  const serviceRevenue = services.reduce((sum: number, s: any) => sum + s.price, 0);
+  const servicePaid = services.reduce((sum: number, s: any) => sum + s.paid_amount, 0);
+
+  let effectiveSponsorship = revenue?.sponsorship || 0;
+  if (guestType === 'regular' && revenue) {
+      const originalSponsorship = revenue.sponsorship || 0;
+      if (revenue.is_upsaled) {
+          if (upsaleHistory && upsaleHistory.length > 0) {
+              const firstUpsale = upsaleHistory.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+              if (firstUpsale.from_payment_source === 'Chỉ tiêu') {
+                  effectiveSponsorship = originalSponsorship - firstUpsale.from_sponsorship;
+              } else {
+                  effectiveSponsorship = originalSponsorship;
+              }
+          } else {
+              effectiveSponsorship = originalSponsorship;
+          }
+      } else if (revenue.payment_source === 'Chỉ tiêu' && guest.referrer) {
+          effectiveSponsorship = 0;
+      } else {
+          effectiveSponsorship = originalSponsorship;
+      }
+  }
+
+  const totalRevenue = effectiveSponsorship + serviceRevenue;
+  const totalPaid = (revenue?.paid || 0) + servicePaid;
+  const totalUnpaid = totalRevenue - totalPaid;
+  const guestWithRevenue = { ...guest, ...revenue, unpaid: totalUnpaid };
 
   return (
     <>
@@ -319,32 +349,6 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                   </InfoRow>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
-                  <CardTitle className="flex items-center text-base md:text-lg"><Briefcase className="mr-2" /> Dịch vụ đã bán</CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => setIsAddServiceOpen(true)}><PlusCircle className="h-4 w-4" /></Button>
-                </CardHeader>
-                <CardContent className="p-3 md:p-4 pt-0">
-                  {services.length > 0 ? (
-                    <div className="space-y-2">
-                      {services.map((service: any) => (
-                        <div key={service.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                          <div>
-                            <p className="font-medium">{service.services.name}</p>
-                            <p className="text-sm text-slate-500">{service.status || 'Chưa có trạng thái'}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold">{formatCurrency(service.price)}</p>
-                            <p className="text-xs text-green-600">Đã trả: {formatCurrency(service.paid_amount)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-slate-500 text-sm">Chưa bán dịch vụ nào.</p>
-                  )}
-                </CardContent>
-              </Card>
             </div>
 
             <div className="space-y-6">
@@ -352,13 +356,18 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                 <Card>
                   <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
                     <CardTitle className="flex items-center text-base md:text-lg"><DollarSign className="mr-2" /> Doanh thu</CardTitle>
-                    <Button variant="ghost" size="icon" onClick={() => { setRevenueDialogMode('edit'); setIsRevenueDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => setIsAddServiceOpen(true)}><PlusCircle className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => { setRevenueDialogMode('edit'); setIsRevenueDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="p-3 md:p-4 pt-0">
-                    <InfoRow icon={DollarSign} label="Tài trợ" value={formatCurrency(revenue.sponsorship)} />
-                    <InfoRow icon={CheckCircle} label="Đã thanh toán" value={formatCurrency(revenue.paid)} />
-                    <InfoRow icon={AlertCircle} label="Chưa thanh toán" value={formatCurrency(revenue.unpaid)} />
-                    <InfoRow icon={Info} label="Nguồn thanh toán" value={revenue.payment_source} />
+                    <InfoRow icon={DollarSign} label="Tài trợ" value={formatCurrency(effectiveSponsorship)} />
+                    <InfoRow icon={Briefcase} label="Tiền dịch vụ" value={formatCurrency(serviceRevenue)} />
+                    <InfoRow icon={DollarSign} label="Tổng doanh thu" value={formatCurrency(totalRevenue)} valueClass="font-bold text-primary" />
+                    <InfoRow icon={CheckCircle} label="Đã thanh toán" value={formatCurrency(totalPaid)} valueClass="text-green-600" />
+                    <InfoRow icon={AlertCircle} label="Chưa thanh toán" value={formatCurrency(totalUnpaid)} valueClass="text-red-600" />
+                    {guestType === 'regular' && <InfoRow icon={Info} label="Nguồn thanh toán" value={revenue.payment_source} />}
                     {revenue.is_upsaled && (
                       <InfoRow icon={FileText} label="Bill">
                         {revenue.bill_image_url ? (
@@ -370,13 +379,35 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                         )}
                       </InfoRow>
                     )}
+                    
+                    {services.length > 0 && (
+                      <div className="mt-4 pt-4 border-t">
+                        <h4 className="text-sm font-semibold mb-2">Chi tiết dịch vụ</h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {services.map((service: any) => (
+                            <div key={service.id} className="text-sm p-2 rounded-md bg-slate-50">
+                              <div className="flex justify-between font-medium">
+                                <span>{service.services.name}</span>
+                                <span>{formatCurrency(service.price)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                                <span>{service.status || 'Chưa có trạng thái'}</span>
+                                <span>Đã trả: {formatCurrency(service.paid_amount)}</span>
+                              </div>
+                              {service.referrer_name && <div className="text-xs text-muted-foreground mt-1">Người giới thiệu: {service.referrer_name}</div>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex gap-2 mt-4">
                       <Button 
                         className="flex-1" 
                         onClick={() => setIsPaymentDialogOpen(true)} 
                         disabled={!revenue || revenue.unpaid <= 0}
                       >
-                        <CreditCard className="mr-2 h-4 w-4" /> Thanh toán
+                        <CreditCard className="mr-2 h-4 w-4" /> Thanh toán tài trợ
                       </Button>
                       {guestType === 'regular' && (
                           <Button 
@@ -393,12 +424,13 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                     </div>
                     <div className="mt-4">
                       <InfoRow icon={History} label="Lịch sử giao dịch">
-                        {payments.length === 0 && upsaleHistory.length === 0 ? (
+                        {payments.length === 0 && upsaleHistory.length === 0 && services.length === 0 ? (
                           <p className="font-medium text-slate-800">Chưa có giao dịch.</p>
                         ) : (
                           <div className="max-h-40 overflow-y-auto space-y-2 text-sm text-right">
                             {payments.map((p: any) => (<div key={p.id} className="flex justify-end"><span>Thanh toán ({format(new Date(p.created_at), 'dd/MM/yy')})</span><span className="font-medium text-green-600 ml-2">{formatCurrency(p.amount)}</span></div>))}
                             {upsaleHistory.map((u: any) => (<div key={u.id} className="flex justify-end"><span>Upsale ({format(new Date(u.created_at), 'dd/MM/yy')})</span><span className="font-medium text-blue-600 ml-2">{formatCurrency(u.to_sponsorship - u.from_sponsorship)}</span></div>))}
+                            {services.map((s: any) => (<div key={s.id} className="flex justify-end"><span>Dịch vụ: {s.services.name} ({format(new Date(s.created_at), 'dd/MM/yy')})</span><span className="font-medium text-purple-600 ml-2">{formatCurrency(s.price)}</span></div>))}
                           </div>
                         )}
                       </InfoRow>
