@@ -33,8 +33,8 @@ export const EventTasksCards = ({ guests, onViewDetails, onImageClick, onOpenChe
                   </button>
                 </div>
                 <div className="w-2/3 p-3 flex flex-col justify-between">
-                  <div className="flex-grow">
-                    <h3 className="text-base font-bold leading-tight">{guest.name}</h3>
+                  <div className="flex-grow cursor-pointer" onClick={() => onViewDetails(guest)}>
+                    <h3 className="text-base font-bold leading-tight hover:underline">{guest.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1">{guest.role}</p>
                     <p className="text-xs text-muted-foreground">{guest.id}</p>
                     {guest.secondaryInfo && <p className="text-xs mt-1 text-slate-600">{guest.secondaryInfo}</p>}
@@ -43,11 +43,10 @@ export const EventTasksCards = ({ guests, onViewDetails, onImageClick, onOpenChe
                       <span>{guest.phone}</span>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center mt-2 flex-shrink-0">
+                  <div className="mt-2 flex-shrink-0">
                     <Button variant="outline" size="sm" onClick={() => onOpenChecklist(guest)}>
                       {completedCount}/{totalCount} tác vụ
                     </Button>
-                    <Button variant="link" size="sm" className="p-0 h-auto text-sm" onClick={() => onViewDetails(guest)}>Xem chi tiết</Button>
                   </div>
                 </div>
               </div>
