@@ -554,7 +554,7 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
         </Drawer>
       ) : (
         <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="max-w-7xl h-[90vh] p-0 bg-gradient-to-br from-[#fff5ea] to-[#e5b899]">
+          <DialogContent className="max-w-7xl h-[90vh] p-0 bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col">
             {guestId && guestType && <GuestDetailsContent isMobile={isMobile} guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DialogContent>
         </Dialog>
