@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { TaskChecklistDialog } from "@/components/event-tasks/TaskChecklistDialog";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
+import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
 
 export const VipTasksTab = () => {
   const queryClient = useQueryClient();
@@ -35,6 +36,7 @@ export const VipTasksTab = () => {
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
   const [dialogGuest, setDialogGuest] = useState<TaskGuest | null>(null);
+  const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { allTasks, tasksByRole, isLoading: isLoadingPermissions } = useRolePermissions();
 
@@ -180,7 +182,16 @@ export const VipTasksTab = () => {
   };
 
   const handleViewDetails = (guest: TaskGuest) => {
-    navigate(`/guests?view_vip=${guest.id}`);
+    setViewingGuestId(guest.id);
+  };
+
+  const handleEditFromDetails = (guestToEdit: any) => {
+    setViewingGuestId(null);
+    navigate(`/guests?view_vip=${guestToEdit.id}`);
+  };
+
+  const handleDeleteFromDetails = () => {
+    showError("Vui lòng xóa khách mời từ trang Quản lý khách mời.");
   };
 
   return (
@@ -255,6 +266,15 @@ export const VipTasksTab = () => {
         onOpenChange={(isOpen) => !isOpen && setDialogGuest(null)}
         onTaskChange={handleTaskChange}
         tasksByRole={tasksByRole}
+      />
+      <GuestDetailsDialog
+        guestId={viewingGuestId}
+        guestType="vip"
+        open={!!viewingGuestId}
+        onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
+        onEdit={handleEditFromDetails}
+        onDelete={handleDeleteFromDetails}
+        roleConfigs={roleConfigs}
       />
     </div>
   );

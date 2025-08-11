@@ -23,7 +23,7 @@ export const EventTasksCards = ({ guests, onViewDetails, onImageClick, onOpenChe
           return (
             <Card key={guest.id} className="bg-white shadow-sm overflow-hidden">
               <div className="flex">
-                <div className="w-1/3 flex-shrink-0">
+                <div className="w-2/5 flex-shrink-0">
                   <button onClick={() => onImageClick(guest)} className="w-full h-full aspect-[3/4] bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center">
                     {guest.image_url ? (
                       <img src={guest.image_url} alt={guest.name} className="w-full h-full object-cover" />
@@ -32,7 +32,7 @@ export const EventTasksCards = ({ guests, onViewDetails, onImageClick, onOpenChe
                     )}
                   </button>
                 </div>
-                <div className="w-2/3 p-3 flex flex-col justify-between">
+                <div className="w-3/5 p-3 flex flex-col justify-between">
                   <div className="flex-grow cursor-pointer" onClick={() => onViewDetails(guest)}>
                     <h3 className="text-base font-bold leading-tight hover:underline">{guest.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1">{guest.role}</p>
@@ -44,7 +44,7 @@ export const EventTasksCards = ({ guests, onViewDetails, onImageClick, onOpenChe
                     </div>
                   </div>
                   <div className="mt-2 flex-shrink-0">
-                    <Button variant="outline" size="sm" onClick={() => onOpenChecklist(guest)}>
+                    <Button variant="outline" size="sm" onClick={() => onOpenChecklist(guest)} className="w-full">
                       {completedCount}/{totalCount} tác vụ
                     </Button>
                   </div>

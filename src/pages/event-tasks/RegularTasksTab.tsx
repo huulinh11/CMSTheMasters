@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { TaskChecklistDialog } from "@/components/event-tasks/TaskChecklistDialog";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
+import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
 
 export const RegularTasksTab = () => {
   const queryClient = useQueryClient();
@@ -35,6 +36,7 @@ export const RegularTasksTab = () => {
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
   const [dialogGuest, setDialogGuest] = useState<TaskGuest | null>(null);
+  const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { allTasks, tasksByRole, isLoading: isLoadingPermissions } = useRolePermissions();
 
@@ -183,7 +185,16 @@ export const RegularTasksTab = () => {
   };
 
   const handleViewDetails = (guest: TaskGuest) => {
-    navigate(`/guests?view_regular=${guest.id}`);
+    setViewingGuestId(guest.id);
+  };
+
+  const handleEditFromDetails = (guestToEdit: any) => {
+    setViewingGuestId(null);
+    navigate(`/guests?view_regular=${guestToEdit.id}`);
+  };
+
+  const handleDeleteFromDetails = () => {
+    showError("Vui lòng xóa khách mời từ trang Quản lý khách mời.");
   };
 
   return (
@@ -258,6 +269,15 @@ export const RegularTasksTab = () => {
         onOpenChange={(isOpen) => !isOpen && setDialogGuest(null)}
         onTaskChange={handleTaskChange}
         tasksByRole={tasksByRole}
+      />
+      <GuestDetailsDialog
+        guestId={viewingGuestId}
+        guestType="regular"
+        open={!!viewingGuestId}
+        onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
+        onEdit={handleEditFromDetails}
+        onDelete={handleDeleteFromDetails}
+        roleConfigs={roleConfigs}
       />
     </div>
   );
