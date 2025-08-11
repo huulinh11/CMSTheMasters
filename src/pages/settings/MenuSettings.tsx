@@ -9,6 +9,8 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { USER_ROLES } from "@/types/app-user";
 
 const SortableMenuItem = ({ item }: { item: NavItemType }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
@@ -32,30 +34,36 @@ const SortableMenuItem = ({ item }: { item: NavItemType }) => {
 
 const MenuSettings = () => {
   const queryClient = useQueryClient();
+  const [selectedRole, setSelectedRole] = useState('default');
   const [menuItems, setMenuItems] = useState<NavItemType[]>([]);
 
   const { data: savedOrder, isLoading, isSuccess } = useQuery<{ item_id: string }[]>({
-    queryKey: ['menu_config_order'],
+    queryKey: ['menu_config_order', selectedRole],
     queryFn: async () => {
-      const { data, error } = await supabase.from('menu_config').select('item_id').order('order');
+      const { data, error } = await supabase.from('menu_config').select('item_id').eq('role', selectedRole).order('order');
       if (error) throw error;
       return data || [];
     },
   });
 
-  const upsertDefaultOrderMutation = useMutation({
+  const upsertOrderMutation = useMutation({
     mutationFn: async (items: { item_id: string; order: number }[]) => {
-      const { error } = await supabase.from('menu_config').upsert(items);
+      const itemsWithRole = items.map(item => ({ ...item, role: selectedRole }));
+      const { error } = await supabase.from('menu_config').upsert(itemsWithRole);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu_config_order'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ['menu_config_order', selectedRole] });
+      queryClient.invalidateQueries({ queryKey: ['auth_state'] });
+      showSuccess("Đã cập nhật thứ tự menu!");
+    },
+    onError: (error: Error) => showError(error.message),
   });
 
   useEffect(() => {
-    if (isSuccess && savedOrder) {
-      if (savedOrder.length > 0) {
+    if (isSuccess) {
+      let finalItems: NavItemType[];
+      if (savedOrder && savedOrder.length > 0) {
         const orderedItems = savedOrder
           .map(item => allNavItems.find(navItem => navItem.id === item.item_id))
           .filter((item): item is NavItemType => !!item);
@@ -65,27 +73,15 @@ const MenuSettings = () => {
             orderedItems.push(defaultItem);
           }
         });
-        setMenuItems(orderedItems);
+        finalItems = orderedItems;
       } else {
-        setMenuItems(allNavItems);
+        finalItems = allNavItems;
         const defaultOrder = allNavItems.map((item, index) => ({ item_id: item.id, order: index }));
-        upsertDefaultOrderMutation.mutate(defaultOrder);
+        upsertOrderMutation.mutate(defaultOrder);
       }
+      setMenuItems(finalItems);
     }
-  }, [isSuccess, savedOrder, upsertDefaultOrderMutation]);
-
-  const reorderMutation = useMutation({
-    mutationFn: async (items: { item_id: string; order: number }[]) => {
-      const { error } = await supabase.from('menu_config').upsert(items);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu_config_order'] });
-      queryClient.invalidateQueries({ queryKey: ['auth_state'] }); // To refetch in AuthContext
-      showSuccess("Đã cập nhật thứ tự menu!");
-    },
-    onError: (error: Error) => showError(error.message),
-  });
+  }, [isSuccess, savedOrder]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -101,32 +97,46 @@ const MenuSettings = () => {
       setMenuItems(newOrderItems);
 
       const newOrder = newOrderItems.map((item, index) => ({ item_id: item.id, order: index }));
-      reorderMutation.mutate(newOrder);
+      upsertOrderMutation.mutate(newOrder);
     }
   };
 
-  if (isLoading && menuItems.length === 0) {
-    return <Skeleton className="h-96 w-full" />;
-  }
-
   return (
     <div className="space-y-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h3 className="font-semibold text-slate-800">Cấu hình riêng cho</h3>
+        <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <SelectTrigger className="w-full md:w-[240px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Mặc định (chung cho tất cả)</SelectItem>
+            {USER_ROLES.map(role => (
+              <SelectItem key={role} value={role}>{role}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="p-4 border-l-4 border-primary bg-primary/10 rounded-r-lg">
         <h3 className="font-semibold">Hướng dẫn</h3>
         <p className="text-sm text-slate-600">
           Kéo thả để sắp xếp thứ tự menu. Thứ tự mới sẽ được lưu tự động.
-          Trên di động, 4 mục đầu tiên sẽ hiển thị trên thanh điều hướng, các mục còn lại sẽ nằm trong "Khác".
+          Trên di động, 3 mục đầu tiên sẽ hiển thị trên thanh điều hướng, các mục còn lại sẽ nằm trong "Khác".
         </p>
       </div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={menuItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-2">
-            {menuItems.map(item => (
-              <SortableMenuItem key={item.id} item={item} />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      {isLoading ? (
+        <Skeleton className="h-96 w-full" />
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={menuItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {menuItems.map(item => (
+                <SortableMenuItem key={item.id} item={item} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
     </div>
   );
 };

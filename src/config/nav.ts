@@ -25,7 +25,7 @@ export type NavItemType = {
 };
 
 export const allNavItems: NavItemType[] = [
-  { id: "dashboard", to: "/", icon: LayoutDashboard, label: "Dashboard", mobileLabel: "Home", end: true },
+  { id: "dashboard", to: "/", icon: LayoutDashboard, label: "Dashboard", mobileLabel: "Thống kê", end: true },
   { id: "guests", to: "/guests", icon: Users, label: "Khách mời" },
   { id: "media-benefits", to: "/media-benefits", icon: Megaphone, label: "Quyền lợi truyền thông", mobileLabel: "Quyền lợi" },
   { id: "event-tasks", to: "/event-tasks", icon: ClipboardList, label: "Tác vụ sự kiện", mobileLabel: "Tác vụ" },

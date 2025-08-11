@@ -30,34 +30,64 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [menuConfig, setMenuConfig] = useState<NavItemType[]>(allNavItems);
 
-  useEffect(() => {
-    const fetchMenuConfig = async () => {
-      const { data: menuOrder, error } = await supabase
+  const fetchMenuConfig = async (role?: Profile['role']) => {
+    let menuOrder: { item_id: string }[] | null = null;
+    let error: any = null;
+
+    // 1. Try fetching role-specific config
+    if (role) {
+      const { data, error: roleError } = await supabase
         .from('menu_config')
         .select('item_id')
+        .eq('role', role)
         .order('order', { ascending: true });
-
-      if (error) {
-        console.error("Error fetching menu config, using default.", error);
-        return; // Keep default
+      
+      if (roleError) {
+        console.error(`Error fetching menu config for role ${role}:`, roleError);
+      } else if (data && data.length > 0) {
+        menuOrder = data;
       }
+    }
 
-      if (menuOrder && menuOrder.length > 0) {
-        const orderedItems = menuOrder
-          .map(item => allNavItems.find(navItem => navItem.id === item.item_id))
-          .filter((item): item is NavItemType => !!item);
-        
-        // Add any new items from allNavItems that are not in the saved config
-        allNavItems.forEach(defaultItem => {
-          if (!orderedItems.find(item => item.id === defaultItem.id)) {
-            orderedItems.push(defaultItem);
-          }
-        });
-        
-        setMenuConfig(orderedItems);
+    // 2. If no role-specific config, fetch default
+    if (!menuOrder) {
+      const { data, error: defaultError } = await supabase
+        .from('menu_config')
+        .select('item_id')
+        .eq('role', 'default')
+        .order('order', { ascending: true });
+      
+      if (defaultError) {
+        error = defaultError;
+      } else {
+        menuOrder = data;
       }
-    };
+    }
 
+    if (error) {
+      console.error("Error fetching menu config, using default.", error);
+      setMenuConfig(allNavItems); // Fallback to hardcoded order
+      return;
+    }
+
+    if (menuOrder && menuOrder.length > 0) {
+      const orderedItems = menuOrder
+        .map(item => allNavItems.find(navItem => navItem.id === item.item_id))
+        .filter((item): item is NavItemType => !!item);
+      
+      allNavItems.forEach(defaultItem => {
+        if (!orderedItems.find(item => item.id === defaultItem.id)) {
+          orderedItems.push(defaultItem);
+        }
+      });
+      
+      setMenuConfig(orderedItems);
+    } else {
+      setMenuConfig(allNavItems); // Fallback if DB is empty
+    }
+  };
+
+  useEffect(() => {
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
@@ -80,9 +110,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             await supabase.auth.signOut();
           } else {
             setProfile(userProfile || null);
+            await fetchMenuConfig(userProfile?.role);
           }
         }
-        await fetchMenuConfig();
       } catch (e) {
         console.error("Lỗi nghiêm trọng khi khởi tạo auth:", e);
       } finally {
@@ -97,9 +127,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       if (!session) {
         setProfile(null);
+        setMenuConfig(allNavItems);
       }
-      // Refetch menu config on auth change in case it's different
-      fetchMenuConfig();
     });
 
     return () => {
@@ -109,7 +138,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (user && !profile) {
-      const fetchProfile = async () => {
+      const fetchProfileAndConfig = async () => {
         const { data: userProfile, error } = await supabase
           .from('profiles')
           .select('*')
@@ -121,11 +150,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           await supabase.auth.signOut();
         } else {
           setProfile(userProfile || null);
+          await fetchMenuConfig(userProfile?.role);
         }
       };
-      fetchProfile();
+      fetchProfileAndConfig();
     }
-  }, [user, profile]);
+  }, [user]);
 
   const permissions = useMemo(() => {
     const role = profile?.role || user?.user_metadata?.role;
