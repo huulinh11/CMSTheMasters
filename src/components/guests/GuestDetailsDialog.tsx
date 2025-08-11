@@ -548,7 +548,8 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
     <>
       {isMobile ? (
         <Drawer open={open} onOpenChange={onOpenChange}>
-          <DrawerContent className="h-[calc(100dvh-60px)] bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col [&>div:first-child]:bg-slate-800">
+          <DrawerContent className="h-[calc(100dvh-60px)] bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col">
+            <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-slate-400 flex-shrink-0" />
             {guestId && guestType && <GuestDetailsContent isMobile={isMobile} guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DrawerContent>
         </Drawer>
