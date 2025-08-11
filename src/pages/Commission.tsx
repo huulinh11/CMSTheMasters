@@ -126,10 +126,137 @@ const CommissionPage = () => {
 
   const renderContent = () => {
     if (isLoading) return <Skeleton className="h-96 w-full rounded-lg" />;
-    if (isSale) { /* ... existing Sale view ... */ return null; }
+    
+    if (isSale) {
+      return (
+        <div className="space-y-6">
+          {currentUserSummary && (
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Hoa hồng của bạn</h2>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{currentUserSummary.upsale_person_name}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <InfoRow label="Số lượt upsale" value={String(currentUserSummary.upsale_count)} />
+                  <InfoRow label="Tổng tiền upsale" value={formatCurrency(currentUserSummary.total_upsale_amount)} />
+                  <InfoRow label="Tổng hoa hồng" value={formatCurrency(currentUserSummary.total_commission)} valueClass="text-green-600 font-bold" />
+                  <Button className="w-full mt-2" onClick={() => setSelectedUpsalePerson({ userId: currentUserSummary.user_id, name: currentUserSummary.upsale_person_name, hideCommission: false })}>Xem chi tiết</Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          {otherUsersSummary.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Hoa hồng của Sale khác</h2>
+              {isMobile ? (
+                <div className="space-y-4">
+                  {otherUsersSummary.map((item) => (
+                    <Card key={item.user_id}>
+                      <CardHeader><CardTitle>{item.upsale_person_name}</CardTitle></CardHeader>
+                      <CardContent className="space-y-2">
+                        <InfoRow label="Số lượt upsale" value={String(item.upsale_count)} />
+                        <InfoRow label="Tổng tiền upsale" value={formatCurrency(item.total_upsale_amount)} />
+                        <Button className="w-full mt-2" onClick={() => setSelectedUpsalePerson({ userId: item.user_id, name: item.upsale_person_name, hideCommission: true })}>Xem chi tiết</Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border bg-white">
+                  <Table>
+                    <TableHeader><TableRow><TableHead>Tên Sale</TableHead><TableHead>Số lượt upsale</TableHead><TableHead>Tổng tiền upsale</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                      {otherUsersSummary.map((item) => (
+                        <TableRow key={item.user_id}>
+                          <TableCell className="font-medium">{item.upsale_person_name}</TableCell>
+                          <TableCell>{item.upsale_count}</TableCell>
+                          <TableCell>{formatCurrency(item.total_upsale_amount)}</TableCell>
+                          <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => setSelectedUpsalePerson({ userId: item.user_id, name: item.upsale_person_name, hideCommission: true })}>Xem chi tiết</Button></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
 
-    const renderReferrerContent = () => ( /* ... existing referrer content ... */ null );
-    const renderUpsaleContent = () => ( /* ... existing upsale content ... */ null );
+    const renderReferrerContent = () => (
+      <>
+        {isMobile ? (
+          <div className="space-y-4">
+            {processedReferrerSummary.map((item, index) => (
+              <Card key={index}>
+                <CardHeader><CardTitle>{item.referrer_name}</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  <InfoRow label="Số lượt giới thiệu" value={String(item.commissionable_referrals_count)} />
+                  <InfoRow label="Tổng tiền tài trợ" value={formatCurrency(item.total_commissionable_amount)} />
+                  <InfoRow label="Tổng hoa hồng" value={formatCurrency(item.total_commission)} valueClass="text-green-600 font-bold" />
+                  <Button className="w-full mt-2" onClick={() => setSelectedReferrer(item.referrer_name)}>Xem chi tiết</Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border bg-white">
+            <Table>
+              <TableHeader><TableRow><TableHead>Tên người giới thiệu</TableHead><TableHead>Số lượt giới thiệu</TableHead><TableHead>Tổng tiền tài trợ</TableHead><TableHead>Tổng hoa hồng</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {processedReferrerSummary.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{item.referrer_name}</TableCell>
+                    <TableCell>{item.commissionable_referrals_count}</TableCell>
+                    <TableCell>{formatCurrency(item.total_commissionable_amount)}</TableCell>
+                    <TableCell className="font-semibold text-green-600">{formatCurrency(item.total_commission)}</TableCell>
+                    <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => setSelectedReferrer(item.referrer_name)}>Xem chi tiết</Button></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </>
+    );
+    const renderUpsaleContent = () => (
+      <>
+        {isMobile ? (
+          <div className="space-y-4">
+            {processedUpsaleSummary.map((item) => (
+              <Card key={item.user_id}>
+                <CardHeader><CardTitle>{item.upsale_person_name}</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  <InfoRow label="Số lượt upsale" value={String(item.upsale_count)} />
+                  <InfoRow label="Tổng tiền upsale" value={formatCurrency(item.total_upsale_amount)} />
+                  <InfoRow label="Tổng hoa hồng" value={formatCurrency(item.total_commission)} valueClass="text-green-600 font-bold" />
+                  <Button className="w-full mt-2" onClick={() => setSelectedUpsalePerson({ userId: item.user_id, name: item.upsale_person_name, hideCommission: false })}>Xem chi tiết</Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border bg-white">
+            <Table>
+              <TableHeader><TableRow><TableHead>Tên Sale</TableHead><TableHead>Số lượt upsale</TableHead><TableHead>Tổng tiền upsale</TableHead><TableHead>Tổng hoa hồng</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {processedUpsaleSummary.map((item) => (
+                  <TableRow key={item.user_id}>
+                    <TableCell className="font-medium">{item.upsale_person_name}</TableCell>
+                    <TableCell>{item.upsale_count}</TableCell>
+                    <TableCell>{formatCurrency(item.total_upsale_amount)}</TableCell>
+                    <TableCell className="font-semibold text-green-600">{formatCurrency(item.total_commission)}</TableCell>
+                    <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => setSelectedUpsalePerson({ userId: item.user_id, name: item.upsale_person_name, hideCommission: false })}>Xem chi tiết</Button></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </>
+    );
     const renderServiceContent = () => (
       <>
         {isMobile ? (
@@ -179,13 +306,24 @@ const CommissionPage = () => {
             </div>
           </div>
         )}
+        {(commissionType === 'all' || commissionType === 'referrer') && (
+          <div className="space-y-2">
+            <div className="flex justify-between items-center"><h2 className="text-xl font-bold text-slate-800">Hoa hồng Giới thiệu</h2><h3 className="text-lg font-semibold text-slate-600">Tổng: {processedReferrerSummary.length}</h3></div>
+            {renderReferrerContent()}
+          </div>
+        )}
+        {(commissionType === 'all' || commissionType === 'upsale') && (
+          <div className="space-y-2">
+            <div className="flex justify-between items-center"><h2 className="text-xl font-bold text-slate-800">Hoa hồng Upsale</h2><h3 className="text-lg font-semibold text-slate-600">Tổng: {processedUpsaleSummary.length}</h3></div>
+            {renderUpsaleContent()}
+          </div>
+        )}
         {(commissionType === 'all' || commissionType === 'service') && (
           <div className="space-y-2">
             <div className="flex justify-between items-center"><h2 className="text-xl font-bold text-slate-800">Hoa hồng Dịch vụ</h2><h3 className="text-lg font-semibold text-slate-600">Tổng: {processedServiceSummary.length}</h3></div>
             {renderServiceContent()}
           </div>
         )}
-        {/* ... existing referrer and upsale sections ... */}
       </div>
     );
   };
