@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { formatCurrency } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Service, GuestService } from "@/types/service-sales";
+import { Service, GuestService, GuestServiceSummary } from "@/types/service-sales";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,7 @@ import { GuestRevenue } from "@/types/guest-revenue";
 interface ServiceDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  guestSummary: { guest_id: string; guest_name: string; services: GuestService[] } | null;
+  guestSummary: GuestServiceSummary | null;
   allServices: Service[];
   onStatusChange: (id: string, status: string) => void;
   onConvertTrial: (id: string) => void;
