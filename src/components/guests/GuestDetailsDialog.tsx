@@ -117,7 +117,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       const tasksPromise = supabase.from('guest_tasks').select('*').eq('guest_id', guestId);
       const paymentsPromise = supabase.from(paymentTable).select('*').eq('guest_id', guestId);
       const upsaleHistoryPromise = supabase.from('guest_upsale_history').select('*').eq('guest_id', guestId);
-      const servicesPromise = supabase.from('guest_services').select('*, services(name)').eq('guest_id', guestId);
+      const servicesPromise = supabase.rpc('get_guest_service_details_by_guest_id', { guest_id_in: guestId });
 
       const [
         { data: guestData, error: guestError },
