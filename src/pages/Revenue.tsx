@@ -22,6 +22,7 @@ import { CombinedRevenueTable } from "@/components/Revenue/CombinedRevenueTable"
 import { CombinedRevenueCards } from "@/components/Revenue/CombinedRevenueCards";
 import { GuestService } from "@/types/service-sales";
 import { VipGuest } from "@/types/vip-guest";
+import { PageHeader } from "@/components/PageHeader";
 
 export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
   service_revenue: number;
@@ -214,7 +215,7 @@ const RevenuePage = () => {
 
   return (
     <div className="p-4 md:p-6">
-      <h1 className="text-2xl font-bold text-slate-800 mb-4">Quản lý doanh thu</h1>
+      <PageHeader title="Quản lý doanh thu" />
       
       {canViewSummaryStats && <RevenueStats {...revenueStats} />}
 

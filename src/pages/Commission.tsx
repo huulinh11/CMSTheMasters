@@ -15,6 +15,7 @@ import { ServiceCommissionDetailsDialog } from "@/components/service-sales/Servi
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { PageHeader } from "@/components/PageHeader";
 
 type CombinedCommissionSummary = {
   userId: string;
@@ -233,7 +234,7 @@ const CommissionPage = () => {
 
   return (
     <div className="p-4 md:p-6">
-      <h1 className="text-2xl font-bold text-slate-800 mb-4">Quản lý hoa hồng</h1>
+      <PageHeader title="Quản lý hoa hồng" />
       {renderContent()}
       <UpsaleCommissionDetailsDialog person={selectedUpsalePerson} open={!!selectedUpsalePerson} onOpenChange={() => setSelectedUpsalePerson(null)} />
       <ServiceCommissionDetailsDialog referrer={selectedServiceReferrer} open={!!selectedServiceReferrer} onOpenChange={() => setSelectedServiceReferrer(null)} />

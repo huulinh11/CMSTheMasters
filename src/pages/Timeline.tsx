@@ -32,6 +32,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { PageHeader } from "@/components/PageHeader";
 
 const Timeline = () => {
   const queryClient = useQueryClient();
@@ -212,8 +213,7 @@ const Timeline = () => {
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="p-4 md:p-6 space-y-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h1 className="text-2xl font-bold text-slate-800">Timeline sự kiện</h1>
+        <PageHeader title="Timeline sự kiện">
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
             <div className="flex items-center gap-2">
               <Label htmlFor="baseTime" className="flex-shrink-0">Giờ bắt đầu</Label>
@@ -241,7 +241,7 @@ const Timeline = () => {
               </Link>
             </div>
           </div>
-        </div>
+        </PageHeader>
 
         {isLoading ? (
           <Skeleton className="h-96 w-full" />

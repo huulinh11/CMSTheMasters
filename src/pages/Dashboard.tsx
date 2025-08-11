@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Camera } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -11,12 +9,11 @@ import DashboardGuestsTab from "./dashboard/DashboardGuestsTab";
 import DashboardTasksTab from "./dashboard/DashboardTasksTab";
 import DashboardBenefitsTab from "./dashboard/DashboardBenefitsTab";
 import { useQrScanner } from "@/contexts/QrScannerContext";
+import { PageHeader } from "@/components/PageHeader";
 
 const DashboardPage = () => {
-  const { profile, user } = useAuth();
   const { openScanner } = useQrScanner();
   const isMobile = useIsMobile();
-  const displayName = profile?.full_name || user?.email?.split('@')[0];
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['checklist_settings'],
@@ -35,11 +32,7 @@ const DashboardPage = () => {
 
   return (
     <div className="p-4 md:p-6 bg-transparent min-h-full">
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl text-slate-800">
-          <span className="font-normal">Hello </span>
-          <span className="font-bold">{displayName}</span>
-        </h1>
+      <PageHeader title="Thống kê">
         {!isMobile && (
           <div className="flex items-center gap-2">
             <Button onClick={openScanner}>
@@ -48,7 +41,7 @@ const DashboardPage = () => {
             </Button>
           </div>
         )}
-      </header>
+      </PageHeader>
 
       <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 md:w-auto md:inline-flex bg-primary/10 p-1 h-12 rounded-xl">

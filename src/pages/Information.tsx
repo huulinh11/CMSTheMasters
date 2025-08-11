@@ -12,13 +12,14 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Eye } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InformationTable } from "@/components/information/InformationTable";
 import { InformationCards } from "@/components/information/InformationCards";
 import { EditInformationDialog } from "@/components/information/EditInformationDialog";
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate } from "react-router-dom";
+import { PageHeader } from "@/components/PageHeader";
 
 const Information = () => {
   const queryClient = useQueryClient();
@@ -86,10 +87,9 @@ const Information = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Thông tin</h1>
+      <PageHeader title="Thông tin">
         <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
-      </div>
+      </PageHeader>
       <div className="flex items-center gap-2">
         <Input
           placeholder="Tìm kiếm theo tên, ID, vai trò..."

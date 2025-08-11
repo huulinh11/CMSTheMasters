@@ -16,6 +16,7 @@ import { GuestServiceSummaryCards } from "@/components/service-sales/GuestServic
 import { ServiceDetailsDialog } from "@/components/service-sales/ServiceDetailsDialog";
 import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import { GuestRevenue } from "@/types/guest-revenue";
+import { PageHeader } from "@/components/PageHeader";
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -121,13 +122,12 @@ const ServiceSalesPage = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Bán dịch vụ</h1>
+      <PageHeader title="Bán dịch vụ">
         <div className="flex gap-2">
           <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}><Settings className="h-4 w-4" /></Button>
           <Button onClick={() => setIsAddOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
         </div>
-      </div>
+      </PageHeader>
 
       <ServiceStats totalRevenue={stats.totalRevenue} totalPaid={stats.totalPaid} totalUnpaid={totalUnpaid} />
 

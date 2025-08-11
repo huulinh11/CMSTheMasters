@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/PageHeader";
 
 const AccountPage = () => {
   const queryClient = useQueryClient();
@@ -94,12 +95,11 @@ const AccountPage = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Quản lý tài khoản</h1>
+      <PageHeader title="Quản lý tài khoản">
         <Button onClick={() => handleOpenDialog(null)}>
           <PlusCircle className="mr-2 h-4 w-4" /> Thêm tài khoản
         </Button>
-      </div>
+      </PageHeader>
 
       {isLoading ? (
         <Skeleton className="h-96 w-full" />
