@@ -10,6 +10,7 @@ const settingsItems = [
   { to: "/settings/menu", label: "Cài đặt menu" },
   { to: "/settings/general", label: "Chung" },
   { to: "/settings/loading-screen", label: "Cấu hình màn hình chờ profile" },
+  { to: "/settings/library", label: "Thư viện" },
 ];
 
 const SettingsIndex = () => (
@@ -18,7 +19,7 @@ const SettingsIndex = () => (
       <Link to={item.to} key={item.to}>
         <Card className="hover:bg-slate-50 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>{item.label}</CardTitle>
+            <CardTitle className="text-lg">{item.label}</CardTitle>
             <ChevronRight className="h-5 w-5 text-slate-400" />
           </CardHeader>
         </Card>

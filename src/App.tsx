@@ -18,6 +18,7 @@ import BenefitSettings from "./pages/settings/BenefitSettings";
 import GeneralSettings from "./pages/settings/GeneralSettings";
 import MenuSettings from "./pages/settings/MenuSettings";
 import LoadingScreenSettings from "./pages/settings/LoadingScreenSettings";
+import ImageLibrary from "./pages/settings/ImageLibrary";
 import NotFound from "./pages/NotFound";
 import PublicUser from "./pages/PublicUser";
 import PublicProfile from "./pages/public/PublicProfile";
@@ -80,6 +81,7 @@ const router = createBrowserRouter([
               { path: "menu", element: <MenuSettings /> },
               { path: "general", element: <GeneralSettings /> },
               { path: "loading-screen", element: <LoadingScreenSettings /> },
+              { path: "library", element: <ImageLibrary /> },
             ]
           }
         ],
