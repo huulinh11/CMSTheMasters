@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Edit, Phone, User, FileText } from "lucide-react";
+import { MoreVertical, Trash2, Edit, Phone, User, Camera } from "lucide-react";
 import { Guest } from "@/types/guest";
 import { RoleConfiguration } from "@/types/role-configuration";
 
@@ -45,54 +45,53 @@ export const GuestCards = ({
     <div className="space-y-4">
       {guests.length > 0 ? (
         guests.map((guest) => (
-          <Card key={guest.id} className="bg-white shadow-sm">
-            <CardHeader className="flex flex-row items-start justify-between pb-2">
-              <button onClick={() => onView(guest)} className="text-left pr-2">
-                <CardTitle className="text-lg font-semibold text-slate-800 hover:underline">{guest.name}</CardTitle>
-              </button>
-              <div className="flex items-center space-x-2 flex-shrink-0">
-                <Checkbox
-                  checked={selectedGuests.includes(guest.id)}
-                  onCheckedChange={() => onSelectGuest(guest.id)}
-                  aria-label={`Select ${guest.name}`}
-                />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreVertical className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(guest)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Sửa
-                    </DropdownMenuItem>
-                    {canDelete && (
-                      <DropdownMenuItem onClick={() => onDelete(guest.id)} className="text-red-600">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Xóa
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+          <Card key={guest.id} className="bg-white shadow-sm overflow-hidden">
+            <div className="flex">
+              <div className="w-2/5 flex-shrink-0">
+                <button onClick={() => onView(guest)} className="w-full h-full aspect-[3/4] bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center">
+                  <Camera className="h-8 w-8 text-slate-400" />
+                </button>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-2">
-              <div className="flex items-center text-sm">
-                <span 
-                  className="px-2 py-1 rounded-md font-medium"
-                  style={getRoleColors(guest.role)}
-                >
-                  {guest.role}
-                </span>
-                <span className="text-slate-500 ml-1.5">({guest.id})</span>
+              <div className="w-3/5 p-3 flex flex-col">
+                <div className="flex justify-between items-start">
+                  <div className="flex-grow cursor-pointer pr-2" onClick={() => onView(guest)}>
+                    <h3 className="text-base font-bold leading-tight hover:underline">{guest.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">{guest.role} ({guest.id})</p>
+                  </div>
+                  <div className="flex items-center flex-shrink-0">
+                    <Checkbox
+                      checked={selectedGuests.includes(guest.id)}
+                      onCheckedChange={() => onSelectGuest(guest.id)}
+                      aria-label={`Select ${guest.name}`}
+                      className="mr-1"
+                    />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onEdit(guest)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Sửa
+                        </DropdownMenuItem>
+                        {canDelete && (
+                          <DropdownMenuItem onClick={() => onDelete(guest.id)} className="text-red-600">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Xóa
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+                <div className="mt-2 space-y-1 text-xs text-slate-600 flex-grow">
+                  <InfoItem icon={Phone} value={guest.phone} />
+                  <InfoItem icon={User} value={guest.referrer} />
+                </div>
               </div>
-              <div className="border-t border-slate-100 pt-3 space-y-2 text-slate-600">
-                <InfoItem icon={Phone} label="SĐT" value={guest.phone} />
-                <InfoItem icon={User} label="Người giới thiệu" value={guest.referrer} />
-                <InfoItem icon={FileText} label="Ghi chú" value={guest.notes} />
-              </div>
-            </CardContent>
+            </div>
           </Card>
         ))
       ) : (
@@ -104,15 +103,12 @@ export const GuestCards = ({
   );
 };
 
-const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value?: string }) => {
+const InfoItem = ({ icon: Icon, value }: { icon: React.ElementType, value?: string | null }) => {
   if (!value) return null;
   return (
-    <div className="flex items-start">
-      <Icon className="h-4 w-4 mr-3 mt-1 flex-shrink-0 text-[rgb(185,179,176)]" />
-      <p className="text-sm">
-        <span className="text-[rgb(185,179,176)] font-normal">{label}: </span>
-        <span className="text-black font-normal">{value}</span>
-      </p>
+    <div className="flex items-center text-xs text-slate-600">
+      <Icon className="h-3 w-3 mr-1.5 flex-shrink-0" />
+      <span className="truncate">{value}</span>
     </div>
   );
 };
