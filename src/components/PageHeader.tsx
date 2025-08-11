@@ -17,16 +17,16 @@ export const PageHeader = ({ title, children }: PageHeaderProps) => {
 
   return (
     <header className="flex flex-wrap justify-between items-center gap-x-4 gap-y-2 mb-4 md:mb-6">
-      <div className="flex items-baseline gap-2">
-        <h1 className="text-xl font-bold text-slate-800">{title}</h1>
+      <div className="flex-1 min-w-0">
+        <h1 className="text-xl font-bold text-slate-800 truncate">{title}</h1>
+      </div>
+      
+      <div className="flex items-center gap-2 flex-shrink-0">
         {isMobile && isDefaultPage && (
           <div className="text-sm text-slate-600 font-medium whitespace-nowrap">
             {displayName}
           </div>
         )}
-      </div>
-      
-      <div className="flex items-center gap-2">
         {children}
       </div>
     </header>
