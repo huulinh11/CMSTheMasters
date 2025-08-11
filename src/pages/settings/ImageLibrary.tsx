@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BUCKET_NAME = 'avatars';
 const FOLDER_NAME = 'image-library';
@@ -26,6 +27,7 @@ const ImageLibrary = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const { session } = useAuth();
 
   const { data: files = [], isLoading } = useQuery({
     queryKey: ['image-library-files'],
@@ -67,7 +69,11 @@ const ImageLibrary = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (fileName: string) => {
+      if (!session) throw new Error("Not authenticated");
       const { data, error } = await supabase.functions.invoke('manage-images', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: { 
           method: 'DELETE_IMAGE',
           payload: { fileName }

@@ -33,6 +33,9 @@ const AccountPage = () => {
     queryFn: async () => {
       if (!session) return [];
       const { data, error } = await supabase.functions.invoke('manage-users', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: { method: 'LIST_USERS' },
       });
       
@@ -50,7 +53,11 @@ const AccountPage = () => {
 
   const mutation = useMutation({
     mutationFn: async (payload: { method: string, payload: any }) => {
+      if (!session) throw new Error("Not authenticated");
       const { data, error } = await supabase.functions.invoke('manage-users', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: payload,
       });
       if (error) {
