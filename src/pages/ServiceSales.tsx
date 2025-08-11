@@ -57,17 +57,17 @@ const ServiceSalesPage = () => {
     return guestServices.filter(item =>
       item.guest_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.service_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.guest_phone?.includes(searchTerm)
+      (item.guest_phone && item.guest_phone.includes(searchTerm))
     );
   }, [guestServices, searchTerm]);
 
   const stats = useMemo(() => {
-    return filteredServices.reduce((acc, item) => {
+    return guestServices.reduce((acc, item) => {
       acc.totalRevenue += item.price;
       acc.totalPaid += item.paid_amount;
       return acc;
     }, { totalRevenue: 0, totalPaid: 0 });
-  }, [filteredServices]);
+  }, [guestServices]);
 
   const totalUnpaid = stats.totalRevenue - stats.totalPaid;
 

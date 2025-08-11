@@ -25,10 +25,12 @@ interface PayServiceDialogProps {
 export const PayServiceDialog = ({ item, open, onOpenChange }: PayServiceDialogProps) => {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState(0);
+  const [formattedAmount, setFormattedAmount] = useState("0");
 
   useEffect(() => {
     if (item) {
       setAmount(item.unpaid_amount);
+      setFormattedAmount(new Intl.NumberFormat('vi-VN').format(item.unpaid_amount));
     }
   }, [item]);
 
@@ -53,6 +55,13 @@ export const PayServiceDialog = ({ item, open, onOpenChange }: PayServiceDialogP
     onError: (error: Error) => showError(`Lỗi: ${error.message}`),
   });
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const numericValue = parseInt(rawValue.replace(/[^0-9]/g, ''), 10) || 0;
+    setAmount(numericValue);
+    setFormattedAmount(new Intl.NumberFormat('vi-VN').format(numericValue));
+  };
+
   if (!item) return null;
 
   return (
@@ -64,7 +73,12 @@ export const PayServiceDialog = ({ item, open, onOpenChange }: PayServiceDialogP
         </DialogHeader>
         <div className="py-4">
           <Label htmlFor="payment">Số tiền thanh toán (đ)</Label>
-          <Input id="payment" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} max={item.unpaid_amount} />
+          <Input
+            id="payment"
+            type="text"
+            value={formattedAmount}
+            onChange={handleAmountChange}
+          />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
