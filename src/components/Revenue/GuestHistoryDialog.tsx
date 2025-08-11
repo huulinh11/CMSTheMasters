@@ -51,21 +51,22 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
       
       const [{ data: serviceEvents }, { data: servicePayments }] = await Promise.all([serviceEventsPromise, servicePaymentsPromise]);
 
-      const allServiceIds = (serviceEvents || []).map(e => e.details.service_id);
+      const allServiceIds = (guestServices || []).map(gs => gs.service_id);
       let serviceNamesMap = new Map<string, string>();
       if (allServiceIds.length > 0) {
         const { data: serviceDetails } = await supabase.from('services').select('id, name').in('id', allServiceIds);
         serviceNamesMap = new Map((serviceDetails || []).map(s => [s.id, s.name]));
       }
       
-      const guestServiceIdToServiceIdMap = new Map((serviceEvents || []).map(e => [e.guest_service_id, e.details.service_id]));
+      const guestServiceIdToServiceIdMap = new Map((guestServices || []).map(gs => [gs.id, gs.service_id]));
 
       const paymentHistory: CombinedHistoryItem[] = (payments || []).map(p => ({ type: 'payment', ...p }));
       const upsaleHistory: CombinedHistoryItem[] = (upsaleEvents || []).map(u => ({ type: 'upsale', ...u }));
       const servicePaymentHistory: CombinedHistoryItem[] = (servicePayments || []).map(p => ({ type: 'service_payment', ...p, service_name: serviceNamesMap.get(guestServiceIdToServiceIdMap.get(p.guest_service_id) || '') || 'Dịch vụ không xác định' }));
       
       const serviceEventsHistory = (serviceEvents || []).reduce<CombinedHistoryItem[]>((acc, e) => {
-        const serviceName = serviceNamesMap.get(e.details.service_id) || 'Dịch vụ không xác định';
+        const serviceId = e.details.service_id || guestServiceIdToServiceIdMap.get(e.guest_service_id);
+        const serviceName = serviceNamesMap.get(serviceId) || 'Dịch vụ không xác định';
         if (e.event_type === 'created') {
           acc.push({ type: 'service_created', id: e.id, created_at: e.created_at, service_name: serviceName, price: e.details.price, is_free_trial: e.details.is_free_trial });
         }
