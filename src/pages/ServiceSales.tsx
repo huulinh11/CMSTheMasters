@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { GuestService, Service } from "@/types/service-sales";
+import { GuestService, Service, GuestServiceSummary } from "@/types/service-sales";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,14 +10,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import ServiceStats from "@/components/service-sales/ServiceStats";
 import { ServiceSettingsDialog } from "@/components/service-sales/ServiceSettingsDialog";
 import { AddGuestServiceDialog } from "@/components/service-sales/AddGuestServiceDialog";
-import { PayServiceDialog } from "@/components/service-sales/PayServiceDialog";
-import { GuestServicesTable } from "@/components/service-sales/GuestServicesTable";
-import { GuestServicesCards } from "@/components/service-sales/GuestServicesCards";
 import { showError, showSuccess } from "@/utils/toast";
-import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
-import { RoleConfiguration } from "@/types/role-configuration";
-import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
-import { GuestRevenue } from "@/types/guest-revenue";
+import { GuestServiceSummaryTable } from "@/components/service-sales/GuestServiceSummaryTable";
+import { GuestServiceSummaryCards } from "@/components/service-sales/GuestServiceSummaryCards";
+import { ServiceDetailsDialog } from "@/components/service-sales/ServiceDetailsDialog";
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -25,9 +21,7 @@ const ServiceSalesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [payingItem, setPayingItem] = useState<GuestService | null>(null);
-  const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
-  const [viewingGuest, setViewingGuest] = useState<GuestService | null>(null);
+  const [viewingGuestSummary, setViewingGuestSummary] = useState<GuestServiceSummary | null>(null);
 
   const { data: guestServices = [], isLoading } = useQuery<GuestService[]>({
     queryKey: ['guest_service_details'],
@@ -42,15 +36,6 @@ const ServiceSalesPage = () => {
     queryKey: ['services'],
     queryFn: async () => {
       const { data, error } = await supabase.from('services').select('*');
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
-  const { data: roleConfigs = [] } = useQuery<RoleConfiguration[]>({
-    queryKey: ['role_configurations'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('role_configurations').select('*');
       if (error) throw error;
       return data || [];
     }
@@ -80,13 +65,42 @@ const ServiceSalesPage = () => {
     onError: (err: Error) => showError(err.message),
   });
 
-  const filteredServices = useMemo(() => {
-    return guestServices.filter(item =>
-      item.guest_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.service_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.guest_phone && item.guest_phone.includes(searchTerm))
-    );
-  }, [guestServices, searchTerm]);
+  const guestServiceSummaries = useMemo((): GuestServiceSummary[] => {
+    const groupedByGuest = new Map<string, GuestServiceSummary>();
+
+    guestServices.forEach(service => {
+        let summary = groupedByGuest.get(service.guest_id);
+        if (!summary) {
+            summary = {
+                guest_id: service.guest_id,
+                guest_name: service.guest_name,
+                guest_phone: service.guest_phone,
+                guest_type: service.guest_type,
+                services: [],
+                total_revenue: 0,
+                total_paid: 0,
+                total_unpaid: 0,
+            };
+            groupedByGuest.set(service.guest_id, summary);
+        }
+        summary.services.push(service);
+        summary.total_revenue += service.price;
+        summary.total_paid += service.paid_amount;
+        summary.total_unpaid += service.unpaid_amount;
+    });
+
+    return Array.from(groupedByGuest.values());
+  }, [guestServices]);
+
+  const filteredSummaries = useMemo(() => {
+    return guestServiceSummaries.filter(summary => {
+        const searchTermLower = searchTerm.toLowerCase();
+        const guestMatch = summary.guest_name.toLowerCase().includes(searchTermLower) ||
+                           (summary.guest_phone && summary.guest_phone.includes(searchTerm));
+        const serviceMatch = summary.services.some(s => s.service_name.toLowerCase().includes(searchTermLower));
+        return guestMatch || serviceMatch;
+    });
+  }, [guestServiceSummaries, searchTerm]);
 
   const stats = useMemo(() => {
     return guestServices.reduce((acc, item) => {
@@ -97,10 +111,6 @@ const ServiceSalesPage = () => {
   }, [guestServices]);
 
   const totalUnpaid = stats.totalRevenue - stats.totalPaid;
-
-  const handleHistory = (item: GuestService) => {
-    setHistoryGuest({ id: item.guest_id, name: item.guest_name } as GuestRevenue);
-  };
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -123,39 +133,26 @@ const ServiceSalesPage = () => {
       {isLoading ? (
         <Skeleton className="h-96 w-full" />
       ) : isMobile ? (
-        <GuestServicesCards
-          items={filteredServices}
-          services={services}
-          onStatusChange={(id, status) => statusUpdateMutation.mutate({ id, status })}
-          onPay={setPayingItem}
-          onConvertTrial={(id) => convertTrialMutation.mutate(id)}
-          onViewGuest={setViewingGuest}
-          onHistory={handleHistory}
+        <GuestServiceSummaryCards
+          summaries={filteredSummaries}
+          onViewDetails={setViewingGuestSummary}
         />
       ) : (
-        <GuestServicesTable
-          items={filteredServices}
-          services={services}
-          onStatusChange={(id, status) => statusUpdateMutation.mutate({ id, status })}
-          onPay={setPayingItem}
-          onConvertTrial={(id) => convertTrialMutation.mutate(id)}
-          onViewGuest={setViewingGuest}
-          onHistory={handleHistory}
+        <GuestServiceSummaryTable
+          summaries={filteredSummaries}
+          onViewDetails={setViewingGuestSummary}
         />
       )}
 
       <ServiceSettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       <AddGuestServiceDialog open={isAddOpen} onOpenChange={setIsAddOpen} />
-      <PayServiceDialog item={payingItem} open={!!payingItem} onOpenChange={() => setPayingItem(null)} />
-      <GuestHistoryDialog guest={historyGuest} open={!!historyGuest} onOpenChange={() => setHistoryGuest(null)} />
-      <GuestDetailsDialog
-        guestId={viewingGuest?.guest_id || null}
-        guestType={viewingGuest?.guest_type === 'Chức vụ' ? 'vip' : 'regular'}
-        open={!!viewingGuest}
-        onOpenChange={(isOpen) => !isOpen && setViewingGuest(null)}
-        onEdit={() => {}}
-        onDelete={() => {}}
-        roleConfigs={roleConfigs}
+      <ServiceDetailsDialog
+        open={!!viewingGuestSummary}
+        onOpenChange={(isOpen) => !isOpen && setViewingGuestSummary(null)}
+        guestSummary={viewingGuestSummary}
+        allServices={services}
+        onStatusChange={(id, status) => statusUpdateMutation.mutate({ id, status })}
+        onConvertTrial={(id) => convertTrialMutation.mutate(id)}
       />
     </div>
   );
