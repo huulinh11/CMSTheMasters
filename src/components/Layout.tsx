@@ -5,19 +5,16 @@ import BottomNav from "./BottomNav";
 import { QrScannerProvider } from "@/contexts/QrScannerContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import QrScannerComponent from "@/components/QrScannerComponent";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { showError } from "@/utils/toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isMobile = useIsMobile();
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const isProcessingScanRef = useRef(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  const { menuConfig, isLoading: isAuthLoading } = useAuth();
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: settings } = useQuery({
@@ -44,15 +41,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       isProcessingScanRef.current = false;
     }
   }, [isScannerOpen]);
-
-  useEffect(() => {
-    if (!isAuthLoading && menuConfig.length > 0 && location.pathname === '/') {
-      const defaultPath = menuConfig[0].to;
-      if (defaultPath !== '/') {
-        navigate(defaultPath, { replace: true });
-      }
-    }
-  }, [isAuthLoading, menuConfig, location.pathname, navigate]);
 
   const handleScan = useCallback((scannedUrl: string | null) => {
     if (isProcessingScanRef.current || !scannedUrl) return;

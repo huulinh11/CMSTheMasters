@@ -30,6 +30,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PermissionProtectedRoute from "./components/PermissionProtectedRoute";
 import CommissionPage from "./pages/Commission";
 import ServiceSalesPage from "./pages/ServiceSales"; // Import trang mới
+import HomeRedirect from "./components/HomeRedirect";
 
 const queryClient = new QueryClient();
 
@@ -56,7 +57,8 @@ const router = createBrowserRouter([
     path: "/",
     element: <ProtectedLayout />,
     children: [
-      { element: <PermissionProtectedRoute permissionId="dashboard" />, children: [{ index: true, element: <Dashboard /> }] },
+      { index: true, element: <HomeRedirect /> },
+      { element: <PermissionProtectedRoute permissionId="dashboard" />, children: [{ path: "dashboard", element: <Dashboard /> }] },
       { element: <PermissionProtectedRoute permissionId="guests" />, children: [{ path: "guests", element: <Guests /> }] },
       { element: <PermissionProtectedRoute permissionId="media-benefits" />, children: [{ path: "media-benefits", element: <MediaBenefits /> }] },
       { element: <PermissionProtectedRoute permissionId="event-tasks" />, children: [{ path: "event-tasks", element: <EventTasks /> }] },
