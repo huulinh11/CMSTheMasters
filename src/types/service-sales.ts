@@ -27,6 +27,17 @@ export type GuestService = {
   payment_count: number;
 };
 
+export type GuestServiceSummary = {
+  guest_id: string;
+  guest_name: string;
+  guest_phone: string;
+  guest_type: 'Chức vụ' | 'Khách mời';
+  services: GuestService[];
+  total_revenue: number;
+  total_paid: number;
+  total_unpaid: number;
+};
+
 export type ServiceCommissionSummary = {
   referrer_id: string;
   referrer_type: string;
