@@ -19,9 +19,10 @@ interface GuestServicesTableProps {
   onStatusChange: (id: string, status: string) => void;
   onPay: (item: GuestService) => void;
   onConvertTrial: (id: string) => void;
+  onViewGuest: (guest: GuestService) => void;
 }
 
-export const GuestServicesTable = ({ items, services, onStatusChange, onPay, onConvertTrial }: GuestServicesTableProps) => {
+export const GuestServicesTable = ({ items, services, onStatusChange, onPay, onConvertTrial, onViewGuest }: GuestServicesTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -44,12 +45,14 @@ export const GuestServicesTable = ({ items, services, onStatusChange, onPay, onC
               return (
                 <TableRow key={item.id}>
                   <TableCell>
-                    <div className="font-medium">{item.guest_name}</div>
-                    <div className="text-sm text-muted-foreground">{item.guest_phone}</div>
+                    <button onClick={() => onViewGuest(item)} className="text-left hover:underline">
+                      <div className="font-medium">{item.guest_name}</div>
+                      <div className="text-sm text-muted-foreground">{item.guest_phone}</div>
+                    </button>
                   </TableCell>
                   <TableCell>
                     {item.service_name}
-                    {item.is_free_trial && <Badge variant="outline" className="ml-2">Free</Badge>}
+                    {item.is_free_trial && <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}
                   </TableCell>
                   <TableCell>{formatCurrency(item.price)}</TableCell>
                   <TableCell className="text-green-600">{formatCurrency(item.paid_amount)}</TableCell>
@@ -76,7 +79,7 @@ export const GuestServicesTable = ({ items, services, onStatusChange, onPay, onC
                   </TableCell>
                   <TableCell className="text-right space-x-1">
                     {item.is_free_trial ? (
-                      <Button variant="secondary" size="sm" onClick={() => onConvertTrial(item.id)}>
+                      <Button variant="secondary" size="sm" onClick={() => onConvertTrial(item.id)} className="bg-orange-500 hover:bg-orange-600 text-white">
                         <RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi
                       </Button>
                     ) : (

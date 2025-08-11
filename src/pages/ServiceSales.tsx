@@ -14,6 +14,8 @@ import { PayServiceDialog } from "@/components/service-sales/PayServiceDialog";
 import { GuestServicesTable } from "@/components/service-sales/GuestServicesTable";
 import { GuestServicesCards } from "@/components/service-sales/GuestServicesCards";
 import { showError, showSuccess } from "@/utils/toast";
+import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
+import { RoleConfiguration } from "@/types/role-configuration";
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -22,6 +24,7 @@ const ServiceSalesPage = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [payingItem, setPayingItem] = useState<GuestService | null>(null);
+  const [viewingGuest, setViewingGuest] = useState<GuestService | null>(null);
 
   const { data: guestServices = [], isLoading } = useQuery<GuestService[]>({
     queryKey: ['guest_service_details'],
@@ -36,6 +39,15 @@ const ServiceSalesPage = () => {
     queryKey: ['services'],
     queryFn: async () => {
       const { data, error } = await supabase.from('services').select('*');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: roleConfigs = [] } = useQuery<RoleConfiguration[]>({
+    queryKey: ['role_configurations'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('role_configurations').select('*');
       if (error) throw error;
       return data || [];
     }
@@ -110,6 +122,7 @@ const ServiceSalesPage = () => {
           onStatusChange={(id, status) => statusUpdateMutation.mutate({ id, status })}
           onPay={setPayingItem}
           onConvertTrial={(id) => convertTrialMutation.mutate(id)}
+          onViewGuest={setViewingGuest}
         />
       ) : (
         <GuestServicesTable
@@ -118,12 +131,22 @@ const ServiceSalesPage = () => {
           onStatusChange={(id, status) => statusUpdateMutation.mutate({ id, status })}
           onPay={setPayingItem}
           onConvertTrial={(id) => convertTrialMutation.mutate(id)}
+          onViewGuest={setViewingGuest}
         />
       )}
 
       <ServiceSettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       <AddGuestServiceDialog open={isAddOpen} onOpenChange={setIsAddOpen} />
       <PayServiceDialog item={payingItem} open={!!payingItem} onOpenChange={() => setPayingItem(null)} />
+      <GuestDetailsDialog
+        guestId={viewingGuest?.guest_id || null}
+        guestType={viewingGuest?.guest_type === 'Chức vụ' ? 'vip' : 'regular'}
+        open={!!viewingGuest}
+        onOpenChange={(isOpen) => !isOpen && setViewingGuest(null)}
+        onEdit={() => {}}
+        onDelete={() => {}}
+        roleConfigs={roleConfigs}
+      />
     </div>
   );
 };

@@ -13,6 +13,7 @@ interface GuestServicesCardsProps {
   onStatusChange: (id: string, status: string) => void;
   onPay: (item: GuestService) => void;
   onConvertTrial: (id: string) => void;
+  onViewGuest: (guest: GuestService) => void;
 }
 
 const InfoRow = ({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) => (
@@ -22,7 +23,7 @@ const InfoRow = ({ label, value, valueClass }: { label: string; value: string; v
   </div>
 );
 
-export const GuestServicesCards = ({ items, services, onStatusChange, onPay, onConvertTrial }: GuestServicesCardsProps) => {
+export const GuestServicesCards = ({ items, services, onStatusChange, onPay, onConvertTrial, onViewGuest }: GuestServicesCardsProps) => {
   return (
     <div className="space-y-4">
       {items.map((item) => {
@@ -30,10 +31,12 @@ export const GuestServicesCards = ({ items, services, onStatusChange, onPay, onC
         return (
           <Card key={item.id}>
             <CardHeader>
-              <CardTitle>{item.guest_name}</CardTitle>
+              <button onClick={() => onViewGuest(item)} className="text-left hover:underline">
+                <CardTitle>{item.guest_name}</CardTitle>
+              </button>
               <p className="text-sm text-muted-foreground">
                 {item.service_name}
-                {item.is_free_trial && <Badge variant="outline" className="ml-2">Free</Badge>}
+                {item.is_free_trial && <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -62,7 +65,7 @@ export const GuestServicesCards = ({ items, services, onStatusChange, onPay, onC
                 )}
               </div>
               {item.is_free_trial ? (
-                <Button className="w-full mt-2" variant="secondary" onClick={() => onConvertTrial(item.id)}>
+                <Button className="w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white" variant="secondary" onClick={() => onConvertTrial(item.id)}>
                   <RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi
                 </Button>
               ) : (
