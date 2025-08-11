@@ -536,7 +536,7 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
     <>
       {isMobile ? (
         <Drawer open={open} onOpenChange={onOpenChange}>
-          <DrawerContent className="h-[calc(100vh-60px)] mt-[60px]">
+          <DrawerContent className="h-[calc(100dvh-60px)]">
             {guestId && guestType && <GuestDetailsContent guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DrawerContent>
         </Drawer>
