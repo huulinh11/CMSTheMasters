@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useAuth } from "../contexts/AuthContext";
 import { useQrScanner } from "@/contexts/QrScannerContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { NavItemType } from "@/config/nav";
 
 const BottomNav = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -27,7 +28,23 @@ const BottomNav = () => {
   const rightItems = visibleNavItems.slice(2, 3);
   const moreLinks = visibleNavItems.slice(3);
 
-  const isMorePageActive = moreLinks.some(link => location.pathname.startsWith(link.to));
+  const isMorePageActive = useMemo(() => {
+    const path = location.pathname;
+
+    const isLinkActive = (link: NavItemType) => {
+      if (link.end) {
+        return path === link.to;
+      }
+      return path.startsWith(link.to);
+    };
+
+    const isVisibleItemActive = [...leftItems, ...rightItems].some(isLinkActive);
+    if (isVisibleItemActive) {
+      return false; // If a visible item is active, "More" should not be.
+    }
+
+    return moreLinks.some(isLinkActive);
+  }, [location.pathname, leftItems, rightItems, moreLinks]);
 
   return (
     <footer className="bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:hidden flex-shrink-0">
