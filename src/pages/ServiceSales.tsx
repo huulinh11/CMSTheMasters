@@ -16,6 +16,7 @@ import { GuestServicesCards } from "@/components/service-sales/GuestServicesCard
 import { showError, showSuccess } from "@/utils/toast";
 import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { ServicePaymentHistoryDialog } from "@/components/service-sales/ServicePaymentHistoryDialog";
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -24,6 +25,7 @@ const ServiceSalesPage = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [payingItem, setPayingItem] = useState<GuestService | null>(null);
+  const [historyItem, setHistoryItem] = useState<GuestService | null>(null);
   const [viewingGuest, setViewingGuest] = useState<GuestService | null>(null);
 
   const { data: guestServices = [], isLoading } = useQuery<GuestService[]>({
@@ -123,6 +125,7 @@ const ServiceSalesPage = () => {
           onPay={setPayingItem}
           onConvertTrial={(id) => convertTrialMutation.mutate(id)}
           onViewGuest={setViewingGuest}
+          onHistory={setHistoryItem}
         />
       ) : (
         <GuestServicesTable
@@ -132,12 +135,14 @@ const ServiceSalesPage = () => {
           onPay={setPayingItem}
           onConvertTrial={(id) => convertTrialMutation.mutate(id)}
           onViewGuest={setViewingGuest}
+          onHistory={setHistoryItem}
         />
       )}
 
       <ServiceSettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       <AddGuestServiceDialog open={isAddOpen} onOpenChange={setIsAddOpen} />
       <PayServiceDialog item={payingItem} open={!!payingItem} onOpenChange={() => setPayingItem(null)} />
+      <ServicePaymentHistoryDialog item={historyItem} open={!!historyItem} onOpenChange={() => setHistoryItem(null)} />
       <GuestDetailsDialog
         guestId={viewingGuest?.guest_id || null}
         guestType={viewingGuest?.guest_type === 'Chức vụ' ? 'vip' : 'regular'}

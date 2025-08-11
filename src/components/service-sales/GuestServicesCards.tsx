@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GuestService, Service } from "@/types/service-sales";
 import { formatCurrency } from "@/lib/utils";
-import { CreditCard, RefreshCw } from "lucide-react";
+import { CreditCard, RefreshCw, History } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,6 +14,7 @@ interface GuestServicesCardsProps {
   onPay: (item: GuestService) => void;
   onConvertTrial: (id: string) => void;
   onViewGuest: (guest: GuestService) => void;
+  onHistory: (item: GuestService) => void;
 }
 
 const InfoRow = ({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) => (
@@ -23,7 +24,7 @@ const InfoRow = ({ label, value, valueClass }: { label: string; value: string; v
   </div>
 );
 
-export const GuestServicesCards = ({ items, services, onStatusChange, onPay, onConvertTrial, onViewGuest }: GuestServicesCardsProps) => {
+export const GuestServicesCards = ({ items, services, onStatusChange, onPay, onConvertTrial, onViewGuest, onHistory }: GuestServicesCardsProps) => {
   return (
     <div className="space-y-4">
       {items.map((item) => {
@@ -64,20 +65,27 @@ export const GuestServicesCards = ({ items, services, onStatusChange, onPay, onC
                   <p className="text-sm text-muted-foreground">N/A</p>
                 )}
               </div>
-              {item.is_free_trial ? (
-                <Button className="w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white" variant="secondary" onClick={() => onConvertTrial(item.id)}>
-                  <RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi
-                </Button>
-              ) : (
-                <Button
-                  className="w-full mt-2"
-                  onClick={() => onPay(item)}
-                  disabled={item.unpaid_amount <= 0}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Thanh toán
-                </Button>
-              )}
+              <div className="flex gap-2 pt-2">
+                {item.is_free_trial ? (
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white" variant="secondary" onClick={() => onConvertTrial(item.id)}>
+                    <RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi
+                  </Button>
+                ) : (
+                  <Button
+                    className="flex-1"
+                    onClick={() => onPay(item)}
+                    disabled={item.unpaid_amount <= 0}
+                  >
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Thanh toán
+                  </Button>
+                )}
+                {item.payment_count > 0 && (
+                  <Button className="flex-1" variant="secondary" onClick={() => onHistory(item)}>
+                    <History className="mr-2 h-4 w-4" /> Lịch sử TT
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         );

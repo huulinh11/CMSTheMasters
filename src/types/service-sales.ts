@@ -24,6 +24,7 @@ export type GuestService = {
   status: string | null;
   created_at: string;
   is_free_trial?: boolean;
+  payment_count: number;
 };
 
 export type ServiceCommissionSummary = {

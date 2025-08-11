@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GuestService, Service } from "@/types/service-sales";
 import { formatCurrency } from "@/lib/utils";
-import { CreditCard, RefreshCw } from "lucide-react";
+import { CreditCard, RefreshCw, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface GuestServicesTableProps {
@@ -20,9 +20,10 @@ interface GuestServicesTableProps {
   onPay: (item: GuestService) => void;
   onConvertTrial: (id: string) => void;
   onViewGuest: (guest: GuestService) => void;
+  onHistory: (item: GuestService) => void;
 }
 
-export const GuestServicesTable = ({ items, services, onStatusChange, onPay, onConvertTrial, onViewGuest }: GuestServicesTableProps) => {
+export const GuestServicesTable = ({ items, services, onStatusChange, onPay, onConvertTrial, onViewGuest, onHistory }: GuestServicesTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -78,6 +79,11 @@ export const GuestServicesTable = ({ items, services, onStatusChange, onPay, onC
                     )}
                   </TableCell>
                   <TableCell className="text-right space-x-1">
+                    {item.payment_count > 0 && (
+                      <Button variant="outline" size="sm" onClick={() => onHistory(item)}>
+                        Lịch sử TT
+                      </Button>
+                    )}
                     {item.is_free_trial ? (
                       <Button variant="secondary" size="sm" onClick={() => onConvertTrial(item.id)} className="bg-orange-500 hover:bg-orange-600 text-white">
                         <RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi
