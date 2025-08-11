@@ -45,13 +45,13 @@ import { GuestQrCodeDialog } from "./GuestQrCodeDialog";
 const InfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode }) => {
   if (!value && !children) return null;
   return (
-    <div className="flex items-center justify-between py-2.5 border-b last:border-b-0">
-      <div className="flex items-center">
+    <div className="flex items-center justify-between py-2.5 border-b last:border-b-0 gap-4">
+      <div className="flex items-center flex-shrink-0">
         <Icon className="h-4 w-4 mr-3 flex-shrink-0 text-slate-500" />
         <p className="text-sm text-slate-500">{label}</p>
       </div>
-      <div className="flex items-center gap-2 ml-4">
-        {value && <p className="font-medium text-slate-800 text-right">{value}</p>}
+      <div className="flex items-center justify-end gap-2 text-right min-w-0">
+        {value && <p className="font-medium text-slate-800 truncate">{value}</p>}
         {children}
       </div>
     </div>
@@ -267,173 +267,175 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
 
   return (
     <>
-      <header className="p-4 md:p-6 flex-shrink-0">
-        <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-                <button onClick={() => setIsImagePreviewOpen(true)}>
-                    <Avatar className="h-16 w-16 md:h-20 md:w-20">
-                        <AvatarImage src={guest.image_url} />
-                        <AvatarFallback>{guest.name?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                </button>
-                <div className="flex-1 min-w-0">
-                    <h1 className="text-xl md:text-3xl font-bold text-slate-800 truncate">{guest.name}</h1>
-                    <p className="text-slate-500 mt-1">{guest.role} ({guest.id})</p>
-                </div>
-            </div>
-            {canDelete && !isMobile && (
-              <Button variant="destructive" onClick={() => setIsDeleteAlertOpen(true)}>
-                <Trash2 className="mr-2 h-4 w-4" /> Xóa
-              </Button>
-            )}
-        </div>
-      </header>
-
-      <ScrollArea className="flex-grow min-h-0">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-0 lg:pb-6 pb-24">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center text-base md:text-lg"><Info className="mr-2" /> Thông tin cơ bản</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}><Edit className="h-4 w-4" /></Button>
-              </CardHeader>
-              <CardContent className="p-3 md:p-4 pt-0">
-                <InfoRow icon={Phone} label="SĐT" value={guest.phone} />
-                <InfoRow icon={User} label="Người giới thiệu" value={guest.referrer} />
-                {guest.secondaryInfo && <InfoRow icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} />}
-                <InfoRow icon={FileText} label="Ghi chú" value={guest.notes} />
-                <InfoRow icon={FileText} label="Tư liệu">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] sm:max-w-[150px]">
-                      {guest.materials || "Chưa có"}
-                    </p>
-                    <Button variant="outline" size="sm" onClick={() => setIsMaterialsOpen(true)} disabled={!guest.materials}>Xem</Button>
+      <div className="flex flex-col h-full">
+        <header className="p-4 md:p-6 flex-shrink-0">
+          <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <button onClick={() => setIsImagePreviewOpen(true)}>
+                      <Avatar className="h-16 w-16 md:h-20 md:w-20">
+                          <AvatarImage src={guest.image_url} />
+                          <AvatarFallback>{guest.name?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                  </button>
+                  <div className="flex-1 min-w-0">
+                      <h1 className="text-xl md:text-3xl font-bold text-slate-800 truncate">{guest.name}</h1>
+                      <p className="text-slate-500 mt-1">{guest.role} ({guest.id})</p>
                   </div>
-                </InfoRow>
-              </CardContent>
-            </Card>
+              </div>
+              {canDelete && !isMobile && (
+                <Button variant="destructive" onClick={() => setIsDeleteAlertOpen(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Xóa
+                </Button>
+              )}
           </div>
+        </header>
 
-          <div className="space-y-6">
-            {revenue && (
+        <ScrollArea className="flex-grow min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 md:p-6 pt-0">
+            <div className="space-y-6">
               <Card>
                 <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
-                  <CardTitle className="flex items-center text-base md:text-lg"><DollarSign className="mr-2" /> Doanh thu</CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => { setRevenueDialogMode('edit'); setIsRevenueDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
+                  <CardTitle className="flex items-center text-base md:text-lg"><Info className="mr-2" /> Thông tin cơ bản</CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}><Edit className="h-4 w-4" /></Button>
                 </CardHeader>
                 <CardContent className="p-3 md:p-4 pt-0">
-                  <InfoRow icon={DollarSign} label="Tài trợ" value={formatCurrency(revenue.sponsorship)} />
-                  <InfoRow icon={CheckCircle} label="Đã thanh toán" value={formatCurrency(revenue.paid)} />
-                  <InfoRow icon={AlertCircle} label="Chưa thanh toán" value={formatCurrency(revenue.unpaid)} />
-                  <InfoRow icon={Info} label="Nguồn thanh toán" value={revenue.payment_source} />
-                  {revenue.is_upsaled && (
-                    <InfoRow icon={FileText} label="Bill">
-                      {revenue.bill_image_url ? (
-                        <Button variant="link" className="p-0 h-auto font-medium" onClick={() => setBillPreviewUrl(revenue.bill_image_url)}>
-                          Xem bill
-                        </Button>
-                      ) : (
-                        <p className="font-medium text-slate-500">Trống</p>
-                      )}
-                    </InfoRow>
-                  )}
-                  <div className="flex gap-2 mt-4">
-                    <Button 
-                      className="flex-1" 
-                      onClick={() => setIsPaymentDialogOpen(true)} 
-                      disabled={!revenue || revenue.unpaid <= 0}
-                    >
-                      <CreditCard className="mr-2 h-4 w-4" /> Thanh toán
-                    </Button>
-                    {guestType === 'regular' && (
-                        <Button 
-                          className="flex-1" 
-                          variant="secondary"
-                          onClick={() => {
-                              setRevenueDialogMode('upsale');
-                              setIsRevenueDialogOpen(true);
-                          }}
-                        >
-                          <TrendingUp className="mr-2 h-4 w-4" /> Upsale
-                        </Button>
+                  <InfoRow icon={Phone} label="SĐT" value={guest.phone} />
+                  <InfoRow icon={User} label="Người giới thiệu" value={guest.referrer} />
+                  {guest.secondaryInfo && <InfoRow icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} />}
+                  <InfoRow icon={FileText} label="Ghi chú" value={guest.notes} />
+                  <InfoRow icon={FileText} label="Tư liệu">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-slate-800">
+                        {guest.materials ? "Đã có" : "Chưa có"}
+                      </p>
+                      <Button variant="outline" size="sm" onClick={() => setIsMaterialsOpen(true)} disabled={!guest.materials}>Xem</Button>
+                    </div>
+                  </InfoRow>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-6">
+              {revenue && (
+                <Card>
+                  <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center text-base md:text-lg"><DollarSign className="mr-2" /> Doanh thu</CardTitle>
+                    <Button variant="ghost" size="icon" onClick={() => { setRevenueDialogMode('edit'); setIsRevenueDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
+                  </CardHeader>
+                  <CardContent className="p-3 md:p-4 pt-0">
+                    <InfoRow icon={DollarSign} label="Tài trợ" value={formatCurrency(revenue.sponsorship)} />
+                    <InfoRow icon={CheckCircle} label="Đã thanh toán" value={formatCurrency(revenue.paid)} />
+                    <InfoRow icon={AlertCircle} label="Chưa thanh toán" value={formatCurrency(revenue.unpaid)} />
+                    <InfoRow icon={Info} label="Nguồn thanh toán" value={revenue.payment_source} />
+                    {revenue.is_upsaled && (
+                      <InfoRow icon={FileText} label="Bill">
+                        {revenue.bill_image_url ? (
+                          <Button variant="link" className="p-0 h-auto font-medium" onClick={() => setBillPreviewUrl(revenue.bill_image_url)}>
+                            Xem bill
+                          </Button>
+                        ) : (
+                          <p className="font-medium text-slate-500">Trống</p>
+                        )}
+                      </InfoRow>
                     )}
-                  </div>
-                  <div className="mt-4">
-                    <InfoRow icon={History} label="Lịch sử giao dịch">
-                      {payments.length === 0 && upsaleHistory.length === 0 ? (
-                        <p className="font-medium text-slate-800">Chưa có giao dịch.</p>
-                      ) : (
-                        <div className="max-h-40 overflow-y-auto space-y-2 text-sm text-right">
-                          {payments.map((p: any) => (<div key={p.id} className="flex justify-end"><span>Thanh toán ({format(new Date(p.created_at), 'dd/MM/yy')})</span><span className="font-medium text-green-600 ml-2">{formatCurrency(p.amount)}</span></div>))}
-                          {upsaleHistory.map((u: any) => (<div key={u.id} className="flex justify-end"><span>Upsale ({format(new Date(u.created_at), 'dd/MM/yy')})</span><span className="font-medium text-blue-600 ml-2">{formatCurrency(u.to_sponsorship - u.from_sponsorship)}</span></div>))}
-                        </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button 
+                        className="flex-1" 
+                        onClick={() => setIsPaymentDialogOpen(true)} 
+                        disabled={!revenue || revenue.unpaid <= 0}
+                      >
+                        <CreditCard className="mr-2 h-4 w-4" /> Thanh toán
+                      </Button>
+                      {guestType === 'regular' && (
+                          <Button 
+                            className="flex-1" 
+                            variant="secondary"
+                            onClick={() => {
+                                setRevenueDialogMode('upsale');
+                                setIsRevenueDialogOpen(true);
+                            }}
+                          >
+                            <TrendingUp className="mr-2 h-4 w-4" /> Upsale
+                          </Button>
                       )}
-                    </InfoRow>
+                    </div>
+                    <div className="mt-4">
+                      <InfoRow icon={History} label="Lịch sử giao dịch">
+                        {payments.length === 0 && upsaleHistory.length === 0 ? (
+                          <p className="font-medium text-slate-800">Chưa có giao dịch.</p>
+                        ) : (
+                          <div className="max-h-40 overflow-y-auto space-y-2 text-sm text-right">
+                            {payments.map((p: any) => (<div key={p.id} className="flex justify-end"><span>Thanh toán ({format(new Date(p.created_at), 'dd/MM/yy')})</span><span className="font-medium text-green-600 ml-2">{formatCurrency(p.amount)}</span></div>))}
+                            {upsaleHistory.map((u: any) => (<div key={u.id} className="flex justify-end"><span>Upsale ({format(new Date(u.created_at), 'dd/MM/yy')})</span><span className="font-medium text-blue-600 ml-2">{formatCurrency(u.to_sponsorship - u.from_sponsorship)}</span></div>))}
+                          </div>
+                        )}
+                      </InfoRow>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              <Card>
+                <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center text-base md:text-lg"><Megaphone className="mr-2" /> Quyền lợi truyền thông</CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setIsMediaDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
+                </CardHeader>
+                <CardContent className="p-3 md:p-4 pt-0"><MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} /></CardContent>
+              </Card>
+            </div>
+            
+            <div className="space-y-6">
+              <Card>
+                <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center text-base md:text-lg"><ClipboardList className="mr-2" /> Tác vụ sự kiện</CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setIsTasksDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
+                </CardHeader>
+                <CardContent className="p-3 md:p-4 pt-0">
+                  <div className="space-y-2">
+                    {tasksForRole.map(taskName => (<div key={taskName} className="flex items-center space-x-2"><Checkbox id={taskName} checked={tasks.find(t => t.task_name === taskName)?.is_completed} disabled /><Label htmlFor={taskName}>{taskName}</Label></div>))}
+                    {tasksForRole.length === 0 && <p className="text-slate-500">Không có tác vụ nào cho vai trò này.</p>}
                   </div>
                 </CardContent>
               </Card>
-            )}
-            <Card>
-              <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center text-base md:text-lg"><Megaphone className="mr-2" /> Quyền lợi truyền thông</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setIsMediaDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
-              </CardHeader>
-              <CardContent className="p-3 md:p-4 pt-0"><MediaBenefitDisplay benefits={benefitsForRole} mediaBenefitData={mediaBenefit} /></CardContent>
-            </Card>
-          </div>
-          
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center text-base md:text-lg"><ClipboardList className="mr-2" /> Tác vụ sự kiện</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setIsTasksDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
-              </CardHeader>
-              <CardContent className="p-3 md:p-4 pt-0">
-                <div className="space-y-2">
-                  {tasksForRole.map(taskName => (<div key={taskName} className="flex items-center space-x-2"><Checkbox id={taskName} checked={tasks.find(t => t.task_name === taskName)?.is_completed} disabled /><Label htmlFor={taskName}>{taskName}</Label></div>))}
-                  {tasksForRole.length === 0 && <p className="text-slate-500">Không có tác vụ nào cho vai trò này.</p>}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><LinkIcon className="mr-2" /> Liên kết</CardTitle></CardHeader>
-              <CardContent className="p-3 md:p-4 pt-0">
-                {guest.slug && (
+              <Card>
+                <CardHeader className="p-3 md:p-4"><CardTitle className="flex items-center text-base md:text-lg"><LinkIcon className="mr-2" /> Liên kết</CardTitle></CardHeader>
+                <CardContent className="p-3 md:p-4 pt-0">
+                  {guest.slug && (
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <p className="text-sm font-medium text-slate-800">Profile Link</p>
+                      <div className="flex items-center gap-1 ml-2">
+                        <Button size="icon" variant="outline" onClick={() => setIsProfileDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
+                        <a href={`/profile/${guest.slug}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
+                        <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/profile/${guest.slug}`)}><Copy className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between py-2 border-b">
-                    <p className="text-sm font-medium text-slate-800">Profile Link</p>
+                    <p className="text-sm font-medium text-slate-800">Checklist Link</p>
                     <div className="flex items-center gap-1 ml-2">
-                      <Button size="icon" variant="outline" onClick={() => setIsProfileDialogOpen(true)}><Edit className="h-4 w-4" /></Button>
-                      <a href={`/profile/${guest.slug}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
-                      <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/profile/${guest.slug}`)}><Copy className="h-4 w-4" /></Button>
+                      <a href={`/checklist/${guest.id}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
+                      <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.id}`)}><Copy className="h-4 w-4" /></Button>
                     </div>
                   </div>
-                )}
-                <div className="flex items-center justify-between py-2 border-b">
-                  <p className="text-sm font-medium text-slate-800">Checklist Link</p>
-                  <div className="flex items-center gap-1 ml-2">
-                    <a href={`/checklist/${guest.id}`} target="_blank" rel="noopener noreferrer"><Button size="icon" variant="outline"><ExternalLink className="h-4 w-4" /></Button></a>
-                    <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.id}`)}><Copy className="h-4 w-4" /></Button>
-                  </div>
-                </div>
-                {guest.role !== 'Vé trải nghiệm' && (
-                  <div className="pt-4">
-                    <Button className="w-full" onClick={() => setIsQrCodeDialogOpen(true)}>
-                      <QrCode className="mr-2 h-4 w-4" /> Xem tất cả mã QR
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  {guest.role !== 'Vé trải nghiệm' && (
+                    <div className="pt-4">
+                      <Button className="w-full" onClick={() => setIsQrCodeDialogOpen(true)}>
+                        <QrCode className="mr-2 h-4 w-4" /> Xem tất cả mã QR
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
-      </ScrollArea>
-      {isMobile && canDelete && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200/50 bg-gradient-to-t from-[#e5b899]/80 via-[#e5b899]/50 to-transparent backdrop-blur-sm">
-          <Button variant="destructive" className="w-full" onClick={() => setIsDeleteAlertOpen(true)}>
-            <Trash2 className="mr-2 h-4 w-4" /> Xóa khách mời
-          </Button>
-        </div>
-      )}
+          {isMobile && canDelete && (
+            <div className="p-4">
+              <Button variant="destructive" className="w-full" onClick={() => setIsDeleteAlertOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" /> Xóa khách mời
+              </Button>
+            </div>
+          )}
+        </ScrollArea>
+      </div>
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -546,7 +548,7 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
     <>
       {isMobile ? (
         <Drawer open={open} onOpenChange={onOpenChange}>
-          <DrawerContent className="h-[calc(100dvh-60px)] bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col relative [&>div:first-child]:bg-slate-400">
+          <DrawerContent className="h-[calc(100dvh-60px)] bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col [&>div:first-child]:bg-slate-800">
             {guestId && guestType && <GuestDetailsContent isMobile={isMobile} guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DrawerContent>
         </Drawer>
