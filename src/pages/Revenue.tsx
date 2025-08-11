@@ -7,12 +7,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { useAuth } from "@/contexts/AuthContext";
 import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
-import { AddVipGuestDialog } from "@/components/vip-guests/AddVipGuestDialog";
-import { VipGuest, VipGuestFormValues } from "@/types/vip-guest";
-import { AddGuestDialog } from "@/components/guests/AddGuestDialog";
-import { Guest, GuestFormValues } from "@/types/guest";
-import { generateGuestSlug } from "@/lib/slug";
-import { showSuccess, showError } from "@/utils/toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import RevenueStats from "@/components/dashboard/RevenueStats";
@@ -24,8 +18,10 @@ import HistoryDialog from "@/components/Revenue/HistoryDialog";
 import GuestPaymentDialog from "@/components/Revenue/GuestPaymentDialog";
 import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog";
+import { CombinedRevenueTable } from "@/components/Revenue/CombinedRevenueTable";
+import { CombinedRevenueCards } from "@/components/Revenue/CombinedRevenueCards";
 
-export type CombinedGuestRevenue = (GuestRevenue | VipGuestRevenue) & { type: 'Chức vụ' | 'Khách mời' };
+export type CombinedGuestRevenue = (GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' });
 
 type UpsaleHistory = {
   guest_id: string;
@@ -158,6 +154,16 @@ const RevenuePage = () => {
 
   const isLoading = isLoadingVip || isLoadingRegular || isLoadingRoles || isLoadingHistory;
 
+  const handleView = (guest: CombinedGuestRevenue) => setViewingGuest(guest);
+  const handleEdit = (guest: CombinedGuestRevenue) => setEditingGuest(guest);
+  const handlePay = (guest: CombinedGuestRevenue) => setPayingGuest(guest);
+  const handleHistory = (guest: CombinedGuestRevenue) => setHistoryGuest(guest);
+  const handleUpsale = (guest: CombinedGuestRevenue) => {
+    if (guest.type === 'Khách mời') {
+      setUpsaleGuest(guest as GuestRevenue);
+    }
+  };
+
   return (
     <div className="p-4 md:p-6">
       <h1 className="text-2xl font-bold text-slate-800 mb-4">Quản lý doanh thu</h1>
@@ -184,10 +190,25 @@ const RevenuePage = () => {
         <Skeleton className="h-96 w-full rounded-lg mt-4" />
       ) : (
         <div className="mt-4">
-          {/* Here you would have your combined table/cards component */}
-          <p className="text-center p-8 bg-slate-100 rounded-lg">
-            Combined guest list will be displayed here.
-          </p>
+          {isMobile ? (
+            <CombinedRevenueCards 
+              guests={filteredGuests}
+              onView={handleView}
+              onEdit={handleEdit}
+              onPay={handlePay}
+              onHistory={handleHistory}
+              onUpsale={handleUpsale}
+            />
+          ) : (
+            <CombinedRevenueTable 
+              guests={filteredGuests}
+              onView={handleView}
+              onEdit={handleEdit}
+              onPay={handlePay}
+              onHistory={handleHistory}
+              onUpsale={handleUpsale}
+            />
+          )}
         </div>
       )}
 
