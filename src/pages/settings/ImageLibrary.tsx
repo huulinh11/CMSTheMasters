@@ -67,10 +67,21 @@ const ImageLibrary = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (fileName: string) => {
-      const { error } = await supabase.storage
-        .from(BUCKET_NAME)
-        .remove([`${FOLDER_NAME}/${fileName}`]);
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke('manage-images', {
+        body: { 
+          method: 'DELETE_IMAGE',
+          payload: { fileName }
+        },
+      });
+
+      if (error) {
+        if (error.name === 'FunctionsHttpError') {
+          const errorBody = await error.context.json();
+          throw new Error(errorBody.error || 'Lỗi khi xóa ảnh.');
+        }
+        throw error;
+      }
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['image-library-files'] });
