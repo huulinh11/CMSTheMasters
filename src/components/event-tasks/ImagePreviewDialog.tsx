@@ -6,7 +6,8 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { showSuccess, showError } from "@/utils/toast";
-import { Upload } from "lucide-react";
+import { Upload, Library } from "lucide-react";
+import { ImageLibraryDialog } from "../image-library/ImageLibraryDialog";
 
 interface ImagePreviewDialogProps {
   guest: TaskGuest | null;
@@ -19,13 +20,13 @@ export const ImagePreviewDialog = ({ guest, open, onOpenChange, guestType }: Ima
   const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
       setPreviewUrl(guest?.image_url || null);
     } else {
-      // Reset state when dialog closes
       setSelectedFile(null);
       setPreviewUrl(null);
     }
@@ -65,7 +66,7 @@ export const ImagePreviewDialog = ({ guest, open, onOpenChange, guestType }: Ima
 
     const fileExt = selectedFile.name.split('.').pop();
     const fileName = `${guest.id}-${Date.now()}.${fileExt}`;
-    const filePath = `public/${fileName}`;
+    const filePath = `image-library/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('avatars')
@@ -87,36 +88,51 @@ export const ImagePreviewDialog = ({ guest, open, onOpenChange, guestType }: Ima
     }
   };
 
-  const handleTriggerUpload = () => {
-    fileInputRef.current?.click();
+  const handleSelectFromLibrary = (url: string) => {
+    setPreviewUrl(url);
+    setSelectedFile(null); // Clear file selection
+    mutation.mutate(url); // Directly save the selected URL
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Ảnh đại diện: {guest?.name}</DialogTitle>
-        </DialogHeader>
-        <div className="flex justify-center items-center my-4">
-          {previewUrl ? (
-            <img src={previewUrl} alt={guest?.name} className="max-h-[60vh] max-w-full rounded-md object-contain" />
-          ) : (
-            <div className="h-64 w-full bg-slate-100 rounded-md flex items-center justify-center">
-              <p className="text-slate-500">Chưa có ảnh</p>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Ảnh đại diện: {guest?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center items-center my-4">
+            {previewUrl ? (
+              <img src={previewUrl} alt={guest?.name} className="max-h-[60vh] max-w-full rounded-md object-contain" />
+            ) : (
+              <div className="h-64 w-full bg-slate-100 rounded-md flex items-center justify-center">
+                <p className="text-slate-500">Chưa có ảnh</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="sm:justify-between flex-col sm:flex-row gap-2">
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="mr-2 h-4 w-4" />
+                Tải ảnh mới
+              </Button>
+              <Button variant="outline" onClick={() => setIsLibraryOpen(true)}>
+                <Library className="mr-2 h-4 w-4" />
+                Chọn từ thư viện
+              </Button>
             </div>
-          )}
-        </div>
-        <DialogFooter className="sm:justify-between">
-          <Button variant="outline" onClick={handleTriggerUpload}>
-            <Upload className="mr-2 h-4 w-4" />
-            {guest?.image_url ? 'Thay đổi ảnh' : 'Thêm ảnh'}
-          </Button>
-          <Input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-          <Button onClick={handleUpload} disabled={!selectedFile || mutation.isPending}>
-            {mutation.isPending ? 'Đang lưu...' : 'Lưu ảnh mới'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <Input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+            <Button onClick={handleUpload} disabled={!selectedFile || mutation.isPending}>
+              {mutation.isPending ? 'Đang lưu...' : 'Lưu ảnh đã tải'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <ImageLibraryDialog
+        open={isLibraryOpen}
+        onOpenChange={setIsLibraryOpen}
+        onSelect={handleSelectFromLibrary}
+      />
+    </>
   );
 };

@@ -8,15 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TextItem } from "@/types/profile-content";
 import { useEffect, useState } from "react";
 import { showSuccess, showError } from "@/utils/toast";
-import { ImageUploader } from "@/components/public-user/ImageUploader";
 import { Slider } from "@/components/ui/slider";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { ImageSourceSelector } from "../components/image-library/ImageSourceSelector";
 
 type LogoConfig = {
   imageUrl: string;
-  imageSourceType: 'url' | 'upload';
   width: number;
   marginTop: number;
   marginRight: number;
@@ -26,7 +23,6 @@ type LogoConfig = {
 
 type DresscodeImageConfig = {
   imageUrl: string;
-  imageSourceType: 'url' | 'upload';
 };
 
 type ChecklistSettings = {
@@ -57,7 +53,7 @@ const MarginEditor = ({ values, onChange }: { values: { marginTop?: number, marg
 const ChecklistSettings = () => {
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<Partial<ChecklistSettings>>({});
-  const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set());
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data, isLoading } = useQuery<ChecklistSettings | null>({
     queryKey: ['checklist_settings'],
@@ -108,19 +104,6 @@ const ChecklistSettings = () => {
     }));
   };
 
-  const handleUploadingState = (id: string, isUploading: boolean) => {
-    setUploadingIds(prev => {
-      const newSet = new Set(prev);
-      if (isUploading) {
-        newSet.add(id);
-      } else {
-        newSet.delete(id);
-      }
-      return newSet;
-    });
-  };
-  const isUploading = uploadingIds.size > 0;
-
   if (isLoading) {
     return <Skeleton className="h-96 w-full" />;
   }
@@ -133,14 +116,11 @@ const ChecklistSettings = () => {
           <CardDescription>Tùy chỉnh hiển thị logo trên trang checklist.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <RadioGroup value={settings.logo_config?.imageSourceType || 'url'} onValueChange={(value) => handleConfigChange('logo_config', 'imageSourceType', value)} className="flex gap-4">
-            <div className="flex items-center space-x-2"><RadioGroupItem value="url" id="logo-url" /><Label htmlFor="logo-url">Nhập link</Label></div>
-            <div className="flex items-center space-x-2"><RadioGroupItem value="upload" id="logo-upload" /><Label htmlFor="logo-upload">Tải ảnh</Label></div>
-          </RadioGroup>
-          {(settings.logo_config?.imageSourceType === 'url' || !settings.logo_config?.imageSourceType) 
-            ? <Input placeholder="URL logo" value={settings.logo_config?.imageUrl || ''} onChange={(e) => handleConfigChange('logo_config', 'imageUrl', e.target.value)} /> 
-            : <ImageUploader guestId="checklist-settings" onUploadSuccess={url => handleConfigChange('logo_config', 'imageUrl', url)} onUploading={isUp => handleUploadingState('logo', isUp)} />}
-          
+          <ImageSourceSelector
+            value={settings.logo_config?.imageUrl || ''}
+            onValueChange={url => handleConfigChange('logo_config', 'imageUrl', url)}
+            onUploadingChange={setIsUploading}
+          />
           <div><Label>Rộng (%)</Label><Slider value={[settings.logo_config?.width || 100]} onValueChange={([val]) => handleConfigChange('logo_config', 'width', val)} max={100} step={1} /></div>
           <div><Label>Canh lề</Label><MarginEditor values={settings.logo_config || {}} onChange={(field, value) => handleConfigChange('logo_config', field, value)} /></div>
         </CardContent>
@@ -180,18 +160,11 @@ const ChecklistSettings = () => {
               onChange={(e) => setSettings(prev => ({ ...prev, dresscode_title: e.target.value }))} 
             />
           </div>
-          <Separator />
-          <RadioGroup 
-            value={settings.dresscode_image_config?.imageSourceType || 'url'} 
-            onValueChange={(value) => handleConfigChange('dresscode_image_config', 'imageSourceType', value as 'url' | 'upload')} 
-            className="flex gap-4"
-          >
-            <div className="flex items-center space-x-2"><RadioGroupItem value="url" id="dresscode-url" /><Label htmlFor="dresscode-url">Nhập link</Label></div>
-            <div className="flex items-center space-x-2"><RadioGroupItem value="upload" id="dresscode-upload" /><Label htmlFor="dresscode-upload">Tải ảnh</Label></div>
-          </RadioGroup>
-          {(settings.dresscode_image_config?.imageSourceType === 'url' || !settings.dresscode_image_config?.imageSourceType) 
-            ? <Input placeholder="URL hình ảnh dresscode" value={settings.dresscode_image_config?.imageUrl || ''} onChange={(e) => handleConfigChange('dresscode_image_config', 'imageUrl', e.target.value)} /> 
-            : <ImageUploader guestId="checklist-settings-dresscode" onUploadSuccess={url => handleConfigChange('dresscode_image_config', 'imageUrl', url)} onUploading={isUp => handleUploadingState('dresscode', isUp)} />}
+          <ImageSourceSelector
+            value={settings.dresscode_image_config?.imageUrl || ''}
+            onValueChange={url => handleConfigChange('dresscode_image_config', 'imageUrl', url)}
+            onUploadingChange={setIsUploading}
+          />
         </CardContent>
       </Card>
 

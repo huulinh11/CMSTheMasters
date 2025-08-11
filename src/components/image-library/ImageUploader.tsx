@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { showError } from "@/utils/toast";
 
+const BUCKET_NAME = 'avatars';
+const FOLDER_NAME = 'image-library';
+
 interface ImageUploaderProps {
   onUploadSuccess: (url: string) => void;
-  guestId: string;
   onUploading?: (isUploading: boolean) => void;
 }
 
-export const ImageUploader = ({ onUploadSuccess, guestId, onUploading }: ImageUploaderProps) => {
+export const ImageUploader = ({ onUploadSuccess, onUploading }: ImageUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const inputId = useId();
 
@@ -24,10 +26,10 @@ export const ImageUploader = ({ onUploadSuccess, guestId, onUploading }: ImageUp
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `profile-content/${guestId}/${fileName}`;
+      const filePath = `${FOLDER_NAME}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from(BUCKET_NAME)
         .upload(filePath, file);
 
       if (uploadError) {
@@ -35,7 +37,7 @@ export const ImageUploader = ({ onUploadSuccess, guestId, onUploading }: ImageUp
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
+        .from(BUCKET_NAME)
         .getPublicUrl(filePath);
 
       if (publicUrl) {
@@ -61,7 +63,7 @@ export const ImageUploader = ({ onUploadSuccess, guestId, onUploading }: ImageUp
         disabled={isUploading}
       >
         <Upload className="mr-2 h-4 w-4" />
-        {isUploading ? 'Đang tải...' : 'Tải ảnh lên'}
+        {isUploading ? 'Đang tải...' : 'Tải ảnh mới'}
       </Button>
       <input
         type="file"
