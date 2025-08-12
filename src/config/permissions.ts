@@ -18,8 +18,7 @@ export const permissionsByRole: Record<AppUser['role'], string[]> = {
     "commission",
     "timeline",
     "public-user",
-    "settings",
-    "referrals"
+    "settings"
   ],
 
   // Nhân viên có các quyền cơ bản, không bao gồm doanh thu và quản lý tài khoản

@@ -60,6 +60,15 @@ const ReferralsPage = () => {
     return result;
   }, [summaryData, searchTerm, filters]);
 
+  const totalStats = useMemo(() => {
+    return filteredAndSortedSummary.reduce((acc, item) => {
+        acc.totalReferrals += item.referral_count;
+        acc.totalRevenue += item.total_revenue;
+        acc.totalCommission += item.total_commission;
+        return acc;
+    }, { totalReferrals: 0, totalRevenue: 0, totalCommission: 0 });
+  }, [filteredAndSortedSummary]);
+
   const handleFilterChange = (field: keyof typeof filters, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
   };
@@ -80,6 +89,32 @@ const ReferralsPage = () => {
   return (
     <div className="p-4 md:p-6 space-y-4">
       <PageHeader title="Người giới thiệu" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tổng lượt giới thiệu</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalStats.totalReferrals}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tổng doanh thu</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalStats.totalRevenue)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tổng hoa hồng</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalStats.totalCommission)}</div>
+          </CardContent>
+        </Card>
+      </div>
       <div className="flex items-center gap-2">
         <Input 
           placeholder="Tìm kiếm theo tên người giới thiệu..." 
