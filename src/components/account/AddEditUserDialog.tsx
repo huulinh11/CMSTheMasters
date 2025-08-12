@@ -26,7 +26,6 @@ export const AddEditUserDialog = ({ open, onOpenChange, onSave, isSaving, user, 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [department, setDepartment] = useState('');
   const [role, setRole] = useState<AppUser['role']>('Nhân viên');
 
   const availableRoles = useMemo(() => {
@@ -44,14 +43,12 @@ export const AddEditUserDialog = ({ open, onOpenChange, onSave, isSaving, user, 
     if (user) {
       setUsername(user.username);
       setFullName(user.full_name);
-      setDepartment(user.department);
       setRole(user.role);
       setPassword('');
     } else {
       setUsername('');
       setPassword('');
       setFullName('');
-      setDepartment('');
       setRole(currentUserRole === 'QL ekip' ? 'Nhân viên' : 'Nhân viên');
     }
   }, [user, open, currentUserRole]);
@@ -61,7 +58,6 @@ export const AddEditUserDialog = ({ open, onOpenChange, onSave, isSaving, user, 
       id: user?.id,
       username,
       full_name: fullName,
-      department,
       role,
     };
     if (password) {
@@ -91,10 +87,6 @@ export const AddEditUserDialog = ({ open, onOpenChange, onSave, isSaving, user, 
           <div className="space-y-2">
             <Label htmlFor="fullName">Họ và tên</Label>
             <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="department">Bộ phận</Label>
-            <Input id="department" value={department} onChange={(e) => setDepartment(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="role">Loại phân quyền</Label>

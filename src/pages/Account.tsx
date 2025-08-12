@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AppUser } from "@/types/app-user";
+import { AppUser, USER_ROLES } from "@/types/app-user";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Edit } from "lucide-react";
@@ -20,6 +20,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const AccountPage = () => {
   const queryClient = useQueryClient();
@@ -27,6 +29,8 @@ const AccountPage = () => {
   const { session, profile } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   const { data: users = [], isLoading, error: queryError } = useQuery<AppUser[]>({
     queryKey: ['app_users', session?.access_token],
@@ -53,6 +57,15 @@ const AccountPage = () => {
     },
     enabled: !!session,
   });
+
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const searchMatch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.username?.toLowerCase().includes(searchTerm.toLowerCase());
+      const roleMatch = roleFilter === 'all' || user.role === roleFilter;
+      return searchMatch && roleMatch;
+    });
+  }, [users, searchTerm, roleFilter]);
 
   const mutation = useMutation({
     mutationFn: async (payload: { method: string, payload: any }) => {
@@ -118,18 +131,37 @@ const AccountPage = () => {
         </Button>
       </PageHeader>
 
+      <div className="flex flex-col md:flex-row gap-2">
+        <Input
+          placeholder="Tìm kiếm theo tên, username..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-grow"
+        />
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue placeholder="Lọc theo loại tài khoản" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả loại</SelectItem>
+            {USER_ROLES.map(role => (
+              <SelectItem key={role} value={role}>{role}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {isLoading ? (
         <Skeleton className="h-96 w-full" />
       ) : isMobile ? (
         <div className="space-y-4">
-          {users.map((user) => (
+          {filteredUsers.map((user) => (
             <Card key={user.id}>
               <CardHeader>
                 <CardTitle>{user.full_name}</CardTitle>
                 <p className="text-sm text-muted-foreground">{user.username} - {user.role}</p>
               </CardHeader>
               <CardContent className="space-y-2">
-                <p><strong>Bộ phận:</strong> {user.department}</p>
                 <div className="flex gap-2 pt-2">
                   <Button variant="outline" size="sm" onClick={() => handleOpenDialog(user)}><Edit className="mr-2 h-4 w-4" /> Sửa</Button>
                   <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user)} disabled={profile?.id === user.id}><Trash2 className="mr-2 h-4 w-4" /> Xóa</Button>
@@ -145,17 +177,15 @@ const AccountPage = () => {
               <TableRow>
                 <TableHead>Họ và tên</TableHead>
                 <TableHead>Username</TableHead>
-                <TableHead>Bộ phận</TableHead>
                 <TableHead>Loại phân quyền</TableHead>
                 <TableHead className="text-right">Tác vụ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>{user.full_name}</TableCell>
                   <TableCell>{user.username}</TableCell>
-                  <TableCell>{user.department}</TableCell>
                   <TableCell><Badge>{user.role}</Badge></TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="sm" onClick={() => handleOpenDialog(user)}>Sửa</Button>

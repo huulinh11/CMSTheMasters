@@ -21,7 +21,7 @@ async function listUsers(supabaseAdmin: SupabaseClient, requesterRole: string) {
   const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
   if (usersError) throw new Error(`Lỗi lấy danh sách người dùng: ${usersError.message}`);
 
-  const { data: profiles, error: profilesError } = await supabaseAdmin.from('profiles').select('*');
+  const { data: profiles, error: profilesError } = await supabaseAdmin.from('profiles').select('id, full_name, role');
   if (profilesError) throw new Error(`Lỗi lấy hồ sơ người dùng: ${profilesError.message}`);
 
   let combined = users.map(u => {
@@ -30,7 +30,8 @@ async function listUsers(supabaseAdmin: SupabaseClient, requesterRole: string) {
       id: u.id,
       email: u.email,
       username: u.email?.split('@')[0],
-      ...profile,
+      full_name: profile?.full_name,
+      role: profile?.role,
     };
   });
 
@@ -43,7 +44,7 @@ async function listUsers(supabaseAdmin: SupabaseClient, requesterRole: string) {
 }
 
 async function createUser(supabaseAdmin: SupabaseClient, payload: any, requesterRole: string) {
-  const { username, password, full_name, department, role } = payload;
+  const { username, password, full_name, role } = payload;
   if (!password || password.length < 6) throw new Error("Mật khẩu phải có ít nhất 6 ký tự.");
   if (!username) throw new Error("Username không được để trống.");
   
@@ -58,7 +59,7 @@ async function createUser(supabaseAdmin: SupabaseClient, payload: any, requester
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name, department, role }
+    user_metadata: { full_name, role }
   });
 
   if (error) throw new Error(`Không thể tạo người dùng: ${error.message}`);
@@ -66,7 +67,7 @@ async function createUser(supabaseAdmin: SupabaseClient, payload: any, requester
 }
 
 async function updateUser(supabaseAdmin: SupabaseClient, payload: any, requesterRole: string) {
-  const { id, password, full_name, department, role } = payload;
+  const { id, password, full_name, role } = payload;
   
   if (requesterRole === 'QL ekip') {
     const { data: targetProfile, error } = await supabaseAdmin.from('profiles').select('role').eq('id', id).single();
@@ -88,7 +89,7 @@ async function updateUser(supabaseAdmin: SupabaseClient, payload: any, requester
 
   const { error: profileError } = await supabaseAdmin
     .from('profiles')
-    .update({ full_name, department, role })
+    .update({ full_name, role })
     .eq('id', id);
   if (profileError) throw new Error(`Lỗi cập nhật hồ sơ: ${profileError.message}`);
 
