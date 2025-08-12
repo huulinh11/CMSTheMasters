@@ -39,28 +39,34 @@ const SiteSettingsManager = () => {
         element.href = href;
       };
 
-      if (settings.website_title) {
-        document.title = settings.website_title;
-        updateMetaTag('property', 'og:title', settings.website_title);
-        updateMetaTag('name', 'twitter:title', settings.website_title);
-      }
+      const websiteTitle = settings.website_title || 'EventApp';
+      const description = settings.sidebar_title || 'Event Information';
+      const imageUrl = settings.og_image_url || `${window.location.origin}/placeholder.svg`;
+      const pageUrl = window.location.href;
 
-      if (settings.sidebar_title) {
-        updateMetaTag('name', 'description', settings.sidebar_title);
-        updateMetaTag('property', 'og:description', settings.sidebar_title);
-        updateMetaTag('name', 'twitter:description', settings.sidebar_title);
-      }
+      // Update Title
+      document.title = websiteTitle;
+      updateMetaTag('name', 'title', websiteTitle);
+      updateMetaTag('property', 'og:title', websiteTitle);
+      updateMetaTag('property', 'twitter:title', websiteTitle);
 
+      // Update Description
+      updateMetaTag('name', 'description', description);
+      updateMetaTag('property', 'og:description', description);
+      updateMetaTag('property', 'twitter:description', description);
+
+      // Update Favicon
       if (settings.favicon_url) {
         updateLinkTag('icon', settings.favicon_url);
       }
 
-      if (settings.og_image_url) {
-        updateMetaTag('property', 'og:image', settings.og_image_url);
-        updateMetaTag('name', 'twitter:image', settings.og_image_url);
-      }
+      // Update Image
+      updateMetaTag('property', 'og:image', imageUrl);
+      updateMetaTag('property', 'twitter:image', imageUrl);
       
-      updateMetaTag('property', 'og:url', window.location.href);
+      // Update URL
+      updateMetaTag('property', 'og:url', pageUrl);
+      updateMetaTag('property', 'twitter:url', pageUrl);
     }
   }, [settings]);
 
