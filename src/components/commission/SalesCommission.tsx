@@ -3,12 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { UpsaleCommissionSummary, ServiceCommissionSummary } from "@/types/commission";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import UpsaleCommissionDetailsDialog from "@/components/Revenue/UpsaleCommissionDetailsDialog";
 import { ServiceCommissionDetailsDialog } from "@/components/service-sales/ServiceCommissionDetailsDialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import CommissionStats from "@/components/Revenue/CommissionStats";
 
@@ -67,6 +71,50 @@ const SalesCommissionCard = ({
       </div>
     </CardContent>
   </Card>
+);
+
+const OtherSalesCard = ({ item, onViewUpsale, onViewService }: { item: CombinedCommissionSummary; onViewUpsale: (person: { userId: string; name: string; hideCommission: boolean }) => void; onViewService: (referrer: { id: string; name: string; hideCommission?: boolean }) => void; }) => (
+  <Card>
+    <CardHeader><CardTitle>{item.name}</CardTitle></CardHeader>
+    <CardContent className="space-y-2">
+      <InfoRow label="Số lượt upsale" value={String(item.upsaleCount)} />
+      <InfoRow label="Tổng tiền upsale" value={formatCurrency(item.totalUpsaleAmount)} />
+      <InfoRow label="Số dịch vụ" value={String(item.serviceCount)} />
+      <InfoRow label="Tổng tiền dịch vụ" value={formatCurrency(item.totalServicePrice)} />
+      <div className="flex gap-2 pt-2">
+        <Button className="flex-1" onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: true })}>Chi tiết Upsale</Button>
+        <Button className="flex-1" variant="secondary" onClick={() => onViewService({ id: item.userId, name: item.name, hideCommission: true })}>Chi tiết Dịch vụ</Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const OtherSalesTable = ({ items, onViewUpsale, onViewService }: { items: CombinedCommissionSummary[]; onViewUpsale: (person: { userId: string; name: string; hideCommission: boolean }) => void; onViewService: (referrer: { id: string; name: string; hideCommission?: boolean }) => void; }) => (
+  <div className="rounded-lg border bg-white">
+    <Table>
+      <TableHeader><TableRow><TableHead>Tên Sale</TableHead><TableHead>Lượt Upsale</TableHead><TableHead>Tiền Upsale</TableHead><TableHead>Lượt Dịch vụ</TableHead><TableHead>Tiền Dịch vụ</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
+      <TableBody>
+        {items.map((item) => (
+          <TableRow key={item.userId}>
+            <TableCell className="font-medium">{item.name}</TableCell>
+            <TableCell>{item.upsaleCount}</TableCell>
+            <TableCell>{formatCurrency(item.totalUpsaleAmount)}</TableCell>
+            <TableCell>{item.serviceCount}</TableCell>
+            <TableCell>{formatCurrency(item.totalServicePrice)}</TableCell>
+            <TableCell className="text-right">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: true })} disabled={item.upsaleCount === 0}>Chi tiết Upsale</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onViewService({ id: item.userId, name: item.name, hideCommission: true })} disabled={item.serviceCount === 0}>Chi tiết Dịch vụ</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
 );
 
 const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
@@ -142,9 +190,13 @@ const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
     );
   }, [combinedSummary, searchTerm]);
 
-  const currentUserSummary = useMemo(() => {
-    if (!isSaleView || !userId) return null;
-    return filteredSummary.find(item => item.userId === userId);
+  const { currentUserSummary, otherUsersSummary } = useMemo(() => {
+    if (!isSaleView || !userId) {
+        return { currentUserSummary: null, otherUsersSummary: filteredSummary };
+    }
+    const currentUser = filteredSummary.find(item => item.userId === userId);
+    const others = filteredSummary.filter(item => item.userId !== userId);
+    return { currentUserSummary: currentUser, otherUsersSummary: others };
   }, [filteredSummary, isSaleView, userId]);
 
   const totalStats = useMemo(() => {
@@ -157,13 +209,14 @@ const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
   }, [filteredSummary]);
 
   const isLoading = isLoadingUpsale || isLoadingService;
+  const isMobile = useIsMobile();
 
   if (isLoading) return <Skeleton className="h-96 w-full rounded-lg" />;
 
   if (isSaleView) {
     return (
       <div className="space-y-6">
-        {currentUserSummary ? (
+        {currentUserSummary && (
           <div>
             <h2 className="text-xl font-bold text-slate-800 mb-2">Hoa hồng của bạn</h2>
             <SalesCommissionCard 
@@ -172,8 +225,29 @@ const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
               onViewService={setSelectedServiceReferrer} 
             />
           </div>
-        ) : (
-          <p>Không có dữ liệu hoa hồng cho bạn.</p>
+        )}
+        {otherUsersSummary.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Thống kê Sale khác</h2>
+            {isMobile ? (
+              <div className="space-y-4">
+                {otherUsersSummary.map((item) => (
+                  <OtherSalesCard 
+                    key={item.userId}
+                    item={item}
+                    onViewUpsale={setSelectedUpsalePerson}
+                    onViewService={setSelectedServiceReferrer}
+                  />
+                ))}
+              </div>
+            ) : (
+              <OtherSalesTable 
+                items={otherUsersSummary}
+                onViewUpsale={setSelectedUpsalePerson}
+                onViewService={setSelectedServiceReferrer}
+              />
+            )}
+          </div>
         )}
       </div>
     );
