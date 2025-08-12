@@ -9,12 +9,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { showSuccess, showError } from "@/utils/toast";
 import { Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageSourceSelector } from "@/components/image-library/ImageSourceSelector";
 
 type GeneralSettingsData = {
   id: string;
   qr_scan_sound_url?: string | null;
   default_dashboard_tab?: 'khach-moi' | 'tac-vu' | 'quyen-loi' | null;
-  service_commission_rate?: number | null; // Thêm trường mới
+  service_commission_rate?: number | null;
+  website_title?: string | null;
+  favicon_url?: string | null;
+  og_image_url?: string | null;
 };
 
 const GeneralSettings = () => {
@@ -26,7 +30,7 @@ const GeneralSettings = () => {
   const { data, isLoading } = useQuery<GeneralSettingsData | null>({
     queryKey: ['general_settings'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('checklist_settings').select('id, qr_scan_sound_url, default_dashboard_tab, service_commission_rate').limit(1).single();
+      const { data, error } = await supabase.from('checklist_settings').select('id, qr_scan_sound_url, default_dashboard_tab, service_commission_rate, website_title, favicon_url, og_image_url').limit(1).single();
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     }
@@ -49,6 +53,7 @@ const GeneralSettings = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['general_settings'] });
       queryClient.invalidateQueries({ queryKey: ['checklist_settings'] });
+      queryClient.invalidateQueries({ queryKey: ['checklist_settings_for_head'] });
       showSuccess("Đã lưu cấu hình!");
     },
     onError: (error: Error) => showError(error.message),
@@ -101,6 +106,40 @@ const GeneralSettings = () => {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Cấu hình Website</CardTitle>
+          <CardDescription>Các thông tin cơ bản hiển thị trên website.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="website-title">Tên website</Label>
+            <Input
+              id="website-title"
+              value={settings.website_title || ''}
+              onChange={(e) => handleConfigChange('website_title', e.target.value)}
+              placeholder="EventApp"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Favicon</Label>
+            <ImageSourceSelector
+              value={settings.favicon_url || ''}
+              onValueChange={url => handleConfigChange('favicon_url', url)}
+              onUploadingChange={setIsUploading}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Ảnh thumbnail (khi chia sẻ)</Label>
+            <ImageSourceSelector
+              value={settings.og_image_url || ''}
+              onValueChange={url => handleConfigChange('og_image_url', url)}
+              onUploadingChange={setIsUploading}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Cấu hình Dashboard</CardTitle>
@@ -172,8 +211,8 @@ const GeneralSettings = () => {
         </CardContent>
       </Card>
       <div className="flex justify-end">
-        <Button onClick={() => mutation.mutate(settings)} disabled={mutation.isPending}>
-          {mutation.isPending ? 'Đang lưu...' : 'Lưu cấu hình'}
+        <Button onClick={() => mutation.mutate(settings)} disabled={mutation.isPending || isUploading}>
+          {mutation.isPending || isUploading ? 'Đang lưu...' : 'Lưu cấu hình'}
         </Button>
       </div>
     </div>
