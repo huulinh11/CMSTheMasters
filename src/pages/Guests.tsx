@@ -6,11 +6,13 @@ import { useEffect, useState } from "react";
 import { ImportExportActions } from "@/components/guests/ImportExportActions";
 import { PageHeader } from "@/components/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const GuestsPage = () => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("vip");
   const { profile } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const viewVip = searchParams.get('view_vip');
@@ -31,7 +33,7 @@ const GuestsPage = () => {
   return (
     <div className="p-4 md:p-6">
       <PageHeader title="Quản lý khách mời">
-        {canImportExport && <ImportExportActions />}
+        {!isMobile && canImportExport && <ImportExportActions />}
       </PageHeader>
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:w-[400px] bg-primary/10 p-1 h-12 rounded-xl">
