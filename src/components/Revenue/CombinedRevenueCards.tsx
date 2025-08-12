@@ -58,6 +58,7 @@ export const CombinedRevenueCards = ({ guests, onView, onEdit, onPay, onHistory,
                 <InfoRow label="Đã thanh toán" value={formatCurrency(guest.paid)} valueClass="text-green-600" />
                 <InfoRow label="Chưa thanh toán" value={formatCurrency(guest.unpaid)} valueClass="text-red-600" />
                 {guest.type === 'Khách mời' && <InfoRow label="Nguồn TT" value={guest.payment_source || 'N/A'} />}
+                {guest.referrer && <InfoRow label="Người giới thiệu" value={guest.referrer} />}
                 {guest.type === 'Khách mời' && guest.is_upsaled && (
                   <InfoRow label="Trạng thái" value="Đã upsale" valueClass="text-red-500 font-semibold" />
                 )}

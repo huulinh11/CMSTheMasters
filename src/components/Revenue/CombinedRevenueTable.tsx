@@ -32,6 +32,7 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
             <TableHead>Loại</TableHead>
+            <TableHead>Người giới thiệu</TableHead>
             <TableHead>Tài trợ</TableHead>
             <TableHead>Tiền dịch vụ</TableHead>
             <TableHead>Tổng tiền</TableHead>
@@ -64,6 +65,7 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
                   )}
                 </TableCell>
                 <TableCell>{guest.type}</TableCell>
+                <TableCell>{guest.referrer || 'N/A'}</TableCell>
                 <TableCell>
                   {guest.type === 'Khách mời' && guest.is_upsaled ? (
                     <span className="bg-red-600 text-white font-bold px-2 py-1 rounded-md text-xs">
@@ -92,7 +94,7 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={12} className="h-24 text-center">
+              <TableCell colSpan={13} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>
