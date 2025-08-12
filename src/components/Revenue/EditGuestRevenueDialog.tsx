@@ -26,6 +26,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { formatCurrency } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { v4 as uuidv4 } from 'uuid';
+import BillPreviewDialog from "./BillPreviewDialog";
 
 interface EditGuestRevenueDialogProps {
   guest: GuestRevenue | null;
@@ -45,6 +46,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
   const [newRole, setNewRole] = useState("");
   const [billFile, setBillFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [previewBillUrl, setPreviewBillUrl] = useState<string | null>(null);
 
   const upsaleRoleOptions = useMemo(() => {
     if (!guest) return [];
@@ -103,7 +105,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
     mutationFn: async (values: { newRole: string; sponsorship: number; paymentSource: string; upsaledBy: string; upsaledByUserId: string; billFile: File | null }) => {
       if (!guest) throw new Error("Không có khách nào được chọn");
 
-      let billImageUrl: string | null = null;
+      let billImageUrl: string | null = guest.bill_image_url || null;
 
       if (values.billFile) {
         setIsUploading(true);
@@ -180,81 +182,98 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
   if (!guest) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{mode === 'upsale' ? 'Upsale cho' : 'Sửa tài trợ cho'} {guest.name}</DialogTitle>
-          <DialogDescription>
-            Cập nhật thông tin tài trợ và các chi tiết liên quan.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="py-4 space-y-4">
-          {mode === 'upsale' && (
-            <>
-              <div>
-                <Label htmlFor="new-role">Vai trò mới</Label>
-                <Select value={newRole} onValueChange={setNewRole}>
-                  <SelectTrigger id="new-role">
-                    <SelectValue placeholder="Chọn vai trò để upsale" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {upsaleRoleOptions.map(role => (
-                      <SelectItem key={role.id} value={role.name}>{role.name} ({formatCurrency(role.sponsorship_amount)})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
-          <div>
-            <Label htmlFor="sponsorship">Số tiền tài trợ (đ)</Label>
-            <Input
-              id="sponsorship"
-              type="text"
-              value={formattedSponsorship}
-              onChange={handleAmountChange}
-              placeholder="Nhập số tiền"
-            />
-          </div>
-          <div>
-            <Label htmlFor="payment-source">Nguồn thanh toán</Label>
-            <Select value={paymentSource} onValueChange={(value) => setPaymentSource(value as PaymentSource)}>
-              <SelectTrigger id="payment-source">
-                <SelectValue placeholder="Chọn nguồn" />
-              </SelectTrigger>
-              <SelectContent>
-                {PAYMENT_SOURCES.map(source => (
-                  <SelectItem key={source} value={source}>{source}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {mode === 'upsale' && (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{mode === 'upsale' ? 'Upsale cho' : 'Sửa tài trợ cho'} {guest.name}</DialogTitle>
+            <DialogDescription>
+              Cập nhật thông tin tài trợ và các chi tiết liên quan.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            {mode === 'upsale' && (
+              <>
+                <div>
+                  <Label htmlFor="new-role">Vai trò mới</Label>
+                  <Select value={newRole} onValueChange={setNewRole}>
+                    <SelectTrigger id="new-role">
+                      <SelectValue placeholder="Chọn vai trò để upsale" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {upsaleRoleOptions.map(role => (
+                        <SelectItem key={role.id} value={role.name}>{role.name} ({formatCurrency(role.sponsorship_amount)})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
             <div>
-              <Label htmlFor="bill-upload">Bill thanh toán</Label>
+              <Label htmlFor="sponsorship">Số tiền tài trợ (đ)</Label>
               <Input
-                id="bill-upload"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setBillFile(e.target.files?.[0] || null)}
-                disabled={isUploading}
+                id="sponsorship"
+                type="text"
+                value={formattedSponsorship}
+                onChange={handleAmountChange}
+                placeholder="Nhập số tiền"
               />
-              {billFile && <p className="text-sm text-muted-foreground mt-1">Đã chọn: {billFile.name}</p>}
             </div>
-          )}
-          <div className="flex items-center space-x-2">
-            <Switch id="is-upsaled" checked={isUpsaled} onCheckedChange={setIsUpsaled} disabled={mode === 'upsale'} />
-            <Label htmlFor="is-upsaled">Đánh dấu là Upsale</Label>
+            <div>
+              <Label htmlFor="payment-source">Nguồn thanh toán</Label>
+              <Select value={paymentSource} onValueChange={(value) => setPaymentSource(value as PaymentSource)}>
+                <SelectTrigger id="payment-source">
+                  <SelectValue placeholder="Chọn nguồn" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_SOURCES.map(source => (
+                    <SelectItem key={source} value={source}>{source}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {mode === 'upsale' && (
+              <div>
+                <Label htmlFor="bill-upload">Bill thanh toán</Label>
+                {guest?.bill_image_url && !billFile && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <img src={guest.bill_image_url} alt="Bill preview" className="h-10 w-10 object-cover rounded-md" />
+                    <Button type="button" variant="outline" size="sm" onClick={() => setPreviewBillUrl(guest.bill_image_url)}>Xem Bill</Button>
+                    <Label htmlFor="bill-upload" className="text-sm font-medium text-primary cursor-pointer hover:underline">
+                      Thay đổi
+                    </Label>
+                  </div>
+                )}
+                <Input
+                  id="bill-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setBillFile(e.target.files?.[0] || null)}
+                  disabled={isUploading}
+                  className={(guest?.bill_image_url && !billFile) ? 'hidden' : 'mt-1'}
+                />
+                {billFile && <p className="text-sm text-muted-foreground mt-1">Đã chọn file mới: {billFile.name}</p>}
+              </div>
+            )}
+            <div className="flex items-center space-x-2">
+              <Switch id="is-upsaled" checked={isUpsaled} onCheckedChange={setIsUpsaled} disabled={mode === 'upsale'} />
+              <Label htmlFor="is-upsaled">Đánh dấu là Upsale</Label>
+            </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
-          <Button onClick={handleSubmit} disabled={editMutation.isPending || upsaleMutation.isPending || isUploading}>
-            {isUploading ? "Đang tải bill..." : (editMutation.isPending || upsaleMutation.isPending ? "Đang lưu..." : "Lưu")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
+            <Button onClick={handleSubmit} disabled={editMutation.isPending || upsaleMutation.isPending || isUploading}>
+              {isUploading ? "Đang tải bill..." : (editMutation.isPending || upsaleMutation.isPending ? "Đang lưu..." : "Lưu")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <BillPreviewDialog
+        imageUrl={previewBillUrl}
+        open={!!previewBillUrl}
+        onOpenChange={() => setPreviewBillUrl(null)}
+      />
+    </>
   );
 };
 

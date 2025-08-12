@@ -12,11 +12,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Edit } from "lucide-react";
 import { useState } from "react";
 import BillPreviewDialog from "./BillPreviewDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EditServicePaymentDialog } from "@/components/service-sales/EditServicePaymentDialog";
 
 interface GuestHistoryDialogProps {
   guest: GuestRevenue | null;
@@ -33,6 +34,7 @@ type CombinedHistoryItem = PaymentHistoryItem | UpsaleHistoryItem | ServicePayme
 
 const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogProps) => {
   const [billPreviewUrl, setBillPreviewUrl] = useState<string | null>(null);
+  const [editingPayment, setEditingPayment] = useState<ServicePaymentHistoryItem | null>(null);
 
   const { data: history = [], isLoading } = useQuery<CombinedHistoryItem[]>({
     queryKey: ['guest_history', guest?.id],
@@ -110,7 +112,7 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
                           {item.type === 'upsale' && (<div><div className="font-semibold text-blue-600">Upsale</div><div className="flex items-center text-sm flex-wrap"><span>{item.from_role} ({formatCurrency(item.from_sponsorship)})</span><ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" /><span>{item.to_role} ({formatCurrency(item.to_sponsorship)})</span></div>{item.upsaled_by && (<div className="text-xs text-muted-foreground mt-1">bởi {item.upsaled_by}</div>)}{item.bill_image_url && (<Button variant="link" className="text-sm p-0 h-auto mt-1" onClick={() => setBillPreviewUrl(item.bill_image_url)}>Xem bill</Button>)}</div>)}
                           {item.type === 'service_created' && (<div><div className="font-semibold text-purple-600">Mua Dịch vụ</div><div>{item.service_name} {item.is_free_trial && <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}</div><div className="text-purple-600 font-medium">{formatCurrency(item.price)}</div></div>)}
                           {item.type === 'service_converted' && (<div><div className="font-semibold text-orange-600">Chuyển đổi Dịch vụ</div><div>{item.service_name}</div><div className="text-orange-600 font-medium">Từ {formatCurrency(item.from_price)} thành {formatCurrency(item.to_price)}</div></div>)}
-                          {item.type === 'service_payment' && (<div><div className="font-semibold text-teal-600">Thanh toán Dịch vụ</div><div>{item.service_name}</div><div className="text-green-600 font-medium">{formatCurrency(item.amount)}</div>{item.bill_image_url && (<Button variant="link" className="text-sm p-0 h-auto mt-1" onClick={() => setBillPreviewUrl(item.bill_image_url)}>Xem bill</Button>)}</div>)}
+                          {item.type === 'service_payment' && (<div><div className="font-semibold text-teal-600">Thanh toán Dịch vụ</div><div>{item.service_name}</div><div className="text-green-600 font-medium">{formatCurrency(item.amount)}</div>{item.bill_image_url && (<div className="flex items-center gap-1"><Button variant="link" className="text-sm p-0 h-auto mt-1" onClick={() => setBillPreviewUrl(item.bill_image_url)}>Xem bill</Button><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingPayment(item)}><Edit className="h-3 w-3" /></Button></div>)}</div>)}
                         </TableCell>
                       </TableRow>
                     ))
@@ -124,6 +126,12 @@ const GuestHistoryDialog = ({ guest, open, onOpenChange }: GuestHistoryDialogPro
         </DialogContent>
       </Dialog>
       <BillPreviewDialog imageUrl={billPreviewUrl} open={!!billPreviewUrl} onOpenChange={() => setBillPreviewUrl(null)} />
+      <EditServicePaymentDialog
+        payment={editingPayment}
+        guestId={guest?.id || null}
+        open={!!editingPayment}
+        onOpenChange={() => setEditingPayment(null)}
+      />
     </>
   );
 };
