@@ -24,6 +24,7 @@ import { ServiceDetailsDialog } from "@/components/service-sales/ServiceDetailsD
 import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import { GuestRevenue } from "@/types/guest-revenue";
 import { VipGuest } from "@/types/vip-guest";
+import { PageHeader } from "@/components/PageHeader";
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -136,10 +137,6 @@ const ServiceSalesPage = () => {
     }, { totalRevenue: 0, totalPaid: 0 });
   }, [guestServices]);
 
-  const totalGuests = useMemo(() => {
-    return guestServiceSummaries.length;
-  }, [guestServiceSummaries]);
-
   const totalUnpaid = stats.totalRevenue - stats.totalPaid;
 
   const handleHistory = (summary: GuestServiceSummary) => {
@@ -154,26 +151,27 @@ const ServiceSalesPage = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
+      <PageHeader title="Bán dịch vụ">
+        <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}><Settings className="h-4 w-4" /></Button>
+      </PageHeader>
+
+      <ServiceStats totalRevenue={stats.totalRevenue} totalPaid={stats.totalPaid} totalUnpaid={totalUnpaid} />
+
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Bán dịch vụ</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}><Settings className="h-4 w-4" /></Button>
-          <Button onClick={() => setIsAddOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
-        </div>
+        <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredSummaries.length}</h2>
+        <Button onClick={() => setIsAddOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
       </div>
 
-      <ServiceStats totalRevenue={stats.totalRevenue} totalPaid={stats.totalPaid} totalUnpaid={totalUnpaid} totalGuests={totalGuests} />
-
-      <div className="flex flex-col md:flex-row gap-4 md:items-center">
+      <div className="flex items-center gap-2">
         <Input
-          placeholder="Tìm kiếm theo tên khách, dịch vụ, SĐT..."
+          placeholder="Tìm kiếm..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow"
         />
         <Select value={serviceFilter} onValueChange={setServiceFilter}>
-          <SelectTrigger className="w-full md:w-[240px]">
-            <SelectValue placeholder="Lọc theo dịch vụ" />
+          <SelectTrigger className="w-auto flex-shrink-0">
+            <SelectValue placeholder="Lọc" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả dịch vụ</SelectItem>

@@ -29,6 +29,7 @@ export const GuestServiceSummaryCards = ({ summaries, onViewDetails, onHistory, 
         const freeTrialServices = summary.services.filter(s => s.is_free_trial);
         const hasFreeTrial = freeTrialServices.length > 0;
         const canDirectlyConvert = freeTrialServices.length === 1;
+        const referrers = [...new Set(summary.services.map(s => s.referrer_name).filter(Boolean))];
 
         return (
           <Card key={summary.guest_id}>
@@ -51,6 +52,9 @@ export const GuestServiceSummaryCards = ({ summaries, onViewDetails, onHistory, 
                   ))}
                 </div>
               </div>
+              {referrers.length > 0 && (
+                <InfoRow label="Người giới thiệu" value={referrers.join(', ')} />
+              )}
               <InfoRow label="Tổng tiền" value={formatCurrency(summary.total_revenue)} />
               <InfoRow label="Đã trả" value={formatCurrency(summary.total_paid)} valueClass="text-green-600" />
               <InfoRow label="Còn lại" value={formatCurrency(summary.total_unpaid)} valueClass="text-red-600" />

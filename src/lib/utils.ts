@@ -23,6 +23,10 @@ export function formatCurrencyShort(amount: number | null | undefined): string {
     const value = (amount / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
     return `${value} triệu`;
   }
+  if (Math.abs(amount) >= 1_000) {
+    const value = (amount / 1_000).toLocaleString('vi-VN', { maximumFractionDigits: 0 });
+    return `${value}k`;
+  }
   
   return formatCurrency(amount);
 }

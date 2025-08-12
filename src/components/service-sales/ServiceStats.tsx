@@ -1,24 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatCurrencyShort } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { formatCurrencyShort } from "@/lib/utils";
 
 interface ServiceStatsProps {
   totalRevenue: number;
   totalPaid: number;
   totalUnpaid: number;
-  totalGuests: number;
 }
 
-const ServiceStats = ({ totalRevenue, totalPaid, totalUnpaid, totalGuests }: ServiceStatsProps) => {
-  const isMobile = useIsMobile();
-  const formatValue = isMobile ? formatCurrencyShort : formatCurrency;
+const ServiceStats = ({ totalRevenue, totalPaid, totalUnpaid }: ServiceStatsProps) => {
+  const formatValue = formatCurrencyShort;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
-      <StatCard
-        title="Tổng khách"
-        value={totalGuests.toString()}
-      />
+    <div className="grid grid-cols-3 gap-2 md:gap-4">
       <StatCard
         title="Tổng doanh thu"
         value={formatValue(totalRevenue)}
