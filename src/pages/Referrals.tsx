@@ -11,16 +11,18 @@ import { formatCurrency } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PageHeader } from "@/components/PageHeader";
 import { ReferralDetailsDialog } from "@/components/referrals/ReferralDetailsDialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { ReferralFilterSheet } from "@/components/referrals/ReferralFilterSheet";
 
 const ReferralsPage = () => {
   const isMobile = useIsMobile();
   const [selectedReferrer, setSelectedReferrer] = useState<ReferrerSummary | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sortOrder, setSortOrder] = useState("default");
+  const [filters, setFilters] = useState({
+    role: "all",
+    status: "all",
+    sort: "default",
+  });
 
   const { data: summaryData = [], isLoading } = useQuery<ReferrerSummary[]>({
     queryKey: ['referrer_summary'],
@@ -38,25 +40,33 @@ const ReferralsPage = () => {
       .filter(item => 
         item.referrer_name.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      .filter(item => roleFilter === 'all' || item.referrer_role === roleFilter);
+      .filter(item => filters.role === 'all' || item.referrer_role === filters.role);
 
-    if (statusFilter !== 'all') {
+    if (filters.status !== 'all') {
       result = result.filter(item => {
-        if (statusFilter === 'not-achieved') return item.referral_count < item.referral_quota;
-        if (statusFilter === 'achieved') return item.referral_count === item.referral_quota;
-        if (statusFilter === 'exceeded') return item.referral_count > item.referral_quota;
+        if (filters.status === 'not-achieved') return item.referral_count < item.referral_quota;
+        if (filters.status === 'achieved') return item.referral_count === item.referral_quota;
+        if (filters.status === 'exceeded') return item.referral_count > item.referral_quota;
         return true;
       });
     }
 
-    if (sortOrder === 'count-asc') {
+    if (filters.sort === 'count-asc') {
       result.sort((a, b) => a.referral_count - b.referral_count);
-    } else if (sortOrder === 'count-desc') {
+    } else if (filters.sort === 'count-desc') {
       result.sort((a, b) => b.referral_count - a.referral_count);
     }
 
     return result;
-  }, [summaryData, searchTerm, roleFilter, statusFilter, sortOrder]);
+  }, [summaryData, searchTerm, filters]);
+
+  const handleFilterChange = (field: keyof typeof filters, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ role: "all", status: "all", sort: "default" });
+  };
 
   if (isLoading) {
     return (
@@ -70,33 +80,19 @@ const ReferralsPage = () => {
   return (
     <div className="p-4 md:p-6 space-y-4">
       <PageHeader title="Người giới thiệu" />
-      <Input 
-        placeholder="Tìm kiếm theo tên người giới thiệu..." 
-        value={searchTerm} 
-        onChange={(e) => setSearchTerm(e.target.value)} 
-      />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger><SelectValue placeholder="Lọc theo vai trò" /></SelectTrigger>
-          <SelectContent><SelectItem value="all">Tất cả vai trò</SelectItem>{referrerRoles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}</SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger><SelectValue placeholder="Lọc theo chỉ tiêu" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả chỉ tiêu</SelectItem>
-            <SelectItem value="not-achieved">Chưa đạt</SelectItem>
-            <SelectItem value="achieved">Đạt</SelectItem>
-            <SelectItem value="exceeded">Vượt</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sortOrder} onValueChange={setSortOrder}>
-          <SelectTrigger><SelectValue placeholder="Sắp xếp" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="default">Mặc định</SelectItem>
-            <SelectItem value="count-asc">Số người GT (tăng dần)</SelectItem>
-            <SelectItem value="count-desc">Số người GT (giảm dần)</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex items-center gap-2">
+        <Input 
+          placeholder="Tìm kiếm theo tên người giới thiệu..." 
+          value={searchTerm} 
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-grow"
+        />
+        <ReferralFilterSheet
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={handleClearFilters}
+          referrerRoles={referrerRoles}
+        />
       </div>
       {isMobile ? (
         <div className="space-y-4">
