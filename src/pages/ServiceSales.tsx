@@ -16,7 +16,6 @@ import { GuestServiceSummaryCards } from "@/components/service-sales/GuestServic
 import { ServiceDetailsDialog } from "@/components/service-sales/ServiceDetailsDialog";
 import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import { GuestRevenue } from "@/types/guest-revenue";
-import { PageHeader } from "@/components/PageHeader";
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -120,14 +119,19 @@ const ServiceSalesPage = () => {
     setHistoryGuest({ id: summary.guest_id, name: summary.guest_name } as GuestRevenue);
   };
 
+  const handleConvertTrial = (serviceId: string) => {
+    convertTrialMutation.mutate(serviceId);
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <PageHeader title="Bán dịch vụ">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-slate-800">Bán dịch vụ</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}><Settings className="h-4 w-4" /></Button>
           <Button onClick={() => setIsAddOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
         </div>
-      </PageHeader>
+      </div>
 
       <ServiceStats totalRevenue={stats.totalRevenue} totalPaid={stats.totalPaid} totalUnpaid={totalUnpaid} />
 
@@ -144,12 +148,14 @@ const ServiceSalesPage = () => {
           summaries={filteredSummaries}
           onViewDetails={setViewingGuestSummary}
           onHistory={handleHistory}
+          onConvertTrial={handleConvertTrial}
         />
       ) : (
         <GuestServiceSummaryTable
           summaries={filteredSummaries}
           onViewDetails={setViewingGuestSummary}
           onHistory={handleHistory}
+          onConvertTrial={handleConvertTrial}
         />
       )}
 
@@ -161,7 +167,7 @@ const ServiceSalesPage = () => {
         guestSummary={viewingGuestSummary}
         allServices={services}
         onStatusChange={(id, status) => statusUpdateMutation.mutate({ id, status })}
-        onConvertTrial={(id) => convertTrialMutation.mutate(id)}
+        onConvertTrial={handleConvertTrial}
       />
       <GuestHistoryDialog guest={historyGuest} open={!!historyGuest} onOpenChange={() => setHistoryGuest(null)} />
     </div>

@@ -9,16 +9,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { GuestServiceSummary } from "@/types/service-sales";
 import { formatCurrency } from "@/lib/utils";
-import { Eye, History } from "lucide-react";
+import { Eye, History, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface GuestServiceSummaryTableProps {
   summaries: GuestServiceSummary[];
   onViewDetails: (summary: GuestServiceSummary) => void;
   onHistory: (summary: GuestServiceSummary) => void;
+  onConvertTrial: (serviceId: string) => void;
 }
 
-export const GuestServiceSummaryTable = ({ summaries, onViewDetails, onHistory }: GuestServiceSummaryTableProps) => {
+export const GuestServiceSummaryTable = ({ summaries, onViewDetails, onHistory, onConvertTrial }: GuestServiceSummaryTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -36,6 +37,10 @@ export const GuestServiceSummaryTable = ({ summaries, onViewDetails, onHistory }
           {summaries.length > 0 ? (
             summaries.map((summary) => {
               const hasPaymentHistory = summary.services.some(s => s.payment_count > 0);
+              const freeTrialServices = summary.services.filter(s => s.is_free_trial);
+              const hasFreeTrial = freeTrialServices.length > 0;
+              const canDirectlyConvert = freeTrialServices.length === 1;
+
               return (
                 <TableRow key={summary.guest_id}>
                   <TableCell>
@@ -45,7 +50,7 @@ export const GuestServiceSummaryTable = ({ summaries, onViewDetails, onHistory }
                   <TableCell>
                     <div className="flex flex-col gap-1 items-start">
                       {summary.services.map(s => (
-                        <Badge key={s.id} variant="secondary">{s.service_name}</Badge>
+                        <Badge key={s.id} variant={s.is_free_trial ? "destructive" : "secondary"}>{s.service_name}</Badge>
                       ))}
                     </div>
                   </TableCell>
@@ -57,6 +62,23 @@ export const GuestServiceSummaryTable = ({ summaries, onViewDetails, onHistory }
                       <Button variant="outline" size="sm" onClick={() => onHistory(summary)}>
                         <History className="mr-2 h-4 w-4" />
                         Lịch sử TT
+                      </Button>
+                    )}
+                    {hasFreeTrial && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                        onClick={() => {
+                          if (canDirectlyConvert) {
+                            onConvertTrial(freeTrialServices[0].id);
+                          } else {
+                            onViewDetails(summary);
+                          }
+                        }}
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Chuyển đổi
                       </Button>
                     )}
                     <Button variant="outline" size="sm" onClick={() => onViewDetails(summary)}>
