@@ -6,6 +6,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Settings, PlusCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ServiceStats from "@/components/service-sales/ServiceStats";
 import { ServiceSettingsDialog } from "@/components/service-sales/ServiceSettingsDialog";
@@ -22,6 +29,7 @@ const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
+  const [serviceFilter, setServiceFilter] = useState("all");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [viewingGuestSummary, setViewingGuestSummary] = useState<GuestServiceSummary | null>(null);
@@ -49,7 +57,7 @@ const ServiceSalesPage = () => {
     queryKey: ['vip_guests_images_for_service_sales'],
     queryFn: async () => {
       const { data, error } = await supabase.from('vip_guests').select('id, image_url');
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       return data || [];
     }
   });
@@ -113,9 +121,12 @@ const ServiceSalesPage = () => {
         const guestMatch = summary.guest_name.toLowerCase().includes(searchTermLower) ||
                            (summary.guest_phone && summary.guest_phone.includes(searchTerm));
         const serviceMatch = summary.services.some(s => s.service_name.toLowerCase().includes(searchTermLower));
-        return guestMatch || serviceMatch;
+        
+        const serviceFilterMatch = serviceFilter === 'all' || summary.services.some(s => s.service_id === serviceFilter);
+
+        return (guestMatch || serviceMatch) && serviceFilterMatch;
     });
-  }, [guestServiceSummaries, searchTerm]);
+  }, [guestServiceSummaries, searchTerm, serviceFilter]);
 
   const stats = useMemo(() => {
     return guestServices.reduce((acc, item) => {
@@ -124,6 +135,10 @@ const ServiceSalesPage = () => {
       return acc;
     }, { totalRevenue: 0, totalPaid: 0 });
   }, [guestServices]);
+
+  const totalGuests = useMemo(() => {
+    return guestServiceSummaries.length;
+  }, [guestServiceSummaries]);
 
   const totalUnpaid = stats.totalRevenue - stats.totalPaid;
 
@@ -147,13 +162,27 @@ const ServiceSalesPage = () => {
         </div>
       </div>
 
-      <ServiceStats totalRevenue={stats.totalRevenue} totalPaid={stats.totalPaid} totalUnpaid={totalUnpaid} />
+      <ServiceStats totalRevenue={stats.totalRevenue} totalPaid={stats.totalPaid} totalUnpaid={totalUnpaid} totalGuests={totalGuests} />
 
-      <Input
-        placeholder="Tìm kiếm theo tên khách, dịch vụ, SĐT..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
+      <div className="flex flex-col md:flex-row gap-4 md:items-center">
+        <Input
+          placeholder="Tìm kiếm theo tên khách, dịch vụ, SĐT..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-grow"
+        />
+        <Select value={serviceFilter} onValueChange={setServiceFilter}>
+          <SelectTrigger className="w-full md:w-[240px]">
+            <SelectValue placeholder="Lọc theo dịch vụ" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả dịch vụ</SelectItem>
+            {services.map(service => (
+              <SelectItem key={service.id} value={service.id}>{service.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {isLoading ? (
         <Skeleton className="h-96 w-full" />

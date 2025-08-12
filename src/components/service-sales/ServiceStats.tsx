@@ -6,14 +6,19 @@ interface ServiceStatsProps {
   totalRevenue: number;
   totalPaid: number;
   totalUnpaid: number;
+  totalGuests: number;
 }
 
-const ServiceStats = ({ totalRevenue, totalPaid, totalUnpaid }: ServiceStatsProps) => {
+const ServiceStats = ({ totalRevenue, totalPaid, totalUnpaid, totalGuests }: ServiceStatsProps) => {
   const isMobile = useIsMobile();
   const formatValue = isMobile ? formatCurrencyShort : formatCurrency;
 
   return (
-    <div className="grid grid-cols-3 gap-2 md:gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+      <StatCard
+        title="Tổng khách"
+        value={totalGuests.toString()}
+      />
       <StatCard
         title="Tổng doanh thu"
         value={formatValue(totalRevenue)}

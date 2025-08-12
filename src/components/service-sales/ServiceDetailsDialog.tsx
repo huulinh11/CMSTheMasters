@@ -11,15 +11,28 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { formatCurrency } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Service, GuestService, GuestServiceSummary } from "@/types/service-sales";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { CreditCard, RefreshCw, History } from "lucide-react";
+import { CreditCard, RefreshCw, History, Trash2 } from "lucide-react";
 import { PayServiceDialog } from "@/components/service-sales/PayServiceDialog";
 import { Badge } from "@/components/ui/badge";
 import GuestHistoryDialog from "../Revenue/GuestHistoryDialog";
 import { GuestRevenue } from "@/types/guest-revenue";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { showSuccess, showError } from "@/utils/toast";
 
 interface ServiceDetailsDialogProps {
   open: boolean;
@@ -39,13 +52,37 @@ const InfoRow = ({ label, value, valueClass }: { label: string; value: string; v
 
 export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServices, onStatusChange, onConvertTrial }: ServiceDetailsDialogProps) => {
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   const [payingItem, setPayingItem] = useState<GuestService | null>(null);
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
+  const [deletingService, setDeletingService] = useState<GuestService | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: async (serviceId: string) => {
+      const { error } = await supabase.from('guest_services').delete().eq('id', serviceId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guest_service_details'] });
+      if (guestSummary) {
+        queryClient.invalidateQueries({ queryKey: ['guest_details', 'vip', guestSummary.guest_id] });
+        queryClient.invalidateQueries({ queryKey: ['guest_details', 'regular', guestSummary.guest_id] });
+      }
+      showSuccess("Xóa dịch vụ thành công!");
+      if (guestSummary?.services.length === 1) {
+        onOpenChange(false);
+      }
+    },
+    onError: (err: Error) => showError(err.message),
+    onSettled: () => setDeletingService(null),
+  });
 
   if (!guestSummary) return null;
 
+  const { services, guest_name } = guestSummary;
+
   const renderContent = () => {
-    if (guestSummary.services.length === 0) {
+    if (services.length === 0) {
       return (
         <div className="h-24 flex items-center justify-center text-center text-slate-500">
           Không có dịch vụ nào.
@@ -56,16 +93,29 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
     if (isMobile) {
       return (
         <div className="space-y-3">
-          {guestSummary.services.map((service) => {
+          {services.map((service) => {
             const serviceMaster = allServices.find(s => s.id === service.service_id);
             return (
               <Card key={service.id}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{service.service_name}</CardTitle>
-                  <CardDescription>
-                    {formatCurrency(service.price)}
-                    {service.is_free_trial && <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}
-                  </CardDescription>
+                <CardHeader className="pb-2 flex flex-row justify-between items-start">
+                  <div>
+                    <CardTitle className="text-base">{service.service_name}</CardTitle>
+                    <CardDescription>
+                      {formatCurrency(service.price)}
+                      {service.is_free_trial && <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-red-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeletingService(service);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </CardHeader>
                 <CardContent className="text-sm space-y-3">
                   <InfoRow label="Đã trả" value={formatCurrency(service.paid_amount)} valueClass="text-green-600" />
@@ -111,7 +161,7 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
       <Table>
         <TableHeader><TableRow><TableHead>Tên dịch vụ</TableHead><TableHead>Giá</TableHead><TableHead>Đã trả</TableHead><TableHead>Còn lại</TableHead><TableHead>Trạng thái</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
         <TableBody>
-          {guestSummary.services.map((service) => {
+          {services.map((service) => {
             const serviceMaster = allServices.find(s => s.id === service.service_id);
             return (
               <TableRow key={service.id}>
@@ -134,6 +184,9 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
                   ) : (
                     <Button variant="outline" size="sm" onClick={() => setPayingItem(service)} disabled={service.unpaid_amount <= 0}><CreditCard className="mr-2 h-4 w-4" /> Thanh toán</Button>
                   )}
+                  <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => setDeletingService(service)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             );
@@ -149,7 +202,7 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Chi tiết dịch vụ đã bán</DialogTitle>
-            <DialogDescription>Cho khách mời: {guestSummary.guest_name}</DialogDescription>
+            <DialogDescription>Cho khách mời: {guest_name}</DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh] mt-4">
             {renderContent()}
@@ -158,6 +211,20 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
       </Dialog>
       <PayServiceDialog item={payingItem} open={!!payingItem} onOpenChange={() => setPayingItem(null)} />
       <GuestHistoryDialog guest={historyGuest} open={!!historyGuest} onOpenChange={() => setHistoryGuest(null)} />
+      <AlertDialog open={!!deletingService} onOpenChange={(isOpen) => !isOpen && setDeletingService(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này sẽ xóa dịch vụ "{deletingService?.service_name}" cho khách mời {guest_name}. Thao tác này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deletingService && deleteMutation.mutate(deletingService.id)}>Xóa</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
