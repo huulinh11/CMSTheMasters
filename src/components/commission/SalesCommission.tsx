@@ -66,8 +66,8 @@ const SalesCommissionCard = ({
       <Separator />
       <InfoRow label="TỔNG HOA HỒNG" value={formatCurrency(item.totalCommission)} valueClass="text-xl text-primary font-bold" />
       <div className="flex gap-2 pt-2">
-        <Button className="flex-1" onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: false })}>Chi tiết Upsale</Button>
-        <Button className="flex-1" variant="secondary" onClick={() => onViewService({ id: item.userId, name: item.name })}>Chi tiết Dịch vụ</Button>
+        <Button className="flex-1" onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: false })} disabled={item.upsaleCount === 0}>Chi tiết Upsale</Button>
+        <Button className="flex-1" variant="secondary" onClick={() => onViewService({ id: item.userId, name: item.name })} disabled={item.serviceCount === 0}>Chi tiết Dịch vụ</Button>
       </div>
     </CardContent>
   </Card>
@@ -82,8 +82,8 @@ const OtherSalesCard = ({ item, onViewUpsale, onViewService }: { item: CombinedC
       <InfoRow label="Số dịch vụ" value={String(item.serviceCount)} />
       <InfoRow label="Tổng tiền dịch vụ" value={formatCurrency(item.totalServicePrice)} />
       <div className="flex gap-2 pt-2">
-        <Button className="flex-1" onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: true })}>Chi tiết Upsale</Button>
-        <Button className="flex-1" variant="secondary" onClick={() => onViewService({ id: item.userId, name: item.name, hideCommission: true })}>Chi tiết Dịch vụ</Button>
+        <Button className="flex-1" onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: true })} disabled={item.upsaleCount === 0}>Chi tiết Upsale</Button>
+        <Button className="flex-1" variant="secondary" onClick={() => onViewService({ id: item.userId, name: item.name, hideCommission: true })} disabled={item.serviceCount === 0}>Chi tiết Dịch vụ</Button>
       </div>
     </CardContent>
   </Card>
