@@ -50,20 +50,23 @@ export const ReferralDetailsDialog = ({ referrer, open, onOpenChange }: Referral
     if (isMobile) {
       return (
         <div className="space-y-3">
-          {details.map(item => (
+          {details.map((item, index) => (
             <Card key={item.guest_id}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">{item.guest_name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{item.guest_role}</p>
+                <CardTitle className="text-base flex items-center">
+                  <span className="text-sm font-normal text-slate-500 mr-2">{index + 1}.</span>
+                  {item.guest_name}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground pl-6">{item.guest_role}</p>
               </CardHeader>
-              <CardContent className="text-sm space-y-1">
+              <CardContent className="text-sm space-y-1 pl-6">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Tiền tài trợ:</span>
                   <span className="font-medium">{formatCurrency(item.sponsorship_amount)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Hoa hồng:</span>
-                  {item.is_commissionable ? (
+                  {item.commission_earned > 0 ? (
                     <span className="font-bold text-green-600">{formatCurrency(item.commission_earned)}</span>
                   ) : (
                     <span className="text-slate-500">Không có</span>
@@ -80,6 +83,7 @@ export const ReferralDetailsDialog = ({ referrer, open, onOpenChange }: Referral
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[50px]">STT</TableHead>
             <TableHead>Tên khách mời</TableHead>
             <TableHead>Vai trò</TableHead>
             <TableHead>Tiền tài trợ</TableHead>
@@ -87,13 +91,14 @@ export const ReferralDetailsDialog = ({ referrer, open, onOpenChange }: Referral
           </TableRow>
         </TableHeader>
         <TableBody>
-          {details.map((item) => (
+          {details.map((item, index) => (
             <TableRow key={item.guest_id}>
+              <TableCell>{index + 1}</TableCell>
               <TableCell className="font-medium">{item.guest_name}</TableCell>
               <TableCell>{item.guest_role}</TableCell>
               <TableCell>{formatCurrency(item.sponsorship_amount)}</TableCell>
               <TableCell>
-                {item.is_commissionable ? (
+                {item.commission_earned > 0 ? (
                   <Badge variant="default" className="bg-green-100 text-green-800">{formatCurrency(item.commission_earned)}</Badge>
                 ) : (
                   <Badge variant="outline">Không có</Badge>
