@@ -2,10 +2,26 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 import { LogOut, LucideIcon } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Sidebar = () => {
   const { signOut, permissions, menuConfig } = useAuth();
   const navigate = useNavigate();
+
+  const { data: settings } = useQuery({
+    queryKey: ['checklist_settings_for_sidebar'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('checklist_settings')
+        .select('sidebar_title')
+        .limit(1)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   const navItems = useMemo(() => {
     if (!permissions || !menuConfig) return [];
@@ -20,7 +36,7 @@ const Sidebar = () => {
   return (
     <aside className="w-64 flex-shrink-0 bg-white border-r border-slate-200 p-4 hidden md:flex flex-col">
       <div>
-        <div className="font-bold text-2xl text-primary mb-8 px-2">EventApp</div>
+        <div className="font-bold text-2xl text-primary mb-8 px-2">{settings?.sidebar_title || 'EventApp'}</div>
         <nav>
           <ul>
             {navItems.map((item) => (

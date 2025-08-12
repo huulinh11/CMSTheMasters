@@ -19,6 +19,7 @@ type GeneralSettingsData = {
   website_title?: string | null;
   favicon_url?: string | null;
   og_image_url?: string | null;
+  sidebar_title?: string | null;
 };
 
 const GeneralSettings = () => {
@@ -30,7 +31,7 @@ const GeneralSettings = () => {
   const { data, isLoading } = useQuery<GeneralSettingsData | null>({
     queryKey: ['general_settings'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('checklist_settings').select('id, qr_scan_sound_url, default_dashboard_tab, service_commission_rate, website_title, favicon_url, og_image_url').limit(1).single();
+      const { data, error } = await supabase.from('checklist_settings').select('id, qr_scan_sound_url, default_dashboard_tab, service_commission_rate, website_title, favicon_url, og_image_url, sidebar_title').limit(1).single();
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     }
@@ -54,6 +55,7 @@ const GeneralSettings = () => {
       queryClient.invalidateQueries({ queryKey: ['general_settings'] });
       queryClient.invalidateQueries({ queryKey: ['checklist_settings'] });
       queryClient.invalidateQueries({ queryKey: ['checklist_settings_for_head'] });
+      queryClient.invalidateQueries({ queryKey: ['checklist_settings_for_sidebar'] });
       showSuccess("Đã lưu cấu hình!");
     },
     onError: (error: Error) => showError(error.message),
@@ -112,6 +114,15 @@ const GeneralSettings = () => {
           <CardDescription>Các thông tin cơ bản hiển thị trên website.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="sidebar-title">Tiêu đề Sidebar (Desktop)</Label>
+            <Input
+              id="sidebar-title"
+              value={settings.sidebar_title || ''}
+              onChange={(e) => handleConfigChange('sidebar_title', e.target.value)}
+              placeholder="EventApp"
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="website-title">Tên website</Label>
             <Input
