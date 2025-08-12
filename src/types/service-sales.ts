@@ -25,6 +25,7 @@ export type GuestService = {
   created_at: string;
   is_free_trial?: boolean;
   payment_count: number;
+  notes?: string | null;
 };
 
 export type GuestServiceSummary = {

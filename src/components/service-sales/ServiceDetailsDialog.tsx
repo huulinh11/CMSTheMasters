@@ -11,13 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { formatCurrency } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Service, GuestService, GuestServiceSummary } from "@/types/service-sales";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { CreditCard, RefreshCw, History, Trash2 } from "lucide-react";
+import { CreditCard, RefreshCw, History, Trash2, MessageSquare } from "lucide-react";
 import { PayServiceDialog } from "@/components/service-sales/PayServiceDialog";
 import { Badge } from "@/components/ui/badge";
 import GuestHistoryDialog from "../Revenue/GuestHistoryDialog";
@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { showSuccess, showError } from "@/utils/toast";
+import { ServiceNotesDialog } from "./ServiceNotesDialog";
 
 interface ServiceDetailsDialogProps {
   open: boolean;
@@ -56,6 +57,7 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
   const [payingItem, setPayingItem] = useState<GuestService | null>(null);
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
   const [deletingService, setDeletingService] = useState<GuestService | null>(null);
+  const [viewingNotes, setViewingNotes] = useState<{ notes: string; serviceName: string } | null>(null);
 
   const deleteMutation = useMutation({
     mutationFn: async (serviceId: string) => {
@@ -133,19 +135,26 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
                       </Select>
                     ) : (<p className="text-sm text-muted-foreground">N/A</p>)}
                   </div>
-                  <div className="flex gap-2 pt-2">
-                    {service.is_free_trial ? (
-                      <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white" variant="secondary" onClick={() => onConvertTrial(service.id)}>
-                        <RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi
-                      </Button>
-                    ) : (
-                      <Button className="flex-1" onClick={() => setPayingItem(service)} disabled={service.unpaid_amount <= 0}>
-                        <CreditCard className="mr-2 h-4 w-4" /> Thanh toán
-                      </Button>
-                    )}
-                    {service.payment_count > 0 && (
-                      <Button className="flex-1" variant="secondary" onClick={() => setHistoryGuest({ id: guestSummary.guest_id, name: guestSummary.guest_name } as GuestRevenue)}>
-                        <History className="mr-2 h-4 w-4" /> Lịch sử
+                  <div className="flex flex-col gap-2 pt-2">
+                    <div className="flex gap-2">
+                      {service.is_free_trial ? (
+                        <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white" variant="secondary" onClick={() => onConvertTrial(service.id)}>
+                          <RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi
+                        </Button>
+                      ) : (
+                        <Button className="flex-1" onClick={() => setPayingItem(service)} disabled={service.unpaid_amount <= 0}>
+                          <CreditCard className="mr-2 h-4 w-4" /> Thanh toán
+                        </Button>
+                      )}
+                      {service.payment_count > 0 && (
+                        <Button className="flex-1" variant="secondary" onClick={() => setHistoryGuest({ id: guestSummary.guest_id, name: guestSummary.guest_name } as GuestRevenue)}>
+                          <History className="mr-2 h-4 w-4" /> Lịch sử
+                        </Button>
+                      )}
+                    </div>
+                    {service.notes && (
+                      <Button className="w-full" variant="outline" onClick={() => setViewingNotes({ notes: service.notes!, serviceName: service.service_name })}>
+                        <MessageSquare className="mr-2 h-4 w-4" /> Xem ghi chú
                       </Button>
                     )}
                   </div>
@@ -178,6 +187,7 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
                   ) : (<span>N/A</span>)}
                 </TableCell>
                 <TableCell className="text-right space-x-1">
+                  {service.notes && (<Button variant="ghost" size="icon" onClick={() => setViewingNotes({ notes: service.notes!, serviceName: service.service_name })}><MessageSquare className="h-4 w-4" /></Button>)}
                   {service.payment_count > 0 && (<Button variant="outline" size="sm" onClick={() => setHistoryGuest({ id: guestSummary.guest_id, name: guestSummary.guest_name } as GuestRevenue)}>Lịch sử</Button>)}
                   {service.is_free_trial ? (
                     <Button variant="secondary" size="sm" onClick={() => onConvertTrial(service.id)} className="bg-orange-500 hover:bg-orange-600 text-white"><RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi</Button>
@@ -225,6 +235,13 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ServiceNotesDialog
+        open={!!viewingNotes}
+        onOpenChange={() => setViewingNotes(null)}
+        notes={viewingNotes?.notes || ''}
+        serviceName={viewingNotes?.serviceName || ''}
+        guestName={guest_name}
+      />
     </>
   );
 };

@@ -37,6 +37,7 @@ import { AppUser } from "@/types/app-user";
 import { Input } from "../ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "../ui/textarea";
 
 type CombinedGuest = (Guest | VipGuest) & { type: 'guest' };
 type Referrer = (CombinedGuest | (AppUser & { type: 'sale' })) & { name: string };
@@ -58,6 +59,7 @@ export const AddGuestServiceDialog = ({ open, onOpenChange, defaultGuestId }: Ad
   const [paidAmount, setPaidAmount] = useState(0);
   const [formattedPaidAmount, setFormattedPaidAmount] = useState("0");
   const [isFreeTrial, setIsFreeTrial] = useState(false);
+  const [notes, setNotes] = useState("");
   const [isGuestPopoverOpen, setIsGuestPopoverOpen] = useState(false);
   const [isReferrerPopoverOpen, setIsReferrerPopoverOpen] = useState(false);
 
@@ -100,6 +102,7 @@ export const AddGuestServiceDialog = ({ open, onOpenChange, defaultGuestId }: Ad
         referrer_type: referrer?.type || null,
         status: selectedService?.statuses?.[0] || null,
         is_free_trial: isFreeTrial,
+        notes: notes || null,
       });
       if (error) throw error;
     },
@@ -119,6 +122,7 @@ export const AddGuestServiceDialog = ({ open, onOpenChange, defaultGuestId }: Ad
       setPaidAmount(0);
       setFormattedPaidAmount("0");
       setIsFreeTrial(false);
+      setNotes("");
     } else {
       if (defaultGuestId) {
         setSelectedGuestId(defaultGuestId);
@@ -173,6 +177,10 @@ export const AddGuestServiceDialog = ({ open, onOpenChange, defaultGuestId }: Ad
           <div className="space-y-2">
             <Label>Số tiền đã thanh toán</Label>
             <Input type="text" value={formattedPaidAmount} onChange={handleAmountChange} />
+          </div>
+          <div className="space-y-2">
+            <Label>Ghi chú</Label>
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Thêm ghi chú..." />
           </div>
         </div>
         <DialogFooter>
