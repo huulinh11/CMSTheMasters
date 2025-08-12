@@ -8,7 +8,7 @@ const SiteSettingsManager = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('checklist_settings')
-        .select('website_title, favicon_url, og_image_url')
+        .select('website_title, favicon_url, og_image_url, sidebar_title')
         .limit(1)
         .single();
       if (error && error.code !== 'PGRST116') throw error;
@@ -19,36 +19,52 @@ const SiteSettingsManager = () => {
 
   useEffect(() => {
     if (settings) {
-      // Update title
+      const updateMetaTag = (key: 'name' | 'property', value: string, content: string) => {
+        let element = document.querySelector(`meta[${key}='${value}']`) as HTMLMetaElement;
+        if (!element) {
+          element = document.createElement('meta');
+          element.setAttribute(key, value);
+          document.head.appendChild(element);
+        }
+        element.content = content;
+      };
+
+      const updateLinkTag = (rel: string, href: string) => {
+        let element = document.querySelector(`link[rel='${rel}']`) as HTMLLinkElement;
+        if (!element) {
+          element = document.createElement('link');
+          element.rel = rel;
+          document.head.appendChild(element);
+        }
+        element.href = href;
+      };
+
       if (settings.website_title) {
         document.title = settings.website_title;
+        updateMetaTag('property', 'og:title', settings.website_title);
+        updateMetaTag('name', 'twitter:title', settings.website_title);
       }
 
-      // Update favicon
+      if (settings.sidebar_title) {
+        updateMetaTag('name', 'description', settings.sidebar_title);
+        updateMetaTag('property', 'og:description', settings.sidebar_title);
+        updateMetaTag('name', 'twitter:description', settings.sidebar_title);
+      }
+
       if (settings.favicon_url) {
-        let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-        if (!link) {
-          link = document.createElement('link');
-          link.rel = 'icon';
-          document.getElementsByTagName('head')[0].appendChild(link);
-        }
-        link.href = settings.favicon_url;
+        updateLinkTag('icon', settings.favicon_url);
       }
 
-      // Update OG image
       if (settings.og_image_url) {
-        let meta: HTMLMetaElement | null = document.querySelector("meta[property='og:image']");
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.setAttribute('property', 'og:image');
-          document.getElementsByTagName('head')[0].appendChild(meta);
-        }
-        meta.content = settings.og_image_url;
+        updateMetaTag('property', 'og:image', settings.og_image_url);
+        updateMetaTag('name', 'twitter:image', settings.og_image_url);
       }
+      
+      updateMetaTag('property', 'og:url', window.location.href);
     }
   }, [settings]);
 
-  return null; // This component does not render anything
+  return null;
 };
 
 export default SiteSettingsManager;
