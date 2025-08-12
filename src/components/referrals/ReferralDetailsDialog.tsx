@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,9 @@ import { formatCurrency } from "@/lib/utils";
 import { ReferrerSummary, ReferredGuestDetail } from "@/types/referrals";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
+import { RoleConfiguration } from "@/types/role-configuration";
+import { showNotice } from "@/utils/toast";
 
 interface ReferralDetailsDialogProps {
   referrer: ReferrerSummary | null;
@@ -23,6 +27,8 @@ interface ReferralDetailsDialogProps {
 
 export const ReferralDetailsDialog = ({ referrer, open, onOpenChange }: ReferralDetailsDialogProps) => {
   const isMobile = useIsMobile();
+  const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
+
   const { data: details = [], isLoading } = useQuery<ReferredGuestDetail[]>({
     queryKey: ['referred_guest_details', referrer?.referrer_id],
     queryFn: async () => {
@@ -33,6 +39,28 @@ export const ReferralDetailsDialog = ({ referrer, open, onOpenChange }: Referral
     },
     enabled: !!referrer && open,
   });
+
+  const { data: roleConfigs = [] } = useQuery<RoleConfiguration[]>({
+    queryKey: ['role_configurations_for_details_dialog'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('role_configurations').select('*');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open,
+  });
+
+  const handleViewGuest = (guestId: string) => {
+    setViewingGuestId(guestId);
+  };
+
+  const handleEditGuest = () => {
+    showNotice("Vui lòng sửa thông tin khách mời từ trang Quản lý khách mời.");
+  };
+
+  const handleDeleteGuest = () => {
+    showNotice("Vui lòng xóa khách mời từ trang Quản lý khách mời.");
+  };
 
   const renderContent = () => {
     if (isLoading) {
@@ -55,7 +83,9 @@ export const ReferralDetailsDialog = ({ referrer, open, onOpenChange }: Referral
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center">
                   <span className="text-sm font-normal text-slate-500 mr-2">{index + 1}.</span>
-                  {item.guest_name}
+                  <button onClick={() => handleViewGuest(item.guest_id)} className="text-left hover:underline">
+                    {item.guest_name}
+                  </button>
                 </CardTitle>
                 <p className="text-sm text-muted-foreground pl-6">{item.guest_role}</p>
               </CardHeader>
@@ -94,7 +124,11 @@ export const ReferralDetailsDialog = ({ referrer, open, onOpenChange }: Referral
           {details.map((item, index) => (
             <TableRow key={item.guest_id}>
               <TableCell>{index + 1}</TableCell>
-              <TableCell className="font-medium">{item.guest_name}</TableCell>
+              <TableCell className="font-medium">
+                <button onClick={() => handleViewGuest(item.guest_id)} className="text-left hover:underline">
+                  {item.guest_name}
+                </button>
+              </TableCell>
               <TableCell>{item.guest_role}</TableCell>
               <TableCell>{formatCurrency(item.sponsorship_amount)}</TableCell>
               <TableCell>
@@ -112,18 +146,29 @@ export const ReferralDetailsDialog = ({ referrer, open, onOpenChange }: Referral
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Chi tiết giới thiệu</DialogTitle>
-          <DialogDescription>
-            Danh sách khách mời được giới thiệu bởi {referrer?.referrer_name}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2">
-          {renderContent()}
-        </div>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Chi tiết giới thiệu</DialogTitle>
+            <DialogDescription>
+              Danh sách khách mời được giới thiệu bởi {referrer?.referrer_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2">
+            {renderContent()}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <GuestDetailsDialog
+        guestId={viewingGuestId}
+        guestType="regular"
+        open={!!viewingGuestId}
+        onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
+        onEdit={handleEditGuest}
+        onDelete={handleDeleteGuest}
+        roleConfigs={roleConfigs}
+      />
+    </>
   );
 };

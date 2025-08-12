@@ -1,7 +1,9 @@
 export type ReferrerSummary = {
   referrer_id: string;
   referrer_name: string;
+  referrer_role: string;
   referral_count: number;
+  referral_quota: number;
   total_revenue: number;
   total_commission: number;
 };
