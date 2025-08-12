@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { ReferralDetailsDialog } from "@/components/referrals/ReferralDetailsDialog";
 import { cn } from "@/lib/utils";
 import { ReferralFilterSheet } from "@/components/referrals/ReferralFilterSheet";
+import ReferralStats from "@/components/referrals/ReferralStats";
 
 const ReferralsPage = () => {
   const isMobile = useIsMobile();
@@ -89,32 +90,11 @@ const ReferralsPage = () => {
   return (
     <div className="p-4 md:p-6 space-y-4">
       <PageHeader title="Người giới thiệu" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng lượt giới thiệu</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalStats.totalReferrals}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng doanh thu</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalStats.totalRevenue)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng hoa hồng</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalStats.totalCommission)}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <ReferralStats
+        totalReferrals={totalStats.totalReferrals}
+        totalRevenue={totalStats.totalRevenue}
+        totalCommission={totalStats.totalCommission}
+      />
       <div className="flex items-center gap-2">
         <Input 
           placeholder="Tìm kiếm theo tên người giới thiệu..." 
