@@ -14,13 +14,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Trash2, Edit, GripVertical } from "lucide-react";
-import { TimelineEventClientState } from "@/types/timeline";
+import { TimelineEventClientState, ParticipantOption } from "@/types/timeline";
 import { formatDuration } from "@/lib/time";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { cn } from "@/lib/utils";
 
-const ParticipantBadge = ({ name }: { name: string }) => (
-  <span className="bg-orange-100 text-orange-800 font-bold px-2 py-1 rounded-md text-xs">
+const ParticipantBadge = ({ name, isGuest }: { name: string; isGuest: boolean }) => (
+  <span
+    className={cn(
+      "font-bold px-2 py-1 rounded-md text-xs",
+      isGuest ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"
+    )}
+  >
     {name}
   </span>
 );
@@ -29,9 +35,10 @@ interface SortableTableRowProps {
   item: TimelineEventClientState;
   onEdit: (item: TimelineEventClientState) => void;
   onDelete: (id: string) => void;
+  participantOptions: ParticipantOption[];
 }
 
-const SortableTableRow = ({ item, onEdit, onDelete }: SortableTableRowProps) => {
+const SortableTableRow = ({ item, onEdit, onDelete, participantOptions }: SortableTableRowProps) => {
   const {
     attributes,
     listeners,
@@ -60,7 +67,11 @@ const SortableTableRow = ({ item, onEdit, onDelete }: SortableTableRowProps) => 
       <TableCell className="whitespace-pre-wrap">{item.content}</TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-2 max-w-xs">
-          {item.participants?.map(p => <ParticipantBadge key={p} name={p} />)}
+          {item.participants?.map(p => {
+            const option = participantOptions.find(opt => opt.value === p);
+            const isGuest = option?.group !== 'Vai trò';
+            return <ParticipantBadge key={p} name={p} isGuest={isGuest} />;
+          })}
         </div>
       </TableCell>
       <TableCell className="whitespace-pre-wrap">{item.notes}</TableCell>
@@ -89,9 +100,10 @@ interface TimelineTableProps {
   items: TimelineEventClientState[];
   onEdit: (item: TimelineEventClientState) => void;
   onDelete: (id: string) => void;
+  participantOptions: ParticipantOption[];
 }
 
-export const TimelineTable = ({ items, onEdit, onDelete }: TimelineTableProps) => {
+export const TimelineTable = ({ items, onEdit, onDelete, participantOptions }: TimelineTableProps) => {
   return (
     <div className="rounded-lg border bg-white">
       <Table>
@@ -109,7 +121,7 @@ export const TimelineTable = ({ items, onEdit, onDelete }: TimelineTableProps) =
         <TableBody>
           {items.length > 0 ? (
             items.map((item) => (
-              <SortableTableRow key={item.id} item={item} onEdit={onEdit} onDelete={onDelete} />
+              <SortableTableRow key={item.id} item={item} onEdit={onEdit} onDelete={onDelete} participantOptions={participantOptions} />
             ))
           ) : (
             <TableRow>

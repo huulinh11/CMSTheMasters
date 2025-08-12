@@ -250,11 +250,11 @@ const Timeline = () => {
             {isMobile ? (
               <div className="space-y-4">
                 {items.map(item => (
-                  <TimelineCard key={item.id} item={item} onEdit={handleOpenEditDialog} onDelete={deleteMutation.mutate} />
+                  <TimelineCard key={item.id} item={item} onEdit={handleOpenEditDialog} onDelete={deleteMutation.mutate} participantOptions={participantOptions} />
                 ))}
               </div>
             ) : (
-              <TimelineTable items={items} onEdit={handleOpenEditDialog} onDelete={deleteMutation.mutate} />
+              <TimelineTable items={items} onEdit={handleOpenEditDialog} onDelete={deleteMutation.mutate} participantOptions={participantOptions} />
             )}
           </SortableContext>
         )}

@@ -7,13 +7,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Trash2, Edit, GripVertical } from "lucide-react";
-import { TimelineEventClientState } from "@/types/timeline";
+import { TimelineEventClientState, ParticipantOption } from "@/types/timeline";
 import { formatDuration } from "@/lib/time";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { cn } from "@/lib/utils";
 
-const ParticipantBadge = ({ name }: { name: string }) => (
-  <span className="bg-orange-100 text-orange-800 font-semibold px-2 py-1 rounded-md text-xs">
+const ParticipantBadge = ({ name, isGuest }: { name: string; isGuest: boolean }) => (
+  <span
+    className={cn(
+      "font-semibold px-2 py-1 rounded-md text-xs",
+      isGuest ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"
+    )}
+  >
     {name}
   </span>
 );
@@ -22,9 +28,10 @@ interface TimelineCardProps {
   item: TimelineEventClientState;
   onEdit: (item: TimelineEventClientState) => void;
   onDelete: (id: string) => void;
+  participantOptions: ParticipantOption[];
 }
 
-export const TimelineCard = ({ item, onEdit, onDelete }: TimelineCardProps) => {
+export const TimelineCard = ({ item, onEdit, onDelete, participantOptions }: TimelineCardProps) => {
   const {
     attributes,
     listeners,
@@ -75,7 +82,11 @@ export const TimelineCard = ({ item, onEdit, onDelete }: TimelineCardProps) => {
               <div className="space-y-1">
                 <p className="text-xs font-medium text-slate-500">Hoạt động có mặt bạn</p>
                 <div className="flex flex-wrap gap-1">
-                  {item.participants.map(p => <ParticipantBadge key={p} name={p} />)}
+                  {item.participants.map(p => {
+                    const option = participantOptions.find(opt => opt.value === p);
+                    const isGuest = option?.group !== 'Vai trò';
+                    return <ParticipantBadge key={p} name={p} isGuest={isGuest} />;
+                  })}
                 </div>
               </div>
             )}
