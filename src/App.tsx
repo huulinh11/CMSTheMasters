@@ -32,6 +32,7 @@ import CommissionPage from "./pages/Commission";
 import ServiceSalesPage from "./pages/ServiceSales";
 import HomeRedirect from "./components/HomeRedirect";
 import SiteSettingsManager from "./components/SiteSettingsManager";
+import Reports from "./pages/Reports";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const router = createBrowserRouter([
       { element: <PermissionProtectedRoute permissionId="revenue" />, children: [{ path: "revenue", element: <Revenue /> }] },
       { element: <PermissionProtectedRoute permissionId="service-sales" />, children: [{ path: "service-sales", element: <ServiceSalesPage /> }] },
       { element: <PermissionProtectedRoute permissionId="commission" />, children: [{ path: "commission", element: <CommissionPage /> }] },
+      { element: <PermissionProtectedRoute permissionId="reports" />, children: [{ path: "reports", element: <Reports /> }] },
       { element: <PermissionProtectedRoute permissionId="timeline" />, children: [{ path: "timeline", element: <Timeline /> }] },
       { element: <PermissionProtectedRoute permissionId="public-user" />, children: [{ path: "public-user", element: <PublicUser /> }] },
       { element: <PermissionProtectedRoute permissionId="account" />, children: [{ path: "account", element: <Account /> }] },
