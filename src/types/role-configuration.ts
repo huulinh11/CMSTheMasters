@@ -9,6 +9,7 @@ export const roleConfigSchema = z.object({
     required_error: "Vui lòng chọn loại vai trò.",
   }),
   sponsorship_amount: z.number().min(0, "Số tiền không được âm."),
+  referral_quota: z.coerce.number().min(0, "Số chỉ tiêu không được âm.").optional().default(10),
   bg_color: z.string().regex(/^#([0-9a-f]{3}){1,2}$/i, "Mã màu không hợp lệ.").optional().default("#EFF6FF"),
   text_color: z.string().regex(/^#([0-9a-f]{3}){1,2}$/i, "Mã màu không hợp lệ.").optional().default("#1E40AF"),
 });

@@ -41,6 +41,7 @@ export const AddEditRoleDialog = ({ open, onOpenChange, onSubmit, defaultValues 
     defaultValues: {
       bg_color: "#EFF6FF",
       text_color: "#1E40AF",
+      referral_quota: 10,
     }
   });
 
@@ -52,7 +53,7 @@ export const AddEditRoleDialog = ({ open, onOpenChange, onSubmit, defaultValues 
         form.reset(defaultValues);
         setFormattedAmount(new Intl.NumberFormat('vi-VN').format(defaultValues.sponsorship_amount));
       } else {
-        form.reset({ name: "", type: undefined, sponsorship_amount: 0, bg_color: "#EFF6FF", text_color: "#1E40AF" });
+        form.reset({ name: "", type: undefined, sponsorship_amount: 0, referral_quota: 10, bg_color: "#EFF6FF", text_color: "#1E40AF" });
         setFormattedAmount("0");
       }
     }
@@ -129,6 +130,23 @@ export const AddEditRoleDialog = ({ open, onOpenChange, onSubmit, defaultValues 
                       placeholder="Nhập số tiền"
                       value={formattedAmount}
                       onChange={handleAmountChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="referral_quota"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Số chỉ tiêu giới thiệu</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Nhập số chỉ tiêu"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
