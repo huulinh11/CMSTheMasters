@@ -66,8 +66,8 @@ const SalesCommissionCard = ({
       <Separator />
       <InfoRow label="TỔNG HOA HỒNG" value={formatCurrency(item.totalCommission)} valueClass="text-xl text-primary font-bold" />
       <div className="flex gap-2 pt-2">
-        <Button className="flex-1" onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: false })} disabled={item.upsaleCount === 0}>Chi tiết Upsale</Button>
-        <Button className="flex-1" variant="secondary" onClick={() => onViewService({ id: item.userId, name: item.name })} disabled={item.serviceCount === 0}>Chi tiết Dịch vụ</Button>
+        <Button className="flex-1" onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: false })} disabled={Number(item.upsaleCount) === 0}>Chi tiết Upsale</Button>
+        <Button className="flex-1" variant="secondary" onClick={() => onViewService({ id: item.userId, name: item.name })} disabled={Number(item.serviceCount) === 0}>Chi tiết Dịch vụ</Button>
       </div>
     </CardContent>
   </Card>
@@ -82,8 +82,8 @@ const OtherSalesCard = ({ item, onViewUpsale, onViewService }: { item: CombinedC
       <InfoRow label="Số dịch vụ" value={String(item.serviceCount)} />
       <InfoRow label="Tổng tiền dịch vụ" value={formatCurrency(item.totalServicePrice)} />
       <div className="flex gap-2 pt-2">
-        <Button className="flex-1" onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: true })} disabled={item.upsaleCount === 0}>Chi tiết Upsale</Button>
-        <Button className="flex-1" variant="secondary" onClick={() => onViewService({ id: item.userId, name: item.name, hideCommission: true })} disabled={item.serviceCount === 0}>Chi tiết Dịch vụ</Button>
+        <Button className="flex-1" onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: true })} disabled={Number(item.upsaleCount) === 0}>Chi tiết Upsale</Button>
+        <Button className="flex-1" variant="secondary" onClick={() => onViewService({ id: item.userId, name: item.name, hideCommission: true })} disabled={Number(item.serviceCount) === 0}>Chi tiết Dịch vụ</Button>
       </div>
     </CardContent>
   </Card>
@@ -105,8 +105,8 @@ const OtherSalesTable = ({ items, onViewUpsale, onViewService }: { items: Combin
               <DropdownMenu>
                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: true })} disabled={item.upsaleCount === 0}>Chi tiết Upsale</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onViewService({ id: item.userId, name: item.name, hideCommission: true })} disabled={item.serviceCount === 0}>Chi tiết Dịch vụ</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: true })} disabled={Number(item.upsaleCount) === 0}>Chi tiết Upsale</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onViewService({ id: item.userId, name: item.name, hideCommission: true })} disabled={Number(item.serviceCount) === 0}>Chi tiết Dịch vụ</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>
@@ -147,7 +147,7 @@ const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
       summaryMap.set(item.user_id, {
         userId: item.user_id,
         name: item.upsale_person_name,
-        upsaleCount: item.upsale_count,
+        upsaleCount: Number(item.upsale_count || 0),
         totalUpsaleAmount: item.total_upsale_amount,
         upsaleCommission: item.total_commission,
         serviceCount: 0,
@@ -161,7 +161,7 @@ const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
       if (item.referrer_type === 'sale') {
         const existing = summaryMap.get(item.referrer_id);
         if (existing) {
-          existing.serviceCount = item.service_count;
+          existing.serviceCount = Number(item.service_count || 0);
           existing.totalServicePrice = item.total_service_price;
           existing.serviceCommission = item.total_commission;
           existing.totalCommission += item.total_commission;
@@ -172,7 +172,7 @@ const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
             upsaleCount: 0,
             totalUpsaleAmount: 0,
             upsaleCommission: 0,
-            serviceCount: item.service_count,
+            serviceCount: Number(item.service_count || 0),
             totalServicePrice: item.total_service_price,
             serviceCommission: item.total_commission,
             totalCommission: item.total_commission,
