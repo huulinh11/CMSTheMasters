@@ -39,32 +39,34 @@ const SiteSettingsManager = () => {
         element.href = href;
       };
 
-      const websiteTitle = settings.website_title || 'EventApp';
-      const description = settings.sidebar_title || 'Event Information';
-      const imageUrl = settings.og_image_url || `${window.location.origin}/placeholder.svg`;
+      const websiteTitle = settings.website_title;
+      const description = settings.sidebar_title;
+      const imageUrl = settings.og_image_url;
+      const faviconUrl = settings.favicon_url;
       const pageUrl = window.location.href;
 
-      // Update Title
-      document.title = websiteTitle;
-      updateMetaTag('name', 'title', websiteTitle);
-      updateMetaTag('property', 'og:title', websiteTitle);
-      updateMetaTag('property', 'twitter:title', websiteTitle);
-
-      // Update Description
-      updateMetaTag('name', 'description', description);
-      updateMetaTag('property', 'og:description', description);
-      updateMetaTag('property', 'twitter:description', description);
-
-      // Update Favicon
-      if (settings.favicon_url) {
-        updateLinkTag('icon', settings.favicon_url);
+      if (websiteTitle) {
+        document.title = websiteTitle;
+        updateMetaTag('name', 'title', websiteTitle);
+        updateMetaTag('property', 'og:title', websiteTitle);
+        updateMetaTag('property', 'twitter:title', websiteTitle);
       }
 
-      // Update Image
-      updateMetaTag('property', 'og:image', imageUrl);
-      updateMetaTag('property', 'twitter:image', imageUrl);
+      if (description) {
+        updateMetaTag('name', 'description', description);
+        updateMetaTag('property', 'og:description', description);
+        updateMetaTag('property', 'twitter:description', description);
+      }
+
+      if (faviconUrl) {
+        updateLinkTag('icon', faviconUrl);
+      }
+
+      if (imageUrl) {
+        updateMetaTag('property', 'og:image', imageUrl);
+        updateMetaTag('property', 'twitter:image', imageUrl);
+      }
       
-      // Update URL
       updateMetaTag('property', 'og:url', pageUrl);
       updateMetaTag('property', 'twitter:url', pageUrl);
     }
