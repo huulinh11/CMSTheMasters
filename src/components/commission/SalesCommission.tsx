@@ -3,16 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { UpsaleCommissionSummary, ServiceCommissionSummary } from "@/types/commission";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 import UpsaleCommissionDetailsDialog from "@/components/Revenue/UpsaleCommissionDetailsDialog";
 import { ServiceCommissionDetailsDialog } from "@/components/service-sales/ServiceCommissionDetailsDialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import CommissionStats from "@/components/Revenue/CommissionStats";
 
@@ -33,8 +29,47 @@ interface SalesCommissionProps {
   userId?: string;
 }
 
+const InfoRow = ({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) => (
+  <div className="flex justify-between items-center text-sm">
+    <span className="text-slate-500">{label}</span>
+    <span className={`font-medium text-slate-800 ${valueClass}`}>{value}</span>
+  </div>
+);
+
+const SalesCommissionCard = ({
+  item,
+  onViewUpsale,
+  onViewService,
+}: {
+  item: CombinedCommissionSummary;
+  onViewUpsale: (person: { userId: string; name: string; hideCommission: boolean }) => void;
+  onViewService: (referrer: { id: string; name: string; hideCommission?: boolean }) => void;
+}) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>{item.name}</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-3">
+      <h3 className="font-semibold text-slate-700">Upsale</h3>
+      <InfoRow label="Số lượt" value={String(item.upsaleCount)} />
+      <InfoRow label="Tổng tiền" value={formatCurrency(item.totalUpsaleAmount)} />
+      <InfoRow label="Hoa hồng" value={formatCurrency(item.upsaleCommission)} valueClass="text-green-600 font-bold" />
+      <Separator />
+      <h3 className="font-semibold text-slate-700">Dịch vụ</h3>
+      <InfoRow label="Số lượt" value={String(item.serviceCount)} />
+      <InfoRow label="Tổng tiền" value={formatCurrency(item.totalServicePrice)} />
+      <InfoRow label="Hoa hồng" value={formatCurrency(item.serviceCommission)} valueClass="text-green-600 font-bold" />
+      <Separator />
+      <InfoRow label="TỔNG HOA HỒNG" value={formatCurrency(item.totalCommission)} valueClass="text-xl text-primary font-bold" />
+      <div className="flex gap-2 pt-2">
+        <Button className="flex-1" onClick={() => onViewUpsale({ userId: item.userId, name: item.name, hideCommission: false })}>Chi tiết Upsale</Button>
+        <Button className="flex-1" variant="secondary" onClick={() => onViewService({ id: item.userId, name: item.name })}>Chi tiết Dịch vụ</Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
-  const isMobile = useIsMobile();
   const [selectedUpsalePerson, setSelectedUpsalePerson] = useState<{ userId: string; name: string; hideCommission: boolean } | null>(null);
   const [selectedServiceReferrer, setSelectedServiceReferrer] = useState<{ id: string; name: string; hideCommission?: boolean } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -107,13 +142,9 @@ const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
     );
   }, [combinedSummary, searchTerm]);
 
-  const { currentUserSummary, otherUsersSummary } = useMemo(() => {
-    if (!isSaleView || !userId) {
-        return { currentUserSummary: null, otherUsersSummary: filteredSummary };
-    }
-    const currentUser = filteredSummary.find(item => item.userId === userId);
-    const others = filteredSummary.filter(item => item.userId !== userId);
-    return { currentUserSummary: currentUser, otherUsersSummary: others };
+  const currentUserSummary = useMemo(() => {
+    if (!isSaleView || !userId) return null;
+    return filteredSummary.find(item => item.userId === userId);
   }, [filteredSummary, isSaleView, userId]);
 
   const totalStats = useMemo(() => {
@@ -127,84 +158,22 @@ const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
 
   const isLoading = isLoadingUpsale || isLoadingService;
 
-  const InfoRow = ({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) => (
-    <div className="flex justify-between items-center text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className={`font-medium text-slate-800 ${valueClass}`}>{value}</span>
-    </div>
-  );
-
   if (isLoading) return <Skeleton className="h-96 w-full rounded-lg" />;
 
   if (isSaleView) {
     return (
       <div className="space-y-6">
-        {currentUserSummary && (
+        {currentUserSummary ? (
           <div>
             <h2 className="text-xl font-bold text-slate-800 mb-2">Hoa hồng của bạn</h2>
-            <Card>
-              <CardHeader><CardTitle>{currentUserSummary.name}</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <h3 className="font-semibold text-slate-700">Upsale</h3>
-                <InfoRow label="Số lượt" value={String(currentUserSummary.upsaleCount)} />
-                <InfoRow label="Tổng tiền" value={formatCurrency(currentUserSummary.totalUpsaleAmount)} />
-                <InfoRow label="Hoa hồng" value={formatCurrency(currentUserSummary.upsaleCommission)} valueClass="text-green-600 font-bold" />
-                <Separator />
-                <h3 className="font-semibold text-slate-700">Dịch vụ</h3>
-                <InfoRow label="Số lượt" value={String(currentUserSummary.serviceCount)} />
-                <InfoRow label="Tổng tiền" value={formatCurrency(currentUserSummary.totalServicePrice)} />
-                <InfoRow label="Hoa hồng" value={formatCurrency(currentUserSummary.serviceCommission)} valueClass="text-green-600 font-bold" />
-                <Separator />
-                <InfoRow label="TỔNG HOA HỒNG" value={formatCurrency(currentUserSummary.totalCommission)} valueClass="text-xl text-primary font-bold" />
-                <div className="flex gap-2 pt-2">
-                  <Button className="flex-1" onClick={() => setSelectedUpsalePerson({ userId: currentUserSummary.userId, name: currentUserSummary.name, hideCommission: false })}>Chi tiết Upsale</Button>
-                  <Button className="flex-1" variant="secondary" onClick={() => setSelectedServiceReferrer({ id: currentUserSummary.userId, name: currentUserSummary.name })}>Chi tiết Dịch vụ</Button>
-                </div>
-              </CardContent>
-            </Card>
+            <SalesCommissionCard 
+              item={currentUserSummary} 
+              onViewUpsale={setSelectedUpsalePerson} 
+              onViewService={setSelectedServiceReferrer} 
+            />
           </div>
-        )}
-        {otherUsersSummary.length > 0 && (
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Thống kê Sale khác</h2>
-            {isMobile ? (
-              <div className="space-y-4">
-                {otherUsersSummary.map((item) => (
-                  <Card key={item.userId}>
-                    <CardHeader><CardTitle>{item.name}</CardTitle></CardHeader>
-                    <CardContent className="space-y-2">
-                      <InfoRow label="Số lượt upsale" value={String(item.upsaleCount)} />
-                      <InfoRow label="Tổng tiền upsale" value={formatCurrency(item.totalUpsaleAmount)} />
-                      <InfoRow label="Số dịch vụ" value={String(item.serviceCount)} />
-                      <InfoRow label="Tổng tiền dịch vụ" value={formatCurrency(item.totalServicePrice)} />
-                      <div className="flex gap-2 pt-2">
-                        <Button className="flex-1" onClick={() => setSelectedUpsalePerson({ userId: item.userId, name: item.name, hideCommission: true })}>Chi tiết Upsale</Button>
-                        <Button className="flex-1" variant="secondary" onClick={() => setSelectedServiceReferrer({ id: item.userId, name: item.name, hideCommission: true })}>Chi tiết Dịch vụ</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-lg border bg-white">
-                <Table>
-                  <TableHeader><TableRow><TableHead>Tên Sale</TableHead><TableHead>Lượt Upsale</TableHead><TableHead>Tiền Upsale</TableHead><TableHead>Lượt Dịch vụ</TableHead><TableHead>Tiền Dịch vụ</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    {otherUsersSummary.map((item) => (
-                      <TableRow key={item.userId}>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{item.upsaleCount}</TableCell>
-                        <TableCell>{formatCurrency(item.totalUpsaleAmount)}</TableCell>
-                        <TableCell>{item.serviceCount}</TableCell>
-                        <TableCell>{formatCurrency(item.totalServicePrice)}</TableCell>
-                        <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => setSelectedUpsalePerson({ userId: item.userId, name: item.name, hideCommission: true })}>Xem chi tiết</Button></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
+        ) : (
+          <p>Không có dữ liệu hoa hồng cho bạn.</p>
         )}
       </div>
     );
@@ -218,54 +187,16 @@ const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
         totalCommission={totalStats.totalCommission}
       />
       <Input placeholder="Tìm kiếm theo tên..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-      {isMobile ? (
-        <div className="space-y-4">
-          {filteredSummary.map((item) => (
-            <Card key={item.userId}>
-              <CardHeader>
-                <CardTitle>{item.name}</CardTitle>
-                <p className="text-lg font-bold text-primary">{formatCurrency(item.totalCommission)}</p>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-end">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => setSelectedUpsalePerson({ userId: item.userId, name: item.name, hideCommission: false })} disabled={item.upsaleCount === 0}>Chi tiết Upsale</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedServiceReferrer({ id: item.userId, name: item.name })} disabled={item.serviceCount === 0}>Chi tiết Dịch vụ</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-lg border bg-white">
-          <Table>
-            <TableHeader><TableRow><TableHead>Tên</TableHead><TableHead>HH Upsale</TableHead><TableHead>HH Dịch vụ</TableHead><TableHead>Tổng hoa hồng</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {filteredSummary.map((item) => (
-                <TableRow key={item.userId}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{formatCurrency(item.upsaleCommission)}</TableCell>
-                  <TableCell>{formatCurrency(item.serviceCommission)}</TableCell>
-                  <TableCell className="font-semibold text-green-600">{formatCurrency(item.totalCommission)}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => setSelectedUpsalePerson({ userId: item.userId, name: item.name, hideCommission: false })} disabled={item.upsaleCount === 0}>Chi tiết Upsale</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setSelectedServiceReferrer({ id: item.userId, name: item.name })} disabled={item.serviceCount === 0}>Chi tiết Dịch vụ</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredSummary.map((item) => (
+          <SalesCommissionCard 
+            key={item.userId} 
+            item={item} 
+            onViewUpsale={setSelectedUpsalePerson} 
+            onViewService={setSelectedServiceReferrer} 
+          />
+        ))}
+      </div>
       <UpsaleCommissionDetailsDialog person={selectedUpsalePerson} open={!!selectedUpsalePerson} onOpenChange={() => setSelectedUpsalePerson(null)} />
       <ServiceCommissionDetailsDialog referrer={selectedServiceReferrer} open={!!selectedServiceReferrer} onOpenChange={() => setSelectedServiceReferrer(null)} />
     </div>
