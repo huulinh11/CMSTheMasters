@@ -213,67 +213,68 @@ const SalesCommission = ({ isSaleView, userId }: SalesCommissionProps) => {
 
   if (isLoading) return <Skeleton className="h-96 w-full rounded-lg" />;
 
-  if (isSaleView) {
-    return (
-      <div className="space-y-6">
-        {currentUserSummary && (
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Hoa hồng của bạn</h2>
-            <SalesCommissionCard 
-              item={currentUserSummary} 
-              onViewUpsale={setSelectedUpsalePerson} 
-              onViewService={setSelectedServiceReferrer} 
-            />
-          </div>
-        )}
-        {otherUsersSummary.length > 0 && (
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Thống kê Sale khác</h2>
-            {isMobile ? (
-              <div className="space-y-4">
-                {otherUsersSummary.map((item) => (
-                  <OtherSalesCard 
-                    key={item.userId}
-                    item={item}
-                    onViewUpsale={setSelectedUpsalePerson}
-                    onViewService={setSelectedServiceReferrer}
-                  />
-                ))}
-              </div>
-            ) : (
-              <OtherSalesTable 
-                items={otherUsersSummary}
-                onViewUpsale={setSelectedUpsalePerson}
-                onViewService={setSelectedServiceReferrer}
-              />
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <CommissionStats 
-        totalUpsaleAmount={totalStats.totalUpsaleAmount}
-        totalUpsaleCount={totalStats.totalUpsaleCount}
-        totalCommission={totalStats.totalCommission}
-      />
-      <Input placeholder="Tìm kiếm theo tên..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredSummary.map((item) => (
-          <SalesCommissionCard 
-            key={item.userId} 
-            item={item} 
-            onViewUpsale={setSelectedUpsalePerson} 
-            onViewService={setSelectedServiceReferrer} 
+    <>
+      {isSaleView ? (
+        <div className="space-y-6">
+          {currentUserSummary && (
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Hoa hồng của bạn</h2>
+              <SalesCommissionCard 
+                item={currentUserSummary} 
+                onViewUpsale={setSelectedUpsalePerson} 
+                onViewService={setSelectedServiceReferrer} 
+              />
+            </div>
+          )}
+          {otherUsersSummary.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Thống kê Sale khác</h2>
+              {isMobile ? (
+                <div className="space-y-4">
+                  {otherUsersSummary.map((item) => (
+                    <OtherSalesCard 
+                      key={item.userId}
+                      item={item}
+                      onViewUpsale={setSelectedUpsalePerson}
+                      onViewService={setSelectedServiceReferrer}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <OtherSalesTable 
+                  items={otherUsersSummary}
+                  onViewUpsale={setSelectedUpsalePerson}
+                  onViewService={setSelectedServiceReferrer}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <CommissionStats 
+            totalUpsaleAmount={totalStats.totalUpsaleAmount}
+            totalUpsaleCount={totalStats.totalUpsaleCount}
+            totalCommission={totalStats.totalCommission}
           />
-        ))}
-      </div>
+          <Input placeholder="Tìm kiếm theo tên..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredSummary.map((item) => (
+              <SalesCommissionCard 
+                key={item.userId} 
+                item={item} 
+                onViewUpsale={setSelectedUpsalePerson} 
+                onViewService={setSelectedServiceReferrer} 
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      
       <UpsaleCommissionDetailsDialog person={selectedUpsalePerson} open={!!selectedUpsalePerson} onOpenChange={() => setSelectedUpsalePerson(null)} />
       <ServiceCommissionDetailsDialog referrer={selectedServiceReferrer} open={!!selectedServiceReferrer} onOpenChange={() => setSelectedServiceReferrer(null)} />
-    </div>
+    </>
   );
 };
 
