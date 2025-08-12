@@ -11,6 +11,7 @@ import { GuestServiceSummary } from "@/types/service-sales";
 import { formatCurrency } from "@/lib/utils";
 import { Eye, History, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface GuestServiceSummaryTableProps {
   summaries: GuestServiceSummary[];
@@ -25,6 +26,7 @@ export const GuestServiceSummaryTable = ({ summaries, onViewDetails, onHistory, 
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Ảnh</TableHead>
             <TableHead>Khách hàng</TableHead>
             <TableHead>Dịch vụ</TableHead>
             <TableHead>Tổng tiền</TableHead>
@@ -43,6 +45,12 @@ export const GuestServiceSummaryTable = ({ summaries, onViewDetails, onHistory, 
 
               return (
                 <TableRow key={summary.guest_id}>
+                  <TableCell>
+                    <Avatar>
+                      <AvatarImage src={summary.image_url || ''} alt={summary.guest_name} />
+                      <AvatarFallback>{summary.guest_name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </TableCell>
                   <TableCell>
                     <div className="font-medium">{summary.guest_name}</div>
                     <div className="text-sm text-muted-foreground">{summary.guest_phone}</div>
@@ -91,7 +99,7 @@ export const GuestServiceSummaryTable = ({ summaries, onViewDetails, onHistory, 
             })
           ) : (
             <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">
+              <TableCell colSpan={7} className="h-24 text-center">
                 Không có dữ liệu.
               </TableCell>
             </TableRow>

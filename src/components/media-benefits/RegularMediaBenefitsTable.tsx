@@ -13,6 +13,7 @@ import { SimpleLinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 import { Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 import { BenefitItem } from "@/types/benefit-configuration";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface RegularMediaBenefitsTableProps {
   guests: MediaRegularGuest[];
@@ -42,6 +43,7 @@ export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit, ben
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Ảnh</TableHead>
             <TableHead>ID</TableHead>
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
@@ -55,6 +57,11 @@ export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit, ben
           {guests.length > 0 ? (
             guests.map((guest) => (
               <TableRow key={guest.id}>
+                <TableCell>
+                  <Avatar>
+                    <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </TableCell>
                 <TableCell>{guest.id}</TableCell>
                 <TableCell>
                   <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => onEdit(guest)}>
@@ -89,7 +96,7 @@ export const RegularMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit, ben
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={4 + benefitsToDisplay.length} className="h-24 text-center">
+              <TableCell colSpan={5 + benefitsToDisplay.length} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>

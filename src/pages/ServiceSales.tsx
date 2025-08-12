@@ -16,6 +16,7 @@ import { GuestServiceSummaryCards } from "@/components/service-sales/GuestServic
 import { ServiceDetailsDialog } from "@/components/service-sales/ServiceDetailsDialog";
 import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import { GuestRevenue } from "@/types/guest-revenue";
+import { VipGuest } from "@/types/vip-guest";
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -26,7 +27,7 @@ const ServiceSalesPage = () => {
   const [viewingGuestSummary, setViewingGuestSummary] = useState<GuestServiceSummary | null>(null);
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
 
-  const { data: guestServices = [], isLoading } = useQuery<GuestService[]>({
+  const { data: guestServices = [], isLoading: isLoadingGuestServices } = useQuery<GuestService[]>({
     queryKey: ['guest_service_details'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_guest_service_details');
@@ -39,6 +40,15 @@ const ServiceSalesPage = () => {
     queryKey: ['services'],
     queryFn: async () => {
       const { data, error } = await supabase.from('services').select('*');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: vipGuestsWithImages = [], isLoading: isLoadingVipImages } = useQuery<Pick<VipGuest, 'id' | 'image_url'>[]>({
+    queryKey: ['vip_guests_images_for_service_sales'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('vip_guests').select('id, image_url');
       if (error) throw error;
       return data || [];
     }
@@ -70,6 +80,7 @@ const ServiceSalesPage = () => {
 
   const guestServiceSummaries = useMemo((): GuestServiceSummary[] => {
     const groupedByGuest = new Map<string, GuestServiceSummary>();
+    const vipImagesMap = new Map(vipGuestsWithImages.map(g => [g.id, g.image_url]));
 
     guestServices.forEach(service => {
         let summary = groupedByGuest.get(service.guest_id);
@@ -83,6 +94,7 @@ const ServiceSalesPage = () => {
                 total_revenue: 0,
                 total_paid: 0,
                 total_unpaid: 0,
+                image_url: service.guest_type === 'Chức vụ' ? vipImagesMap.get(service.guest_id) : null,
             };
             groupedByGuest.set(service.guest_id, summary);
         }
@@ -93,7 +105,7 @@ const ServiceSalesPage = () => {
     });
 
     return Array.from(groupedByGuest.values());
-  }, [guestServices]);
+  }, [guestServices, vipGuestsWithImages]);
 
   const filteredSummaries = useMemo(() => {
     return guestServiceSummaries.filter(summary => {
@@ -122,6 +134,8 @@ const ServiceSalesPage = () => {
   const handleConvertTrial = (serviceId: string) => {
     convertTrialMutation.mutate(serviceId);
   };
+
+  const isLoading = isLoadingGuestServices || isLoadingVipImages;
 
   return (
     <div className="p-4 md:p-6 space-y-4">

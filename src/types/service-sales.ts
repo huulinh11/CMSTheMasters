@@ -36,6 +36,7 @@ export type GuestServiceSummary = {
   total_revenue: number;
   total_paid: number;
   total_unpaid: number;
+  image_url?: string | null;
 };
 
 export type ServiceCommissionSummary = {

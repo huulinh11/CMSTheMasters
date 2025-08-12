@@ -7,9 +7,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Edit, Phone, User, Info, Camera } from "lucide-react";
+import { MoreVertical, Trash2, Edit, Phone, User, Info } from "lucide-react";
 import { VipGuest } from "@/types/vip-guest";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface VipGuestCardsProps {
   guests: VipGuest[];
@@ -46,56 +47,51 @@ export const VipGuestCards = ({
       {guests.length > 0 ? (
         guests.map((guest) => (
           <Card key={guest.id} className="bg-white shadow-sm overflow-hidden">
-            <div className="flex">
-              <div className="w-2/5 flex-shrink-0">
-                <button onClick={() => onView(guest)} className="w-full h-full aspect-[3/4] bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center">
-                  {guest.image_url ? (
-                    <img src={guest.image_url} alt={guest.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <Camera className="h-8 w-8 text-slate-400" />
-                  )}
-                </button>
-              </div>
-              <div className="w-3/5 p-3 flex flex-col">
-                <div className="flex justify-between items-start">
-                  <div className="flex-grow cursor-pointer pr-2" onClick={() => onView(guest)}>
-                    <h3 className="text-base font-bold leading-tight hover:underline">{guest.name}</h3>
+            <div className="p-3">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3 flex-grow min-w-0" onClick={() => onView(guest)}>
+                  <Avatar className="h-12 w-12 flex-shrink-0">
+                    <AvatarImage src={guest.image_url} alt={guest.name} />
+                    <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-grow min-w-0">
+                    <h3 className="text-base font-bold leading-tight hover:underline truncate">{guest.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1">{guest.role} ({guest.id})</p>
                   </div>
-                  <div className="flex items-center flex-shrink-0">
-                    <Checkbox
-                      checked={selectedGuests.includes(guest.id)}
-                      onCheckedChange={() => onSelectGuest(guest.id)}
-                      aria-label={`Select ${guest.name}`}
-                      className="mr-1"
-                    />
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-5 w-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onEdit(guest)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Sửa
-                        </DropdownMenuItem>
-                        {canDelete && (
-                          <DropdownMenuItem onClick={() => onDelete(guest.id)} className="text-red-600">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Xóa
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
                 </div>
-                <div className="mt-2 space-y-1 text-xs text-slate-600 flex-grow">
-                  <InfoItem icon={Phone} value={guest.phone} />
-                  <InfoItem icon={Info} value={guest.secondaryInfo} />
-                  <InfoItem icon={User} value={guest.referrer} />
+                <div className="flex items-center flex-shrink-0">
+                  <Checkbox
+                    checked={selectedGuests.includes(guest.id)}
+                    onCheckedChange={() => onSelectGuest(guest.id)}
+                    aria-label={`Select ${guest.name}`}
+                    className="mr-1"
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onEdit(guest)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Sửa
+                      </DropdownMenuItem>
+                      {canDelete && (
+                        <DropdownMenuItem onClick={() => onDelete(guest.id)} className="text-red-600">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Xóa
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
+              <CardContent className="pt-3 px-0 pb-0 space-y-1 text-xs text-slate-600">
+                <InfoItem icon={Phone} value={guest.phone} />
+                <InfoItem icon={Info} value={guest.secondaryInfo} />
+                <InfoItem icon={User} value={guest.referrer} />
+              </CardContent>
             </div>
           </Card>
         ))

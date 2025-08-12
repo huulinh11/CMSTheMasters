@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CombinedGuestRevenue } from "@/pages/Revenue";
 import { formatCurrency } from "@/lib/utils";
 import { Edit, CreditCard, History, TrendingUp } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CombinedRevenueTableProps {
   guests: CombinedGuestRevenue[];
@@ -26,6 +27,7 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Ảnh</TableHead>
             <TableHead>ID</TableHead>
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
@@ -43,6 +45,12 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
           {guests.length > 0 ? (
             guests.map((guest) => (
               <TableRow key={guest.id}>
+                <TableCell>
+                  <Avatar>
+                    <AvatarImage src={guest.image_url || ''} alt={guest.name} />
+                    <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </TableCell>
                 <TableCell>{guest.id}</TableCell>
                 <TableCell className="font-medium">
                   <button onClick={() => onView(guest)} className="text-left hover:underline">
@@ -84,7 +92,7 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center">
+              <TableCell colSpan={12} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>

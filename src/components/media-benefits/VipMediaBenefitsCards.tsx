@@ -6,6 +6,7 @@ import { SimpleLinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 import { Separator } from "@/components/ui/separator";
 import { BenefitItem } from "@/types/benefit-configuration";
 import { useMemo } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface VipMediaBenefitsCardsProps {
   guests: MediaVipGuest[];
@@ -57,9 +58,17 @@ export const VipMediaBenefitsCards = ({ guests, onUpdateBenefit, onEdit, benefit
 
           return (
             <Card key={guest.id} className="bg-white shadow-sm" onClick={() => onEdit(guest)}>
-              <CardHeader>
-                <CardTitle>{guest.name}</CardTitle>
-                <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarImage src={guest.image_url} alt={guest.name} />
+                    <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle>{guest.name}</CardTitle>
+                    <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {benefitsForRole.map((benefit, index) => (

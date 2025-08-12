@@ -17,6 +17,7 @@ import {
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { VipGuest } from "@/types/vip-guest";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface VipGuestTableProps {
   guests: VipGuest[];
@@ -64,6 +65,7 @@ export const VipGuestTable = ({
                 aria-label="Select all"
               />
             </TableHead>
+            <TableHead>Ảnh</TableHead>
             <TableHead>ID</TableHead>
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
@@ -84,6 +86,12 @@ export const VipGuestTable = ({
                     onCheckedChange={() => onSelectGuest(guest.id)}
                     aria-label={`Select ${guest.name}`}
                   />
+                </TableCell>
+                <TableCell>
+                  <Avatar>
+                    <AvatarImage src={guest.image_url} alt={guest.name} />
+                    <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
                 </TableCell>
                 <TableCell className="font-medium">{guest.id}</TableCell>
                 <TableCell className="font-semibold text-slate-800">
@@ -129,7 +137,7 @@ export const VipGuestTable = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={9} className="h-24 text-center">
+              <TableCell colSpan={10} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>

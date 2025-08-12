@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Eye, History, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface GuestServiceSummaryCardsProps {
   summaries: GuestServiceSummary[];
@@ -31,9 +32,15 @@ export const GuestServiceSummaryCards = ({ summaries, onViewDetails, onHistory, 
 
         return (
           <Card key={summary.guest_id}>
-            <CardHeader>
-              <CardTitle>{summary.guest_name}</CardTitle>
-              <p className="text-sm text-muted-foreground">{summary.guest_phone}</p>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>{summary.guest_name}</CardTitle>
+                <p className="text-sm text-muted-foreground">{summary.guest_phone}</p>
+              </div>
+              <Avatar>
+                <AvatarImage src={summary.image_url || ''} alt={summary.guest_name} />
+                <AvatarFallback>{summary.guest_name.charAt(0)}</AvatarFallback>
+              </Avatar>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-1">

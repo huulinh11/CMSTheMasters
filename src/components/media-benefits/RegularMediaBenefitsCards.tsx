@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 import { BenefitItem } from "@/types/benefit-configuration";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface RegularMediaBenefitsCardsProps {
   guests: MediaRegularGuest[];
@@ -65,9 +66,16 @@ export const RegularMediaBenefitsCards = ({ guests, onUpdateBenefit, onEdit, ben
 
           return (
             <Card key={guest.id} className="bg-white shadow-sm" onClick={() => onEdit(guest)}>
-              <CardHeader>
-                <CardTitle>{guest.name}</CardTitle>
-                <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle>{guest.name}</CardTitle>
+                    <p className="text-sm text-slate-500">{guest.role} ({guest.id})</p>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {guest.materials && (

@@ -11,6 +11,7 @@ import { MediaVipGuest, MediaBenefit } from "@/types/media-benefit";
 import { StatusSelect } from "./StatusSelect";
 import { SimpleLinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 import { BenefitItem } from "@/types/benefit-configuration";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface VipMediaBenefitsTableProps {
   guests: MediaVipGuest[];
@@ -33,6 +34,7 @@ export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit, benefit
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Ảnh</TableHead>
             <TableHead>ID</TableHead>
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
@@ -45,6 +47,12 @@ export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit, benefit
           {guests.length > 0 ? (
             guests.map((guest) => (
               <TableRow key={guest.id}>
+                <TableCell>
+                  <Avatar>
+                    <AvatarImage src={guest.image_url} alt={guest.name} />
+                    <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </TableCell>
                 <TableCell>{guest.id}</TableCell>
                 <TableCell>
                   <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => onEdit(guest)}>
@@ -72,7 +80,7 @@ export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit, benefit
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={3 + benefitsToDisplay.length} className="h-24 text-center">
+              <TableCell colSpan={4 + benefitsToDisplay.length} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>

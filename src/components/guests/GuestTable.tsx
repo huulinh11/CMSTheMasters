@@ -17,6 +17,7 @@ import {
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { Guest } from "@/types/guest";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface GuestTableProps {
   guests: Guest[];
@@ -62,6 +63,7 @@ export const GuestTable = ({
                 aria-label="Select all"
               />
             </TableHead>
+            <TableHead>Ảnh</TableHead>
             <TableHead>ID</TableHead>
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
@@ -81,6 +83,11 @@ export const GuestTable = ({
                     onCheckedChange={() => onSelectGuest(guest.id)}
                     aria-label={`Select ${guest.name}`}
                   />
+                </TableCell>
+                <TableCell>
+                  <Avatar>
+                    <AvatarFallback>{guest.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
                 </TableCell>
                 <TableCell className="font-medium">{guest.id}</TableCell>
                 <TableCell className="font-semibold text-slate-800">
@@ -125,7 +132,7 @@ export const GuestTable = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="h-24 text-center">
+              <TableCell colSpan={9} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>
