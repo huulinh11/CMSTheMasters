@@ -12,7 +12,6 @@ import {
   Globe,
   Percent,
   Briefcase,
-  BarChart3,
 } from "lucide-react";
 
 export type NavItemType = {
@@ -34,7 +33,6 @@ export const allNavItems: NavItemType[] = [
   { id: "revenue", to: "/revenue", icon: CircleDollarSign, label: "Doanh thu", isMoreLink: true },
   { id: "service-sales", to: "/service-sales", icon: Briefcase, label: "Bán dịch vụ", isMoreLink: true },
   { id: "commission", to: "/commission", icon: Percent, label: "Hoa hồng", isMoreLink: true },
-  { id: "reports", to: "/reports", icon: BarChart3, label: "Báo cáo", isMoreLink: true },
   { id: "timeline", to: "/timeline", icon: CalendarClock, label: "Timeline", isMoreLink: true },
   { id: "public-user", to: "/public-user", icon: Globe, label: "Public User", isMoreLink: true },
   { id: "account", to: "/account", icon: UserCircle, label: "Tài khoản", isMoreLink: true },
