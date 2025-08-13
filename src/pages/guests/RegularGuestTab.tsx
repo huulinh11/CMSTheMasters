@@ -24,6 +24,7 @@ import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
 import { PaymentSource } from "@/types/guest-revenue";
+import { AdvancedGuestFilter } from "@/components/guests/AdvancedGuestFilter";
 
 const generateId = (role: string, existingGuests: Guest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -42,6 +43,7 @@ const RegularGuestTab = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
+  const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState<(Guest & { sponsorship_amount?: number, payment_source?: PaymentSource }) | null>(null);
@@ -149,16 +151,41 @@ const RegularGuestTab = () => {
     onError: (error) => showError(error.message),
   });
 
+  const guestsWithRevenue = useMemo(() => {
+    const revenueMap = new Map(revenueData.map(r => [r.guest_id, r.sponsorship]));
+    return guests.map(guest => ({
+      ...guest,
+      sponsorship_amount: revenueMap.get(guest.id) || 0,
+    }));
+  }, [guests, revenueData]);
+
   const filteredGuests = useMemo(() => {
-    return guests.filter((guest) => {
+    return guestsWithRevenue.filter((guest) => {
       const searchMatch =
         guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (guest.phone && guest.phone.includes(searchTerm)) ||
         guest.role.toLowerCase().includes(searchTerm.toLowerCase());
       const roleMatch = roleFilters.length === 0 || roleFilters.includes(guest.role);
-      return searchMatch && roleMatch;
+      
+      const advancedMatch = Object.entries(advancedFilters).every(([field, value]) => {
+        if (!value || value === 'all') return true;
+        const hasValue = (val: any) => val !== null && val !== undefined && val !== '';
+
+        switch (field) {
+          case 'phone':
+            return value === 'yes' ? hasValue(guest.phone) : !hasValue(guest.phone);
+          case 'sponsorship':
+            return value === 'yes' ? guest.sponsorship_amount > 0 : guest.sponsorship_amount === 0;
+          case 'materials':
+            return value === 'yes' ? hasValue(guest.materials) : !hasValue(guest.materials);
+          default:
+            return true;
+        }
+      });
+
+      return searchMatch && roleMatch && advancedMatch;
     });
-  }, [guests, searchTerm, roleFilters]);
+  }, [guestsWithRevenue, searchTerm, roleFilters, advancedFilters]);
 
   const handleSelectGuest = (id: string) => {
     setSelectedGuests((prev) =>
@@ -252,6 +279,12 @@ const RegularGuestTab = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            <AdvancedGuestFilter
+              filters={advancedFilters}
+              onFilterChange={(field, value) => setAdvancedFilters(prev => ({ ...prev, [field]: value }))}
+              onClearFilters={() => setAdvancedFilters({})}
+              filterConfig={{ showPhone: true, showSponsorship: true, showMaterials: true }}
+            />
           </div>
           {canDelete && selectedGuests.length > 0 && (
             <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending} className="w-full">
@@ -297,6 +330,12 @@ const RegularGuestTab = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <AdvancedGuestFilter
+                filters={advancedFilters}
+                onFilterChange={(field, value) => setAdvancedFilters(prev => ({ ...prev, [field]: value }))}
+                onClearFilters={() => setAdvancedFilters({})}
+                filterConfig={{ showPhone: true, showSponsorship: true, showMaterials: true }}
+              />
               {canDelete && selectedGuests.length > 0 && (
                 <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending}>
                   <Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})

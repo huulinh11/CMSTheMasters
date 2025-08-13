@@ -22,6 +22,7 @@ import { RoleConfiguration } from "@/types/role-configuration";
 import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
+import { AdvancedGuestFilter } from "@/components/guests/AdvancedGuestFilter";
 
 const generateId = (role: string, existingGuests: VipGuest[]): string => {
     const prefixMap: Record<string, string> = {
@@ -41,6 +42,7 @@ const VipGuestTab = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
+  const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState<(VipGuest & { sponsorship_amount?: number }) | null>(null);
@@ -143,16 +145,43 @@ const VipGuestTab = () => {
     onError: (error) => showError(error.message),
   });
 
+  const guestsWithRevenue = useMemo(() => {
+    const revenueMap = new Map(revenueData.map(r => [r.guest_id, r.sponsorship]));
+    return guests.map(guest => ({
+      ...guest,
+      sponsorship_amount: revenueMap.get(guest.id) || 0,
+    }));
+  }, [guests, revenueData]);
+
   const filteredGuests = useMemo(() => {
-    return guests.filter((guest) => {
+    return guestsWithRevenue.filter((guest) => {
       const searchMatch =
         guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (guest.phone && guest.phone.includes(searchTerm)) ||
         guest.role.toLowerCase().includes(searchTerm.toLowerCase());
       const roleMatch = roleFilters.length === 0 || roleFilters.includes(guest.role);
-      return searchMatch && roleMatch;
+      
+      const advancedMatch = Object.entries(advancedFilters).every(([field, value]) => {
+        if (!value || value === 'all') return true;
+        const hasValue = (val: any) => val !== null && val !== undefined && val !== '';
+
+        switch (field) {
+          case 'phone':
+            return value === 'yes' ? hasValue(guest.phone) : !hasValue(guest.phone);
+          case 'sponsorship':
+            return value === 'yes' ? guest.sponsorship_amount > 0 : guest.sponsorship_amount === 0;
+          case 'secondaryInfo':
+            return value === 'yes' ? hasValue(guest.secondaryInfo) : !hasValue(guest.secondaryInfo);
+          case 'materials':
+            return value === 'yes' ? hasValue(guest.materials) : !hasValue(guest.materials);
+          default:
+            return true;
+        }
+      });
+
+      return searchMatch && roleMatch && advancedMatch;
     });
-  }, [guests, searchTerm, roleFilters]);
+  }, [guestsWithRevenue, searchTerm, roleFilters, advancedFilters]);
 
   const handleSelectGuest = (id: string) => {
     setSelectedGuests((prev) =>
@@ -250,6 +279,12 @@ const VipGuestTab = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            <AdvancedGuestFilter
+              filters={advancedFilters}
+              onFilterChange={(field, value) => setAdvancedFilters(prev => ({ ...prev, [field]: value }))}
+              onClearFilters={() => setAdvancedFilters({})}
+              filterConfig={{ showPhone: true, showSponsorship: true, showSecondaryInfo: true, showMaterials: true }}
+            />
           </div>
           {canDelete && selectedGuests.length > 0 && (
             <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending} className="w-full">
@@ -295,6 +330,12 @@ const VipGuestTab = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <AdvancedGuestFilter
+                filters={advancedFilters}
+                onFilterChange={(field, value) => setAdvancedFilters(prev => ({ ...prev, [field]: value }))}
+                onClearFilters={() => setAdvancedFilters({})}
+                filterConfig={{ showPhone: true, showSponsorship: true, showSecondaryInfo: true, showMaterials: true }}
+              />
               {canDelete && selectedGuests.length > 0 && (
                 <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending}>
                   <Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})
