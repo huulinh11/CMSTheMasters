@@ -33,6 +33,16 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { PageHeader } from "@/components/PageHeader";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Timeline = () => {
   const queryClient = useQueryClient();
@@ -42,6 +52,7 @@ const Timeline = () => {
   const [baseTime, setBaseTime] = useState('08:00');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<TimelineEvent | null>(null);
+  const [isPublishAlertOpen, setIsPublishAlertOpen] = useState(false);
 
   const { data: dbItems = [], isLoading: isLoadingItems } = useQuery<TimelineEvent[]>({
     queryKey: ['timeline_events'],
@@ -166,15 +177,19 @@ const Timeline = () => {
   });
 
   const publishMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.rpc('publish_timeline');
+    mutationFn: async ({ withNotification }: { withNotification: boolean }) => {
+      const { error } = await supabase.rpc('publish_timeline', { with_notification: withNotification });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['public_timeline_events'] });
       showSuccess("Timeline đã được công khai!");
+      setIsPublishAlertOpen(false);
     },
-    onError: (error: any) => showError(error.message),
+    onError: (error: any) => {
+      showError(error.message);
+      setIsPublishAlertOpen(false);
+    },
   });
 
   const handleOpenAddDialog = () => {
@@ -230,10 +245,31 @@ const Timeline = () => {
               {isMobile ? 'Thêm' : 'Thêm mốc thời gian'}
             </Button>
             <div className="flex items-center gap-2">
-              <Button onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending || isSynced} className="flex-1">
-                <Megaphone className="mr-2 h-4 w-4" />
-                {publishMutation.isPending ? 'Đang public...' : 'Public timeline'}
-              </Button>
+              <AlertDialog open={isPublishAlertOpen} onOpenChange={setIsPublishAlertOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button disabled={isSynced} className="flex-1">
+                    <Megaphone className="mr-2 h-4 w-4" />
+                    Public timeline
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Xác nhận Public Timeline</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Bạn có muốn gửi thông báo cập nhật timeline đến tất cả khách mời không?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={publishMutation.isPending}>Hủy</AlertDialogCancel>
+                    <Button variant="outline" onClick={() => publishMutation.mutate({ withNotification: false })} disabled={publishMutation.isPending}>
+                      Không thông báo
+                    </Button>
+                    <Button onClick={() => publishMutation.mutate({ withNotification: true })} disabled={publishMutation.isPending}>
+                      {publishMutation.isPending ? 'Đang xử lý...' : 'Có, gửi thông báo'}
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <Link to="/timeline/public" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="icon">
                   <Eye className="h-4 w-4" />
