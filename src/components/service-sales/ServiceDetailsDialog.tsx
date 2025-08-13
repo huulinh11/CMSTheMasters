@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { showSuccess, showError } from "@/utils/toast";
-import { ServiceNotesDialog } from "./ServiceNotesDialog";
+import { EditServiceNotesDialog } from "./EditServiceNotesDialog";
 
 interface ServiceDetailsDialogProps {
   open: boolean;
@@ -57,7 +57,7 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
   const [payingItem, setPayingItem] = useState<GuestService | null>(null);
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
   const [deletingService, setDeletingService] = useState<GuestService | null>(null);
-  const [viewingNotes, setViewingNotes] = useState<{ notes: string; serviceName: string } | null>(null);
+  const [editingNotesService, setEditingNotesService] = useState<GuestService | null>(null);
 
   const deleteMutation = useMutation({
     mutationFn: async (serviceId: string) => {
@@ -152,11 +152,9 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
                         </Button>
                       )}
                     </div>
-                    {service.notes && (
-                      <Button className="w-full" variant="outline" onClick={() => setViewingNotes({ notes: service.notes!, serviceName: service.service_name })}>
-                        <MessageSquare className="mr-2 h-4 w-4" /> Xem ghi chú
-                      </Button>
-                    )}
+                    <Button className="w-full" variant="outline" onClick={() => setEditingNotesService(service)}>
+                      <MessageSquare className="mr-2 h-4 w-4" /> {service.notes ? 'Sửa ghi chú' : 'Thêm ghi chú'}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -187,7 +185,7 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
                   ) : (<span>N/A</span>)}
                 </TableCell>
                 <TableCell className="text-right space-x-1">
-                  {service.notes && (<Button variant="ghost" size="icon" onClick={() => setViewingNotes({ notes: service.notes!, serviceName: service.service_name })}><MessageSquare className="h-4 w-4" /></Button>)}
+                  <Button variant="ghost" size="icon" onClick={() => setEditingNotesService(service)}><MessageSquare className="h-4 w-4" /></Button>
                   {service.payment_count > 0 && (<Button variant="outline" size="sm" onClick={() => setHistoryGuest({ id: guestSummary.guest_id, name: guestSummary.guest_name } as GuestRevenue)}>Lịch sử</Button>)}
                   {service.is_free_trial ? (
                     <Button variant="secondary" size="sm" onClick={() => onConvertTrial(service.id)} className="bg-orange-500 hover:bg-orange-600 text-white"><RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi</Button>
@@ -235,12 +233,16 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <ServiceNotesDialog
-        open={!!viewingNotes}
-        onOpenChange={() => setViewingNotes(null)}
-        notes={viewingNotes?.notes || ''}
-        serviceName={viewingNotes?.serviceName || ''}
-        guestName={guest_name}
+      <EditServiceNotesDialog
+        open={!!editingNotesService}
+        onOpenChange={() => setEditingNotesService(null)}
+        service={editingNotesService ? {
+          id: editingNotesService.id,
+          notes: editingNotesService.notes,
+          serviceName: editingNotesService.service_name,
+          guestName: guest_name,
+          guestId: guestSummary.guest_id,
+        } : null}
       />
     </>
   );
