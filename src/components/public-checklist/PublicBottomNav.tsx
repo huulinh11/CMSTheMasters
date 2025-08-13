@@ -15,7 +15,7 @@ const PublicBottomNav = () => {
   const { unreadCount } = useGuestNotifications(identifier || null);
 
   return (
-    <footer className="md:relative fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:shadow-none flex-shrink-0">
+    <footer className="md:relative fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] md:shadow-none flex-shrink-0 pb-[env(safe-area-inset-bottom)]">
       <nav className="flex justify-around items-center h-16">
         {navItems.map((item) => (
           <NavItem
