@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { GuestService, Service, GuestServiceSummary } from "@/types/service-sales";
@@ -115,6 +115,17 @@ const ServiceSalesPage = () => {
 
     return Array.from(groupedByGuest.values());
   }, [guestServices, vipGuestsWithImages]);
+
+  useEffect(() => {
+    if (viewingGuestSummary) {
+      const updatedSummary = guestServiceSummaries.find(
+        (summary) => summary.guest_id === viewingGuestSummary.guest_id
+      );
+      if (updatedSummary && JSON.stringify(updatedSummary) !== JSON.stringify(viewingGuestSummary)) {
+        setViewingGuestSummary(updatedSummary);
+      }
+    }
+  }, [guestServiceSummaries, viewingGuestSummary]);
 
   const filteredSummaries = useMemo(() => {
     return guestServiceSummaries.filter(summary => {
