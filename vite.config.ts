@@ -14,7 +14,7 @@ export default defineConfig(() => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'placeholder.svg', 'robots.txt', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: ['favicon.ico', 'placeholder.svg', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
         name: 'Event Management App',
         short_name: 'EventApp',
@@ -26,17 +26,17 @@ export default defineConfig(() => ({
         start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'apple-touch-icon.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'apple-touch-icon.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'apple-touch-icon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
