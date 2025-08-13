@@ -101,7 +101,7 @@ export const VipGuestTable = ({
                 </TableCell>
                 <TableCell>
                   <span 
-                    className="px-2 py-1 rounded-md text-xs font-medium"
+                    className="px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap"
                     style={getRoleColors(guest.role)}
                   >
                     {guest.role}
