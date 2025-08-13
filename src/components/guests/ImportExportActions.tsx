@@ -12,12 +12,12 @@ import { Guest } from "@/types/guest";
 // Define headers for the CSV file
 const CSV_HEADERS = [
   "id", "name", "role", "phone", "type", "referrer", "notes", 
-  "secondary_info", "sponsorship", "paid_amount", "payment_source", "materials"
+  "secondary_info", "sponsorship", "paid_amount", "payment_source", "materials", "facebook_link"
 ];
 
 const CSV_DISPLAY_HEADERS = [
   "ID (để trống nếu tạo mới)", "Tên", "Vai trò", "SĐT", "Loại (Chức vụ/Khách mời)", "Người giới thiệu", "Ghi chú", 
-  "Thông tin phụ (cho Chức vụ)", "Tài trợ", "Số tiền đã thanh toán (chỉ cho khách mới)", "Nguồn thanh toán (cho Khách mời)", "Tư liệu"
+  "Thông tin phụ (cho Chức vụ)", "Tài trợ", "Số tiền đã thanh toán (chỉ cho khách mới)", "Nguồn thanh toán (cho Khách mời)", "Tư liệu", "Link Facebook (cho Chức vụ)"
 ];
 
 // Helper to generate a unique ID for new guests
@@ -58,6 +58,7 @@ export const ImportExportActions = () => {
           sponsorship: revenue?.sponsorship || 0,
           paid_amount: 0,
           payment_source: '',
+          facebook_link: latestVip.facebook_link || '',
         };
       } else {
         // If no VIP, try the latest regular guest
@@ -71,6 +72,7 @@ export const ImportExportActions = () => {
             sponsorship: revenue?.sponsorship || 0,
             paid_amount: 0,
             payment_source: revenue?.payment_source || '',
+            facebook_link: '',
           };
         }
       }
@@ -136,6 +138,7 @@ export const ImportExportActions = () => {
           sponsorship: vipRevenueMap.get(g.id)?.sponsorship || 0,
           paid_amount: 0, // Paid amount is not exported
           payment_source: '',
+          facebook_link: g.facebook_link || '',
         })),
         ...guests.map(g => ({
           ...g,
@@ -144,6 +147,7 @@ export const ImportExportActions = () => {
           sponsorship: guestRevenueMap.get(g.id)?.sponsorship || 0,
           paid_amount: 0, // Paid amount is not exported
           payment_source: guestRevenueMap.get(g.id)?.payment_source || '',
+          facebook_link: '',
         })),
       ];
 
@@ -276,6 +280,7 @@ export const ImportExportActions = () => {
               vipGuestsToUpsert.push({
                 ...commonData,
                 secondary_info: row.secondary_info || null,
+                facebook_link: row.facebook_link || null,
               });
               if (row.sponsorship) {
                 vipRevenueToUpsert.push({
