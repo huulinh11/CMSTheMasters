@@ -5,20 +5,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Service, GuestService, GuestServiceSummary } from "@/types/service-sales";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { CreditCard, RefreshCw, History, Trash2, MessageSquare } from "lucide-react";
+import { RefreshCw, History, Trash2 } from "lucide-react";
 import { PayServiceDialog } from "@/components/service-sales/PayServiceDialog";
 import { Badge } from "@/components/ui/badge";
 import GuestHistoryDialog from "../Revenue/GuestHistoryDialog";
@@ -53,7 +50,6 @@ const InfoRow = ({ label, value, valueClass }: { label: string; value: string; v
 );
 
 export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServices, onStatusChange, onConvertTrial }: ServiceDetailsDialogProps) => {
-  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [payingItem, setPayingItem] = useState<GuestService | null>(null);
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
@@ -93,136 +89,92 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
       );
     }
 
-    if (isMobile) {
-      return (
-        <div className="space-y-3">
-          {services.map((service) => {
-            const serviceMaster = allServices.find(s => s.id === service.service_id);
-            return (
-              <Card key={service.id}>
-                <CardHeader className="pb-2 flex flex-row justify-between items-start">
-                  <div>
-                    <CardTitle className="text-base">{service.service_name}</CardTitle>
-                    <CardDescription>
-                      {formatCurrency(service.price)}
-                      {service.is_free_trial && <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-red-500"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeletingService(service);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
-                <CardContent className="text-sm space-y-3">
-                  <InfoRow label="Đã trả" value={formatCurrency(service.paid_amount)} valueClass="text-green-600" />
-                  <InfoRow label="Còn lại" value={formatCurrency(service.unpaid_amount)} valueClass="text-red-600" />
-                  <InfoRow label="Người giới thiệu" value={service.referrer_name || 'N/A'} />
-                  <div className="space-y-2">
-                    <Label>Trạng thái</Label>
-                    {serviceMaster && serviceMaster.statuses.length > 0 ? (
-                      <Select
-                        value={service.status || ''}
-                        onValueChange={(value) => onStatusChange(service.id, value)}
-                      >
-                        <SelectTrigger><SelectValue placeholder="Chọn trạng thái" /></SelectTrigger>
-                        <SelectContent>{serviceMaster.statuses.map(status => (<SelectItem key={status} value={status}>{status}</SelectItem>))}</SelectContent>
-                      </Select>
-                    ) : (<p className="text-sm text-muted-foreground">N/A</p>)}
-                  </div>
-                  {service.notes && (
-                    <div className="text-sm text-slate-600 bg-slate-50 p-2 rounded-md whitespace-pre-wrap">
-                      <Label className="font-semibold text-slate-800">Ghi chú:</Label>
-                      <p>{service.notes}</p>
-                    </div>
-                  )}
-                  <div className="flex flex-col gap-2 pt-2">
-                    <div className="flex gap-2">
-                      {service.is_free_trial ? (
-                        <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white" variant="secondary" onClick={() => onConvertTrial(service.id)}>
-                          Chuyển đổi
-                        </Button>
-                      ) : (
-                        <Button className="flex-1" onClick={() => setPayingItem(service)} disabled={service.unpaid_amount <= 0}>
-                          Thanh toán
-                        </Button>
-                      )}
-                      <Button className="flex-1" variant="outline" onClick={() => setEditingNotesService(service)}>
-                        {service.notes ? 'Sửa ghi chú' : 'Thêm ghi chú'}
-                      </Button>
-                    </div>
-                    {service.payment_count > 0 && (
-                      <Button className="w-full" variant="secondary" onClick={() => setHistoryGuest({ id: guestSummary.guest_id, name: guestSummary.guest_name } as GuestRevenue)}>
-                        <History className="mr-2 h-4 w-4" /> Lịch sử
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      );
-    }
-
     return (
-      <Table>
-        <TableHeader><TableRow><TableHead>Tên dịch vụ</TableHead><TableHead>Giá</TableHead><TableHead>Đã trả</TableHead><TableHead>Còn lại</TableHead><TableHead>Trạng thái</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
-        <TableBody>
-          {services.map((service) => {
-            const serviceMaster = allServices.find(s => s.id === service.service_id);
-            return (
-              <TableRow key={service.id}>
-                <TableCell>
-                  <div className="font-medium">{service.service_name}{service.is_free_trial && <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}</div>
-                  {service.notes && <p className="text-xs text-slate-500 mt-1 max-w-xs truncate" title={service.notes}>{service.notes}</p>}
-                </TableCell>
-                <TableCell>{formatCurrency(service.price)}</TableCell>
-                <TableCell className="text-green-600">{formatCurrency(service.paid_amount)}</TableCell>
-                <TableCell className="text-red-600">{formatCurrency(service.unpaid_amount)}</TableCell>
-                <TableCell>
+      <div className="space-y-3">
+        {services.map((service) => {
+          const serviceMaster = allServices.find(s => s.id === service.service_id);
+          return (
+            <Card key={service.id}>
+              <CardHeader className="pb-2 flex flex-row justify-between items-start">
+                <div>
+                  <CardTitle className="text-base">{service.service_name}</CardTitle>
+                  <CardDescription>
+                    {formatCurrency(service.price)}
+                    {service.is_free_trial && <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-red-500"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingService(service);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="text-sm space-y-3">
+                <InfoRow label="Đã trả" value={formatCurrency(service.paid_amount)} valueClass="text-green-600" />
+                <InfoRow label="Còn lại" value={formatCurrency(service.unpaid_amount)} valueClass="text-red-600" />
+                <InfoRow label="Người giới thiệu" value={service.referrer_name || 'N/A'} />
+                <div className="space-y-2">
+                  <Label>Trạng thái</Label>
                   {serviceMaster && serviceMaster.statuses.length > 0 ? (
-                    <Select value={service.status || ''} onValueChange={(value) => onStatusChange(service.id, value)}>
-                      <SelectTrigger className="w-[150px]"><SelectValue placeholder="Chọn trạng thái" /></SelectTrigger>
+                    <Select
+                      value={service.status || ''}
+                      onValueChange={(value) => onStatusChange(service.id, value)}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Chọn trạng thái" /></SelectTrigger>
                       <SelectContent>{serviceMaster.statuses.map(status => (<SelectItem key={status} value={status}>{status}</SelectItem>))}</SelectContent>
                     </Select>
-                  ) : (<span>N/A</span>)}
-                </TableCell>
-                <TableCell className="text-right space-x-1">
-                  {service.payment_count > 0 && (<Button variant="outline" size="sm" onClick={() => setHistoryGuest({ id: guestSummary.guest_id, name: guestSummary.guest_name } as GuestRevenue)}>Lịch sử</Button>)}
-                  {service.is_free_trial ? (
-                    <Button variant="secondary" size="sm" onClick={() => onConvertTrial(service.id)} className="bg-orange-500 hover:bg-orange-600 text-white">Chuyển đổi</Button>
-                  ) : (
-                    <Button variant="outline" size="sm" onClick={() => setPayingItem(service)} disabled={service.unpaid_amount <= 0}>Thanh toán</Button>
+                  ) : (<p className="text-sm text-muted-foreground">N/A</p>)}
+                </div>
+                {service.notes && (
+                  <div className="text-sm text-slate-600 bg-slate-50 p-2 rounded-md whitespace-pre-wrap">
+                    <Label className="font-semibold text-slate-800">Ghi chú:</Label>
+                    <p>{service.notes}</p>
+                  </div>
+                )}
+                <div className="flex flex-col gap-2 pt-2">
+                  <div className="flex gap-2">
+                    {service.is_free_trial ? (
+                      <Button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white" variant="secondary" onClick={() => onConvertTrial(service.id)}>
+                        Chuyển đổi
+                      </Button>
+                    ) : (
+                      <Button className="flex-1" onClick={() => setPayingItem(service)} disabled={service.unpaid_amount <= 0}>
+                        Thanh toán
+                      </Button>
+                    )}
+                    <Button className="flex-1" variant="outline" onClick={() => setEditingNotesService(service)}>
+                      {service.notes ? 'Sửa ghi chú' : 'Thêm ghi chú'}
+                    </Button>
+                  </div>
+                  {service.payment_count > 0 && (
+                    <Button className="w-full" variant="secondary" onClick={() => setHistoryGuest({ id: guestSummary.guest_id, name: guestSummary.guest_name } as GuestRevenue)}>
+                      <History className="mr-2 h-4 w-4" /> Lịch sử
+                    </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={() => setEditingNotesService(service)}>{service.notes ? 'Sửa Ghi chú' : 'Thêm Ghi chú'}</Button>
-                  <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => setDeletingService(service)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     );
   };
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Chi tiết dịch vụ đã bán</DialogTitle>
             <DialogDescription>Cho khách mời: {guest_name}</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh] mt-4">
+          <ScrollArea className="max-h-[60vh] mt-4 p-1">
             {renderContent()}
           </ScrollArea>
         </DialogContent>
