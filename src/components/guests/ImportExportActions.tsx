@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
+import { showSuccess, showError, showLoading, dismissToast, showNotice } from "@/utils/toast";
 import Papa from "papaparse";
 import { useQueryClient } from "@tanstack/react-query";
 import { generateGuestSlug } from "@/lib/slug";
@@ -12,12 +12,12 @@ import { Guest } from "@/types/guest";
 // Define headers for the CSV file
 const CSV_HEADERS = [
   "id", "name", "role", "phone", "type", "referrer", "notes", 
-  "secondary_info", "sponsorship", "payment_source", "materials"
+  "secondary_info", "sponsorship", "paid_amount", "payment_source", "materials"
 ];
 
 const CSV_DISPLAY_HEADERS = [
   "ID (để trống nếu tạo mới)", "Tên", "Vai trò", "SĐT", "Loại (Chức vụ/Khách mời)", "Người giới thiệu", "Ghi chú", 
-  "Thông tin phụ (cho Chức vụ)", "Tài trợ", "Nguồn thanh toán (cho Khách mời)", "Tư liệu"
+  "Thông tin phụ (cho Chức vụ)", "Tài trợ", "Số tiền đã thanh toán (chỉ cho khách mới)", "Nguồn thanh toán (cho Khách mời)", "Tư liệu"
 ];
 
 // Helper to generate a unique ID for new guests
@@ -56,6 +56,7 @@ export const ImportExportActions = () => {
           type: 'Chức vụ',
           secondary_info: latestVip.secondary_info,
           sponsorship: revenue?.sponsorship || 0,
+          paid_amount: 0,
           payment_source: '',
         };
       } else {
@@ -68,6 +69,7 @@ export const ImportExportActions = () => {
             type: 'Khách mời',
             secondary_info: '',
             sponsorship: revenue?.sponsorship || 0,
+            paid_amount: 0,
             payment_source: revenue?.payment_source || '',
           };
         }
@@ -132,6 +134,7 @@ export const ImportExportActions = () => {
           type: 'Chức vụ',
           secondary_info: g.secondary_info,
           sponsorship: vipRevenueMap.get(g.id)?.sponsorship || 0,
+          paid_amount: 0, // Paid amount is not exported
           payment_source: '',
         })),
         ...guests.map(g => ({
@@ -139,6 +142,7 @@ export const ImportExportActions = () => {
           type: 'Khách mời',
           secondary_info: '',
           sponsorship: guestRevenueMap.get(g.id)?.sponsorship || 0,
+          paid_amount: 0, // Paid amount is not exported
           payment_source: guestRevenueMap.get(g.id)?.payment_source || '',
         })),
       ];
@@ -209,10 +213,16 @@ export const ImportExportActions = () => {
 
           if (rows.length === 0) throw new Error("File không có dữ liệu.");
 
-          const { data: existingVipGuests } = await supabase.from('vip_guests').select('id');
-          const { data: existingGuests } = await supabase.from('guests').select('id');
+          const { data: existingVipGuests, error: vipError } = await supabase.from('vip_guests').select('id, phone');
+          if (vipError) throw vipError;
+          const { data: existingGuests, error: guestError } = await supabase.from('guests').select('id, phone');
+          if (guestError) throw guestError;
           const { data: roleConfigs, error: roleError } = await supabase.from('role_configurations').select('name, type');
           if (roleError) throw new Error(`Không thể tải cấu hình vai trò: ${roleError.message}`);
+
+          const phoneToIdMap = new Map<string, string>();
+          (existingVipGuests || []).forEach(g => { if (g.phone) phoneToIdMap.set(g.phone, g.id) });
+          (existingGuests || []).forEach(g => { if (g.phone) phoneToIdMap.set(g.phone, g.id) });
 
           const roleTypeMap = new Map(roleConfigs.map(rc => [rc.name, rc.type]));
 
@@ -220,8 +230,19 @@ export const ImportExportActions = () => {
           const guestsToUpsert: any[] = [];
           const vipRevenueToUpsert: any[] = [];
           const guestRevenueToUpsert: any[] = [];
+          const vipPaymentsToInsert: any[] = [];
+          const guestPaymentsToInsert: any[] = [];
+          const skippedRows: { row: any, reason: string }[] = [];
 
           for (const row of rows) {
+            if (row.phone) {
+              const existingId = phoneToIdMap.get(row.phone);
+              if (existingId && (!row.id || row.id !== existingId)) {
+                skippedRows.push({ row, reason: `SĐT ${row.phone} đã tồn tại.` });
+                continue;
+              }
+            }
+
             let type = row.type;
             if (!type && row.role) {
               type = roleTypeMap.get(row.role);
@@ -233,7 +254,12 @@ export const ImportExportActions = () => {
             }
 
             const isVip = type === 'Chức vụ';
+            const isNewGuest = !row.id;
             const guestId = row.id || generateNewId(row.role, type as 'Chức vụ' | 'Khách mời', isVip ? (existingVipGuests || []) : (existingGuests || []));
+
+            if (row.phone) {
+              phoneToIdMap.set(row.phone, guestId);
+            }
 
             const commonData = {
               id: guestId,
@@ -267,6 +293,15 @@ export const ImportExportActions = () => {
                 });
               }
             }
+
+            if (isNewGuest && row.paid_amount && Number(row.paid_amount) > 0) {
+              const payment = { guest_id: guestId, amount: Number(row.paid_amount) };
+              if (isVip) {
+                vipPaymentsToInsert.push(payment);
+              } else {
+                guestPaymentsToInsert.push(payment);
+              }
+            }
           }
 
           if (vipGuestsToUpsert.length > 0) {
@@ -285,9 +320,21 @@ export const ImportExportActions = () => {
             const { error } = await supabase.from('guest_revenue').upsert(guestRevenueToUpsert);
             if (error) throw new Error(`Lỗi import doanh thu khách mời: ${error.message}`);
           }
+          if (vipPaymentsToInsert.length > 0) {
+            const { error } = await supabase.from('vip_payments').insert(vipPaymentsToInsert);
+            if (error) throw new Error(`Lỗi import thanh toán VIP: ${error.message}`);
+          }
+          if (guestPaymentsToInsert.length > 0) {
+            const { error } = await supabase.from('guest_payments').insert(guestPaymentsToInsert);
+            if (error) throw new Error(`Lỗi import thanh toán khách mời: ${error.message}`);
+          }
 
           dismissToast(toastId);
-          showSuccess(`Import thành công ${rows.length} dòng dữ liệu!`);
+          showSuccess(`Import thành công ${rows.length - skippedRows.length} dòng dữ liệu!`);
+          if (skippedRows.length > 0) {
+            showNotice(`${skippedRows.length} dòng đã bị bỏ qua do SĐT bị trùng.`);
+            console.warn("Skipped rows:", skippedRows);
+          }
           queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
           queryClient.invalidateQueries({ queryKey: ['guests'] });
           queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
