@@ -20,22 +20,6 @@ const CSV_DISPLAY_HEADERS = [
   "Thông tin phụ (cho Chức vụ)", "Tài trợ", "Số tiền đã thanh toán (chỉ cho khách mới)", "Nguồn thanh toán (cho Khách mời)", "Tư liệu", "Link Facebook (cho Chức vụ)"
 ];
 
-// Helper to generate a unique ID for new guests
-const generateNewId = (role: string, type: 'Chức vụ' | 'Khách mời', existingGuests: { id: string }[]): string => {
-    const prefixMap: Record<string, string> = {
-        // VIP
-        "Prime Speaker": "PS", "Guest Speaker": "GS", "Mentor kiến tạo": "ME", "Phó BTC": "PB",
-        "Đại sứ": "DS", "Cố vấn": "CV", "Giám đốc": "GD", "Nhà tài trợ": "NT",
-        // Regular
-        "Khách phổ thông": "KPT", "VIP": "VIP", "V-Vip": "VVP", "Super Vip": "SVP", "Vé trải nghiệm": "VTN"
-    };
-    const prefix = prefixMap[role] || role.substring(0, 2).toUpperCase();
-    
-    const roleGuests = existingGuests.filter(g => g.id.startsWith(prefix));
-    const nextId = roleGuests.length + 1;
-    return `${prefix}${String(nextId).padStart(3, '0')}`;
-};
-
 export const ImportExportActions = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -238,6 +222,13 @@ export const ImportExportActions = () => {
           const guestPaymentsToInsert: any[] = [];
           const skippedRows: { row: any, reason: string }[] = [];
 
+          const newIdCounters: Record<string, number> = {};
+          const prefixMap: Record<string, string> = {
+              "Prime Speaker": "PS", "Guest Speaker": "GS", "Mentor kiến tạo": "ME", "Phó BTC": "PB",
+              "Đại sứ": "DS", "Cố vấn": "CV", "Giám đốc": "GD", "Nhà tài trợ": "NT",
+              "Khách phổ thông": "KPT", "VIP": "VIP", "V-Vip": "VVP", "Super Vip": "SVP", "Vé trải nghiệm": "VTN"
+          };
+
           for (const row of rows) {
             if (row.phone) {
               const existingId = phoneToIdMap.get(row.phone);
@@ -259,7 +250,17 @@ export const ImportExportActions = () => {
 
             const isVip = type === 'Chức vụ';
             const isNewGuest = !row.id;
-            const guestId = row.id || generateNewId(row.role, type as 'Chức vụ' | 'Khách mời', isVip ? (existingVipGuests || []) : (existingGuests || []));
+            
+            let guestId = row.id;
+            if (isNewGuest) {
+                const prefix = prefixMap[row.role] || row.role.substring(0, 2).toUpperCase();
+                if (newIdCounters[prefix] === undefined) {
+                    const existingRoleGuests = (isVip ? (existingVipGuests || []) : (existingGuests || [])).filter(g => g.id.startsWith(prefix));
+                    newIdCounters[prefix] = existingRoleGuests.length;
+                }
+                newIdCounters[prefix]++;
+                guestId = `${prefix}${String(newIdCounters[prefix]).padStart(3, '0')}`;
+            }
 
             if (row.phone) {
               phoneToIdMap.set(row.phone, guestId);
