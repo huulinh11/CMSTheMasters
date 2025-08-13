@@ -342,6 +342,21 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                   <InfoRow icon={Phone} label="SĐT" value={guest.phone} />
                   <InfoRow icon={User} label="Người giới thiệu" value={guest.referrer} />
                   {guest.secondaryInfo && <InfoRow icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} />}
+                  {guestType === 'vip' && guest.facebook_link && (
+                    <InfoRow icon={LinkIcon} label="Facebook">
+                      <div className="flex items-center gap-1">
+                        <a href={guest.facebook_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                          Link
+                        </a>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                          navigator.clipboard.writeText(guest.facebook_link);
+                          showSuccess("Đã sao chép link Facebook!");
+                        }}>
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </InfoRow>
+                  )}
                   <InfoRow icon={FileText} label="Ghi chú" value={guest.notes} />
                   <InfoRow icon={FileText} label="Tư liệu">
                     <div className="flex items-center gap-2">
@@ -530,7 +545,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       />
       <EditProfileDialog
         open={isProfileDialogOpen}
-        onOpenChange={setIsProfileDialogOpen}
+        onOpenChange={(isOpen) => !isOpen && setIsProfileDialogOpen(null)}
         guest={{ ...guest, type: guestType === 'vip' ? 'Chức vụ' : 'Khách mời' }}
         onSave={handleSaveProfile}
         isSaving={profileUpdateMutation.isPending}
