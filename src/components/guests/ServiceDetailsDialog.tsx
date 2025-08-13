@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,7 +18,6 @@ import { Service } from "@/types/service-sales";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { CreditCard, RefreshCw, History, Trash2, MessageSquare } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { PayServiceDialog } from "@/components/service-sales/PayServiceDialog";
 import { EditServiceNotesDialog } from "../service-sales/EditServiceNotesDialog";
@@ -115,17 +115,22 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestName, services }
                       <p className="text-sm text-muted-foreground">N/A</p>
                     )}
                   </div>
-                  <div className="flex flex-col gap-2 pt-2">
+                  {service.notes && (
+                    <div className="text-sm text-slate-600 bg-slate-50 p-2 rounded-md whitespace-pre-wrap">
+                      <Label className="font-semibold text-slate-800">Ghi chú:</Label>
+                      <p>{service.notes}</p>
+                    </div>
+                  )}
+                  <div className="flex gap-2 pt-2">
                     <Button
-                      className="w-full"
+                      className="flex-1"
                       onClick={() => setPayingItem(service)}
                       disabled={service.unpaid_amount <= 0}
                     >
-                      <CreditCard className="mr-2 h-4 w-4" />
                       Thanh toán
                     </Button>
-                    <Button className="w-full" variant="outline" onClick={() => setEditingNotesService(service)}>
-                      <MessageSquare className="mr-2 h-4 w-4" /> {service.notes ? 'Sửa ghi chú' : 'Thêm ghi chú'}
+                    <Button className="flex-1" variant="outline" onClick={() => setEditingNotesService(service)}>
+                      {service.notes ? 'Sửa Ghi chú' : 'Thêm Ghi chú'}
                     </Button>
                   </div>
                 </CardContent>
@@ -153,7 +158,10 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestName, services }
             const serviceMaster = allServices.find(s => s.id === service.service_id);
             return (
               <TableRow key={service.id}>
-                <TableCell className="font-medium">{service.service_name}</TableCell>
+                <TableCell>
+                  <div className="font-medium">{service.service_name}</div>
+                  {service.notes && <p className="text-xs text-slate-500 mt-1 max-w-xs truncate" title={service.notes}>{service.notes}</p>}
+                </TableCell>
                 <TableCell>{formatCurrency(service.price)}</TableCell>
                 <TableCell className="text-green-600">{formatCurrency(service.paid_amount)}</TableCell>
                 <TableCell className="text-red-600">{formatCurrency(service.price - service.paid_amount)}</TableCell>
@@ -176,9 +184,13 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestName, services }
                     <span>N/A</span>
                   )}
                 </TableCell>
-                <TableCell className="text-right space-x-1">
-                  <Button variant="ghost" size="icon" onClick={() => setEditingNotesService(service)}>
-                    <MessageSquare className="h-4 w-4" />
+                <TableCell className="text-right space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingNotesService(service)}
+                  >
+                    {service.notes ? 'Sửa Ghi chú' : 'Thêm Ghi chú'}
                   </Button>
                   <Button
                     variant="outline"
@@ -186,7 +198,6 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestName, services }
                     onClick={() => setPayingItem(service)}
                     disabled={service.unpaid_amount <= 0}
                   >
-                    <CreditCard className="mr-2 h-4 w-4" />
                     Thanh toán
                   </Button>
                 </TableCell>

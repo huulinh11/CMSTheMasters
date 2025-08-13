@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -135,26 +136,32 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
                       </Select>
                     ) : (<p className="text-sm text-muted-foreground">N/A</p>)}
                   </div>
+                  {service.notes && (
+                    <div className="text-sm text-slate-600 bg-slate-50 p-2 rounded-md whitespace-pre-wrap">
+                      <Label className="font-semibold text-slate-800">Ghi chú:</Label>
+                      <p>{service.notes}</p>
+                    </div>
+                  )}
                   <div className="flex flex-col gap-2 pt-2">
                     <div className="flex gap-2">
                       {service.is_free_trial ? (
                         <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white" variant="secondary" onClick={() => onConvertTrial(service.id)}>
-                          <RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi
+                          Chuyển đổi
                         </Button>
                       ) : (
                         <Button className="flex-1" onClick={() => setPayingItem(service)} disabled={service.unpaid_amount <= 0}>
-                          <CreditCard className="mr-2 h-4 w-4" /> Thanh toán
+                          Thanh toán
                         </Button>
                       )}
-                      {service.payment_count > 0 && (
-                        <Button className="flex-1" variant="secondary" onClick={() => setHistoryGuest({ id: guestSummary.guest_id, name: guestSummary.guest_name } as GuestRevenue)}>
-                          <History className="mr-2 h-4 w-4" /> Lịch sử
-                        </Button>
-                      )}
+                      <Button className="flex-1" variant="outline" onClick={() => setEditingNotesService(service)}>
+                        {service.notes ? 'Sửa ghi chú' : 'Thêm ghi chú'}
+                      </Button>
                     </div>
-                    <Button className="w-full" variant="outline" onClick={() => setEditingNotesService(service)}>
-                      <MessageSquare className="mr-2 h-4 w-4" /> {service.notes ? 'Sửa ghi chú' : 'Thêm ghi chú'}
-                    </Button>
+                    {service.payment_count > 0 && (
+                      <Button className="w-full" variant="secondary" onClick={() => setHistoryGuest({ id: guestSummary.guest_id, name: guestSummary.guest_name } as GuestRevenue)}>
+                        <History className="mr-2 h-4 w-4" /> Lịch sử
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -172,7 +179,10 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
             const serviceMaster = allServices.find(s => s.id === service.service_id);
             return (
               <TableRow key={service.id}>
-                <TableCell className="font-medium">{service.service_name}{service.is_free_trial && <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}</TableCell>
+                <TableCell>
+                  <div className="font-medium">{service.service_name}{service.is_free_trial && <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}</div>
+                  {service.notes && <p className="text-xs text-slate-500 mt-1 max-w-xs truncate" title={service.notes}>{service.notes}</p>}
+                </TableCell>
                 <TableCell>{formatCurrency(service.price)}</TableCell>
                 <TableCell className="text-green-600">{formatCurrency(service.paid_amount)}</TableCell>
                 <TableCell className="text-red-600">{formatCurrency(service.unpaid_amount)}</TableCell>
@@ -185,13 +195,13 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
                   ) : (<span>N/A</span>)}
                 </TableCell>
                 <TableCell className="text-right space-x-1">
-                  <Button variant="ghost" size="icon" onClick={() => setEditingNotesService(service)}><MessageSquare className="h-4 w-4" /></Button>
                   {service.payment_count > 0 && (<Button variant="outline" size="sm" onClick={() => setHistoryGuest({ id: guestSummary.guest_id, name: guestSummary.guest_name } as GuestRevenue)}>Lịch sử</Button>)}
                   {service.is_free_trial ? (
-                    <Button variant="secondary" size="sm" onClick={() => onConvertTrial(service.id)} className="bg-orange-500 hover:bg-orange-600 text-white"><RefreshCw className="mr-2 h-4 w-4" /> Chuyển đổi</Button>
+                    <Button variant="secondary" size="sm" onClick={() => onConvertTrial(service.id)} className="bg-orange-500 hover:bg-orange-600 text-white">Chuyển đổi</Button>
                   ) : (
-                    <Button variant="outline" size="sm" onClick={() => setPayingItem(service)} disabled={service.unpaid_amount <= 0}><CreditCard className="mr-2 h-4 w-4" /> Thanh toán</Button>
+                    <Button variant="outline" size="sm" onClick={() => setPayingItem(service)} disabled={service.unpaid_amount <= 0}>Thanh toán</Button>
                   )}
+                  <Button variant="outline" size="sm" onClick={() => setEditingNotesService(service)}>{service.notes ? 'Sửa Ghi chú' : 'Thêm Ghi chú'}</Button>
                   <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => setDeletingService(service)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
