@@ -39,24 +39,21 @@ const SiteSettingsManager = () => {
         element.href = href;
       };
 
-      const websiteTitle = settings.website_title;
-      const description = settings.sidebar_title;
+      // Ưu tiên sidebar_title, nếu không có thì dùng website_title
+      const displayTitle = settings.sidebar_title || settings.website_title || 'Event Management App';
+      const description = settings.sidebar_title || 'Ứng dụng quản lý sự kiện';
       const imageUrl = settings.og_image_url;
       const faviconUrl = settings.favicon_url;
       const pageUrl = window.location.href;
 
-      if (websiteTitle) {
-        document.title = websiteTitle;
-        updateMetaTag('name', 'title', websiteTitle);
-        updateMetaTag('property', 'og:title', websiteTitle);
-        updateMetaTag('property', 'twitter:title', websiteTitle);
-      }
+      document.title = displayTitle;
+      updateMetaTag('name', 'title', displayTitle);
+      updateMetaTag('property', 'og:title', displayTitle);
+      updateMetaTag('property', 'twitter:title', displayTitle);
 
-      if (description) {
-        updateMetaTag('name', 'description', description);
-        updateMetaTag('property', 'og:description', description);
-        updateMetaTag('property', 'twitter:description', description);
-      }
+      updateMetaTag('name', 'description', description);
+      updateMetaTag('property', 'og:description', description);
+      updateMetaTag('property', 'twitter:description', description);
 
       if (faviconUrl) {
         updateLinkTag('icon', faviconUrl);
