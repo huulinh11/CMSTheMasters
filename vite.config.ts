@@ -16,8 +16,8 @@ export default defineConfig(() => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'placeholder.svg', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Checklist Sự kiện',
-        short_name: 'Checklist',
+        name: 'The Masters',
+        short_name: 'The Masters',
         description: 'Ứng dụng quản lý sự kiện, lịch trình và khách mời.',
         theme_color: '#fff5ea',
         background_color: '#fff5ea',
