@@ -16,7 +16,7 @@ const PublicChecklistLayout: React.FC<PublicChecklistLayoutProps> = ({ children,
             <NotificationBell guestId={guestId} />
           </header>
         )}
-        <main className="flex-1 overflow-y-auto pb-2">{children}</main>
+        <main className="flex-1 overflow-y-auto pb-16">{children}</main>
         <PublicBottomNav />
       </div>
     </div>
