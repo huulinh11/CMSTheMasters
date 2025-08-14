@@ -32,6 +32,7 @@ interface AdvancedGuestFilterProps {
     showSponsorship?: boolean;
     showSecondaryInfo?: boolean;
     showMaterials?: boolean;
+    showReferrer?: boolean;
   };
 }
 
@@ -39,6 +40,13 @@ const hasDataOptions = [
   { value: 'all', label: 'Tất cả' },
   { value: 'yes', label: 'Có' },
   { value: 'no', label: 'Không' },
+];
+
+const referrerOptions = [
+  { value: 'all', label: 'Tất cả' },
+  { value: 'has_referrer', label: 'Có người giới thiệu' },
+  { value: 'no_referrer', label: 'Không có người giới thiệu' },
+  { value: 'invalid_referrer', label: 'Không xác định' },
 ];
 
 const FilterGrid = ({ filters, onFilterChange, filterConfig }: Omit<AdvancedGuestFilterProps, 'onClearFilters'>) => (
@@ -76,6 +84,15 @@ const FilterGrid = ({ filters, onFilterChange, filterConfig }: Omit<AdvancedGues
         <Select value={filters.materials || 'all'} onValueChange={(value) => onFilterChange('materials', value)}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>{hasDataOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+    )}
+    {filterConfig.showReferrer && (
+      <div className="space-y-2">
+        <Label>Người giới thiệu</Label>
+        <Select value={filters.referrer || 'all'} onValueChange={(value) => onFilterChange('referrer', value)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>{referrerOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
         </Select>
       </div>
     )}

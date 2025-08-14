@@ -187,6 +187,11 @@ const RegularGuestTab = () => {
             return value === 'yes' ? guest.sponsorship_amount > 0 : guest.sponsorship_amount === 0;
           case 'materials':
             return value === 'yes' ? hasValue(guest.materials) : !hasValue(guest.materials);
+          case 'referrer':
+            if (value === 'has_referrer') return hasValue(guest.referrer);
+            if (value === 'no_referrer') return !hasValue(guest.referrer);
+            if (value === 'invalid_referrer') return hasValue(guest.referrer) && !guest.isReferrerValid;
+            return true;
           default:
             return true;
         }
@@ -292,7 +297,7 @@ const RegularGuestTab = () => {
               filters={advancedFilters}
               onFilterChange={(field, value) => setAdvancedFilters(prev => ({ ...prev, [field]: value }))}
               onClearFilters={() => setAdvancedFilters({})}
-              filterConfig={{ showPhone: true, showSponsorship: true, showMaterials: true }}
+              filterConfig={{ showPhone: true, showSponsorship: true, showMaterials: true, showReferrer: true }}
             />
           </div>
           {canDelete && selectedGuests.length > 0 && (
@@ -343,7 +348,7 @@ const RegularGuestTab = () => {
                 filters={advancedFilters}
                 onFilterChange={(field, value) => setAdvancedFilters(prev => ({ ...prev, [field]: value }))}
                 onClearFilters={() => setAdvancedFilters({})}
-                filterConfig={{ showPhone: true, showSponsorship: true, showMaterials: true }}
+                filterConfig={{ showPhone: true, showSponsorship: true, showMaterials: true, showReferrer: true }}
               />
               {canDelete && selectedGuests.length > 0 && (
                 <Button variant="destructive" onClick={handleBulkDelete} disabled={deleteMutation.isPending}>
