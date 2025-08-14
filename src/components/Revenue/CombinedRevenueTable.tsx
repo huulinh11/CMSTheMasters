@@ -65,7 +65,7 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
                   )}
                 </TableCell>
                 <TableCell>{guest.type}</TableCell>
-                <TableCell>{guest.referrer || 'N/A'}</TableCell>
+                <TableCell>{guest.referrer || ''}</TableCell>
                 <TableCell>
                   {guest.type === 'Khách mời' && guest.is_upsaled ? (
                     <span className="bg-red-600 text-white font-bold px-2 py-1 rounded-md text-xs">
@@ -79,7 +79,7 @@ export const CombinedRevenueTable = ({ guests, onView, onEdit, onPay, onHistory,
                 <TableCell className="font-bold">{formatCurrency(guest.total_revenue)}</TableCell>
                 <TableCell className="text-green-600">{formatCurrency(guest.paid)}</TableCell>
                 <TableCell className="text-red-600">{formatCurrency(guest.unpaid)}</TableCell>
-                <TableCell>{guest.type === 'Khách mời' ? guest.payment_source : 'N/A'}</TableCell>
+                <TableCell>{guest.type === 'Khách mời' ? (guest.payment_source === 'Trống' ? '' : guest.payment_source) : ''}</TableCell>
                 <TableCell className="text-right space-x-1">
                   <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}><Edit className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => onPay(guest)} disabled={guest.unpaid <= 0}><CreditCard className="h-4 w-4" /></Button>

@@ -23,6 +23,7 @@ import { CombinedRevenueCards } from "@/components/Revenue/CombinedRevenueCards"
 import { GuestService } from "@/types/service-sales";
 import { VipGuest } from "@/types/vip-guest";
 import { PageHeader } from "@/components/PageHeader";
+import { AdvancedRevenueFilter, RevenueFilters } from "@/components/Revenue/AdvancedRevenueFilter";
 
 export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
   service_revenue: number;
@@ -49,6 +50,12 @@ const RevenuePage = () => {
   const [editingGuest, setEditingGuest] = useState<CombinedGuestRevenue | null>(null);
   const [upsaleGuest, setUpsaleGuest] = useState<GuestRevenue | null>(null);
   const [viewingGuest, setViewingGuest] = useState<CombinedGuestRevenue | null>(null);
+  const [advancedFilters, setAdvancedFilters] = useState<RevenueFilters>({
+    role: "all",
+    sponsorship: "all",
+    paymentStatus: "all",
+    paymentSource: "all",
+  });
 
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
   const canViewSummaryStats = !!(userRole && ['Admin', 'Quản lý'].includes(userRole));
@@ -113,6 +120,8 @@ const RevenuePage = () => {
       return data || [];
     }
   });
+
+  const allRoles = useMemo(() => [...new Set(roleConfigs.map(r => r.name))].sort(), [roleConfigs]);
 
   const regularGuests = useMemo((): GuestRevenue[] => {
     if (isLoadingRegular || isLoadingHistory) return [];
@@ -185,9 +194,39 @@ const RevenuePage = () => {
     return combinedGuests.filter(guest => {
       const searchMatch = guest.name.toLowerCase().includes(searchTerm.toLowerCase()) || guest.id.toLowerCase().includes(searchTerm.toLowerCase());
       const typeMatch = typeFilter === 'all' || guest.type === typeFilter;
-      return searchMatch && typeMatch;
+      
+      const roleMatch = advancedFilters.role === 'all' || guest.role === advancedFilters.role;
+      
+      const sponsorshipMatch = (() => {
+        if (advancedFilters.sponsorship === 'all') return true;
+        if (advancedFilters.sponsorship === 'has_sponsorship') return guest.sponsorship > 0;
+        if (advancedFilters.sponsorship === 'no_sponsorship') return guest.sponsorship === 0;
+        return true;
+      })();
+
+      const paymentStatusMatch = (() => {
+        if (advancedFilters.paymentStatus === 'all') return true;
+        const isPaid = guest.unpaid <= 0 && guest.sponsorship > 0;
+        const isPartiallyPaid = guest.paid > 0 && guest.unpaid > 0;
+        const isUnpaid = guest.paid === 0 && guest.sponsorship > 0;
+
+        if (advancedFilters.paymentStatus === 'paid') return isPaid;
+        if (advancedFilters.paymentStatus === 'partially_paid') return isPartiallyPaid;
+        if (advancedFilters.paymentStatus === 'unpaid') return isUnpaid;
+        return true;
+      })();
+
+      const paymentSourceMatch = (() => {
+        if (advancedFilters.paymentSource === 'all') return true;
+        if (guest.type === 'Khách mời') {
+          return guest.payment_source === advancedFilters.paymentSource;
+        }
+        return false;
+      })();
+
+      return searchMatch && typeMatch && roleMatch && sponsorshipMatch && paymentStatusMatch && paymentSourceMatch;
     });
-  }, [combinedGuests, searchTerm, typeFilter]);
+  }, [combinedGuests, searchTerm, typeFilter, advancedFilters]);
 
   const revenueStats = useMemo(() => {
     return filteredGuests.reduce(
@@ -202,6 +241,19 @@ const RevenuePage = () => {
   }, [filteredGuests]);
 
   const isLoading = isLoadingVip || isLoadingRegular || isLoadingRoles || isLoadingHistory || isLoadingServices || isLoadingVipImages;
+
+  const handleAdvancedFilterChange = (field: keyof RevenueFilters, value: string) => {
+    setAdvancedFilters(prev => ({ ...prev, [field]: value as any }));
+  };
+
+  const handleClearAdvancedFilters = () => {
+    setAdvancedFilters({
+      role: "all",
+      sponsorship: "all",
+      paymentStatus: "all",
+      paymentSource: "all",
+    });
+  };
 
   const handleView = (guest: CombinedGuestRevenue) => setViewingGuest(guest);
   const handleEdit = (guest: CombinedGuestRevenue) => setEditingGuest(guest);
@@ -225,12 +277,20 @@ const RevenuePage = () => {
           <div className="flex items-center space-x-2"><RadioGroupItem value="Chức vụ" id="r2" /><Label htmlFor="r2">Chức vụ</Label></div>
           <div className="flex items-center space-x-2"><RadioGroupItem value="Khách mời" id="r3" /><Label htmlFor="r3">Khách mời</Label></div>
         </RadioGroup>
-        <Input
-          placeholder="Tìm kiếm theo tên, ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="bg-white/80 flex-grow"
-        />
+        <div className="flex-grow flex items-center gap-2">
+          <Input
+            placeholder="Tìm kiếm theo tên, ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="bg-white/80 flex-grow"
+          />
+          <AdvancedRevenueFilter
+            filters={advancedFilters}
+            onFilterChange={handleAdvancedFilterChange}
+            onClearFilters={handleClearAdvancedFilters}
+            allRoles={allRoles}
+          />
+        </div>
       </div>
 
       <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
