@@ -272,11 +272,15 @@ export const ImportExportActions = () => {
             }
 
             let referrerValue = row.referrer ? row.referrer.trim() : null;
-            if (referrerValue && referrerValue.toLowerCase() !== 'ads') {
+            if (referrerValue) {
+              if (referrerValue.toLowerCase() === 'ads') {
+                referrerValue = 'ads'; // Normalize to lowercase
+              } else {
                 const foundId = vipGuestNameMap.get(referrerValue.toLowerCase());
                 if (foundId) {
-                    referrerValue = foundId;
+                  referrerValue = foundId;
                 }
+              }
             }
 
             const commonData = {

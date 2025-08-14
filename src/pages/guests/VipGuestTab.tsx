@@ -150,8 +150,8 @@ const VipGuestTab = () => {
     const guestIdSet = new Set(guests.map(g => g.id));
     const guestNameMap = new Map(guests.map(g => [g.id, g.name]));
     return guests.map(guest => {
-      const referrerName = guest.referrer ? (guest.referrer === 'ads' ? 'Ads' : guestNameMap.get(guest.referrer)) : undefined;
-      const isReferrerValid = !guest.referrer || guest.referrer === 'ads' || guestIdSet.has(guest.referrer);
+      const referrerName = guest.referrer ? (guest.referrer.toLowerCase() === 'ads' ? 'Ads' : guestNameMap.get(guest.referrer)) : undefined;
+      const isReferrerValid = !guest.referrer || guest.referrer.toLowerCase() === 'ads' || guestIdSet.has(guest.referrer);
       return {
         ...guest,
         sponsorship_amount: revenueMap.get(guest.id) || 0,
