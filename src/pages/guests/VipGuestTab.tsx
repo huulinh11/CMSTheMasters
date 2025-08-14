@@ -145,16 +145,18 @@ const VipGuestTab = () => {
     onError: (error) => showError(error.message),
   });
 
-  const guestsWithRevenue = useMemo(() => {
+  const guestsWithDetails = useMemo(() => {
     const revenueMap = new Map(revenueData.map(r => [r.guest_id, r.sponsorship]));
+    const guestNameMap = new Map(guests.map(g => [g.id, g.name]));
     return guests.map(guest => ({
       ...guest,
       sponsorship_amount: revenueMap.get(guest.id) || 0,
+      referrerName: guest.referrer ? (guest.referrer === 'ads' ? 'Ads' : guestNameMap.get(guest.referrer)) : undefined,
     }));
   }, [guests, revenueData]);
 
   const filteredGuests = useMemo(() => {
-    return guestsWithRevenue.filter((guest) => {
+    return guestsWithDetails.filter((guest) => {
       const searchMatch =
         guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (guest.phone && guest.phone.includes(searchTerm)) ||
@@ -181,7 +183,7 @@ const VipGuestTab = () => {
 
       return searchMatch && roleMatch && advancedMatch;
     });
-  }, [guestsWithRevenue, searchTerm, roleFilters, advancedFilters]);
+  }, [guestsWithDetails, searchTerm, roleFilters, advancedFilters]);
 
   const handleSelectGuest = (id: string) => {
     setSelectedGuests((prev) =>

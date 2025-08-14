@@ -20,7 +20,7 @@ import { RoleConfiguration } from "@/types/role-configuration";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface VipGuestTableProps {
-  guests: VipGuest[];
+  guests: (VipGuest & { referrerName?: string })[];
   selectedGuests: string[];
   onSelectGuest: (id: string) => void;
   onSelectAll: (checked: boolean) => void;
@@ -109,7 +109,7 @@ export const VipGuestTable = ({
                 </TableCell>
                 <TableCell>{guest.secondaryInfo}</TableCell>
                 <TableCell>{guest.phone}</TableCell>
-                <TableCell>{guest.referrer}</TableCell>
+                <TableCell>{guest.referrerName || guest.referrer}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{guest.notes}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

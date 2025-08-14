@@ -20,7 +20,7 @@ import { RoleConfiguration } from "@/types/role-configuration";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface GuestTableProps {
-  guests: Guest[];
+  guests: (Guest & { referrerName?: string })[];
   selectedGuests: string[];
   onSelectGuest: (id: string) => void;
   onSelectAll: (checked: boolean) => void;
@@ -104,7 +104,7 @@ export const GuestTable = ({
                   </span>
                 </TableCell>
                 <TableCell>{guest.phone}</TableCell>
-                <TableCell>{guest.referrer}</TableCell>
+                <TableCell>{guest.referrerName || guest.referrer}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{guest.notes}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

@@ -13,7 +13,7 @@ import { RoleConfiguration } from "@/types/role-configuration";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface GuestCardsProps {
-  guests: Guest[];
+  guests: (Guest & { referrerName?: string })[];
   selectedGuests: string[];
   onSelectGuest: (id: string) => void;
   onEdit: (guest: Guest) => void;
@@ -88,7 +88,7 @@ export const GuestCards = ({
               </div>
               <CardContent className="pt-3 px-0 pb-0 space-y-1 text-xs text-slate-600">
                 <InfoItem icon={Phone} value={guest.phone} />
-                <InfoItem icon={User} value={guest.referrer} />
+                <InfoItem icon={User} value={guest.referrerName || guest.referrer} />
               </CardContent>
             </div>
           </Card>

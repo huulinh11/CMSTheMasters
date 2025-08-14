@@ -151,16 +151,19 @@ const RegularGuestTab = () => {
     onError: (error) => showError(error.message),
   });
 
-  const guestsWithRevenue = useMemo(() => {
-    const revenueMap = new Map(revenueData.map(r => [r.guest_id, r.sponsorship]));
+  const guestsWithDetails = useMemo(() => {
+    const revenueMap = new Map(revenueData.map(r => [r.guest_id, { sponsorship: r.sponsorship, payment_source: r.payment_source }]));
+    const vipGuestNameMap = new Map(vipGuests.map(g => [g.id, g.name]));
     return guests.map(guest => ({
       ...guest,
-      sponsorship_amount: revenueMap.get(guest.id) || 0,
+      sponsorship_amount: revenueMap.get(guest.id)?.sponsorship || 0,
+      payment_source: revenueMap.get(guest.id)?.payment_source,
+      referrerName: guest.referrer ? (guest.referrer === 'ads' ? 'Ads' : vipGuestNameMap.get(guest.referrer)) : undefined,
     }));
-  }, [guests, revenueData]);
+  }, [guests, revenueData, vipGuests]);
 
   const filteredGuests = useMemo(() => {
-    return guestsWithRevenue.filter((guest) => {
+    return guestsWithDetails.filter((guest) => {
       const searchMatch =
         guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (guest.phone && guest.phone.includes(searchTerm)) ||
@@ -185,7 +188,7 @@ const RegularGuestTab = () => {
 
       return searchMatch && roleMatch && advancedMatch;
     });
-  }, [guestsWithRevenue, searchTerm, roleFilters, advancedFilters]);
+  }, [guestsWithDetails, searchTerm, roleFilters, advancedFilters]);
 
   const handleSelectGuest = (id: string) => {
     setSelectedGuests((prev) =>

@@ -13,7 +13,7 @@ import { RoleConfiguration } from "@/types/role-configuration";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface VipGuestCardsProps {
-  guests: VipGuest[];
+  guests: (VipGuest & { referrerName?: string })[];
   selectedGuests: string[];
   onSelectGuest: (id: string) => void;
   onEdit: (guest: VipGuest) => void;
@@ -90,7 +90,7 @@ export const VipGuestCards = ({
               <CardContent className="pt-3 px-0 pb-0 space-y-1 text-xs text-slate-600">
                 <InfoItem icon={Phone} value={guest.phone} />
                 <InfoItem icon={Info} value={guest.secondaryInfo} />
-                <InfoItem icon={User} value={guest.referrer} />
+                <InfoItem icon={User} value={guest.referrerName || guest.referrer} />
               </CardContent>
             </div>
           </Card>
