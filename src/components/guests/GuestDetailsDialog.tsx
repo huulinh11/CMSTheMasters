@@ -46,7 +46,7 @@ import { cn } from "@/lib/utils";
 import GuestHistoryDialog from "../Revenue/GuestHistoryDialog";
 import { ServiceDetailsDialog } from "./ServiceDetailsDialog";
 
-const InfoRow = ({ icon: Icon, label, value, children, valueClass }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode, valueClass?: string }) => {
+const InfoRow = ({ icon: Icon, label, value, children, valueClass, isTel = false }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode, valueClass?: string, isTel?: boolean }) => {
   if (!value && !children) return null;
   return (
     <div className="flex items-center justify-between py-2.5 border-b last:border-b-0 gap-4">
@@ -55,7 +55,13 @@ const InfoRow = ({ icon: Icon, label, value, children, valueClass }: { icon: Rea
         <p className="text-sm text-slate-500">{label}</p>
       </div>
       <div className="flex items-center justify-end gap-2 text-right min-w-0">
-        {value && <p className={cn("font-medium text-slate-800 truncate", valueClass)}>{value}</p>}
+        {value && (
+          isTel ? (
+            <a href={`tel:${value}`} className={cn("font-medium text-slate-800 truncate hover:underline", valueClass)}>{value}</a>
+          ) : (
+            <p className={cn("font-medium text-slate-800 truncate", valueClass)}>{value}</p>
+          )
+        )}
         {children}
       </div>
     </div>
@@ -350,7 +356,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                   <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}><Edit className="h-4 w-4" /></Button>
                 </CardHeader>
                 <CardContent className="p-3 md:p-4 pt-0">
-                  <InfoRow icon={Phone} label="SĐT" value={guest.phone} />
+                  <InfoRow icon={Phone} label="SĐT" value={guest.phone} isTel />
                   <InfoRow icon={User} label="Người giới thiệu" value={guest.referrer} valueClass={!guest.isReferrerValid ? 'text-red-500' : ''} />
                   {guest.secondaryInfo && <InfoRow icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} />}
                   {guestType === 'vip' && guest.facebook_link && (

@@ -24,6 +24,16 @@ interface VipGuestCardsProps {
   canDelete: boolean;
 }
 
+const InfoItem = ({ icon: Icon, value, valueClass }: { icon: React.ElementType, value?: string | null, valueClass?: string }) => {
+  if (!value) return null;
+  return (
+    <div className="flex items-center text-xs text-slate-600">
+      <Icon className="h-3 w-3 mr-1.5 flex-shrink-0" />
+      <span className={cn("truncate", valueClass)}>{value}</span>
+    </div>
+  );
+};
+
 export const VipGuestCards = ({
   guests,
   selectedGuests,
@@ -89,7 +99,12 @@ export const VipGuestCards = ({
                 </div>
               </div>
               <CardContent className="pt-3 px-0 pb-0 space-y-1 text-xs text-slate-600">
-                <InfoItem icon={Phone} value={guest.phone} />
+                {guest.phone && (
+                  <div className="flex items-center text-xs text-slate-600">
+                    <Phone className="h-3 w-3 mr-1.5 flex-shrink-0" />
+                    <a href={`tel:${guest.phone}`} className="truncate hover:underline">{guest.phone}</a>
+                  </div>
+                )}
                 <InfoItem icon={Info} value={guest.secondaryInfo} />
                 <InfoItem icon={User} value={guest.referrerName || guest.referrer} valueClass={!guest.isReferrerValid ? 'text-red-500' : ''} />
               </CardContent>
@@ -101,16 +116,6 @@ export const VipGuestCards = ({
           <p>Không tìm thấy khách mời nào.</p>
         </div>
       )}
-    </div>
-  );
-};
-
-const InfoItem = ({ icon: Icon, value, valueClass }: { icon: React.ElementType, value?: string | null, valueClass?: string }) => {
-  if (!value) return null;
-  return (
-    <div className="flex items-center text-xs text-slate-600">
-      <Icon className="h-3 w-3 mr-1.5 flex-shrink-0" />
-      <span className={cn("truncate", valueClass)}>{value}</span>
     </div>
   );
 };

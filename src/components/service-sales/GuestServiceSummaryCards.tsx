@@ -36,7 +36,13 @@ export const GuestServiceSummaryCards = ({ summaries, onViewDetails, onHistory, 
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>{summary.guest_name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{summary.guest_phone}</p>
+                <p className="text-sm text-muted-foreground">
+                  {summary.guest_phone ? (
+                    <a href={`tel:${summary.guest_phone}`} className="hover:underline">{summary.guest_phone}</a>
+                  ) : (
+                    ''
+                  )}
+                </p>
               </div>
               <Avatar>
                 <AvatarImage src={summary.image_url || ''} alt={summary.guest_name} />

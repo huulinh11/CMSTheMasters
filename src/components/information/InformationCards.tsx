@@ -14,7 +14,7 @@ interface InformationCardsProps {
   roleConfigs: RoleConfiguration[];
 }
 
-const InfoItem = ({ icon: Icon, label, value, isLink = false, isCopyable = false, truncate = false }: { icon: React.ElementType, label: string, value?: string, isLink?: boolean, isCopyable?: boolean, truncate?: boolean }) => {
+const InfoItem = ({ icon: Icon, label, value, isLink = false, isTel = false, isCopyable = false, truncate = false }: { icon: React.ElementType, label: string, value?: string, isLink?: boolean, isTel?: boolean, isCopyable?: boolean, truncate?: boolean }) => {
   if (!value) return null;
 
   const handleCopy = (textToCopy: string) => {
@@ -38,6 +38,18 @@ const InfoItem = ({ icon: Icon, label, value, isLink = false, isCopyable = false
               <Copy className="h-4 w-4" />
             </Button>
           </div>
+        ) : isTel ? (
+          <div className="flex items-center justify-between">
+            <p className={cn(truncate ? "truncate" : "")}>
+              <span className="text-[rgb(185,179,176)] font-normal">{label}: </span>
+              <a href={`tel:${value}`} className="text-black font-normal hover:underline">{value}</a>
+            </p>
+            {isCopyable && (
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleCopy(value); }}>
+                <Copy className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         ) : (
           <p className={cn(truncate ? "truncate" : "")}>
             <span className="text-[rgb(185,179,176)] font-normal">{label}: </span>
@@ -48,7 +60,7 @@ const InfoItem = ({ icon: Icon, label, value, isLink = false, isCopyable = false
     </div>
   );
 
-  if (isCopyable) {
+  if (isCopyable && !isLink && !isTel) {
     return (
       <button onClick={() => handleCopy(value)} className="w-full text-left">
         {content}
@@ -104,7 +116,7 @@ export const InformationCards = ({ guests, onEdit, onView, roleConfigs }: Inform
                 <span className="text-slate-500 ml-1.5">({guest.id})</span>
               </div>
               <div className="border-t border-slate-100 pt-3 space-y-2">
-                <InfoItem icon={Phone} label="SĐT" value={guest.phone} isCopyable />
+                <InfoItem icon={Phone} label="SĐT" value={guest.phone} isTel isCopyable />
                 <InfoItem icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} isCopyable />
                 <InfoItem icon={FileText} label="Tư liệu" value={guest.materials} isCopyable truncate />
                 <InfoItem icon={Link} label="Facebook" value={guest.facebook_link} isLink />

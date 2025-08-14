@@ -104,7 +104,13 @@ export const GuestTable = ({
                     {guest.role}
                   </span>
                 </TableCell>
-                <TableCell>{guest.phone}</TableCell>
+                <TableCell>
+                  {guest.phone ? (
+                    <a href={`tel:${guest.phone}`} className="hover:underline">{guest.phone}</a>
+                  ) : (
+                    ''
+                  )}
+                </TableCell>
                 <TableCell className={!guest.isReferrerValid ? 'text-red-500' : ''}>{guest.referrerName || guest.referrer}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{guest.notes}</TableCell>
                 <TableCell className="text-right">

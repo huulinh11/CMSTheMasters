@@ -40,7 +40,11 @@ export const EventTasksCards = ({ guests, onViewDetails, onImageClick, onOpenChe
                     {guest.secondaryInfo && <p className="text-xs mt-1 text-slate-600">{guest.secondaryInfo}</p>}
                     <div className="flex items-center text-xs mt-1">
                       <Phone className="mr-1.5 h-3 w-3 text-muted-foreground" />
-                      <span>{guest.phone}</span>
+                      {guest.phone ? (
+                        <a href={`tel:${guest.phone}`} className="hover:underline">{guest.phone}</a>
+                      ) : (
+                        <span></span>
+                      )}
                     </div>
                   </div>
                   <div className="mt-2 flex-shrink-0">

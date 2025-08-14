@@ -50,9 +50,16 @@ export const InformationTable = ({ guests, onEdit, onView }: InformationTablePro
                 <TableCell className="font-semibold">{guest.name}</TableCell>
                 <TableCell>{guest.role}</TableCell>
                 <TableCell>
-                  <button onClick={() => handleCopy(guest.phone, 'SĐT')} className="text-left hover:underline w-full">
-                    {guest.phone || "N/A"}
-                  </button>
+                  {guest.phone ? (
+                    <div className="flex items-center gap-1">
+                      <a href={`tel:${guest.phone}`} className="hover:underline">{guest.phone}</a>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(guest.phone, 'SĐT')}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    "N/A"
+                  )}
                 </TableCell>
                 <TableCell>
                   <button onClick={() => handleCopy(guest.secondaryInfo, 'Thông tin phụ')} className="text-left hover:underline w-full max-w-[150px]">

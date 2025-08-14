@@ -14,7 +14,12 @@ export const ChecklistHeader = ({ guest }: ChecklistHeaderProps) => {
       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm md:text-base text-slate-600">
         <InfoItem label="ID" value={guest.id} />
         <InfoItem label="Vai trò" value={guest.role} />
-        <InfoItem label="SĐT" value={guest.phone} />
+        {guest.phone && (
+          <div>
+            <span className="font-semibold text-slate-800">SĐT:</span>{' '}
+            <a href={`tel:${guest.phone}`} className="hover:underline">{guest.phone}</a>
+          </div>
+        )}
         {guest.secondaryInfo && <InfoItem label="Thông tin phụ" value={guest.secondaryInfo} />}
       </div>
     </div>

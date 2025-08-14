@@ -53,7 +53,13 @@ export const GuestServiceSummaryTable = ({ summaries, onViewDetails, onHistory, 
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">{summary.guest_name}</div>
-                    <div className="text-sm text-muted-foreground">{summary.guest_phone}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {summary.guest_phone ? (
+                        <a href={`tel:${summary.guest_phone}`} className="hover:underline">{summary.guest_phone}</a>
+                      ) : (
+                        ''
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1 items-start">
