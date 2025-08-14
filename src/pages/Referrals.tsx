@@ -45,6 +45,7 @@ const ReferralsPage = () => {
 
     if (filters.status !== 'all') {
       result = result.filter(item => {
+        if (item.referrer_id === 'ads') return true; // Always show Ads regardless of status filter
         if (filters.status === 'not-achieved') return item.referral_count < item.referral_quota;
         if (filters.status === 'achieved') return item.referral_count === item.referral_quota;
         if (filters.status === 'exceeded') return item.referral_count > item.referral_quota;
@@ -117,7 +118,14 @@ const ReferralsPage = () => {
                 <CardTitle>{item.referrer_name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <p>Số người giới thiệu: <span className={cn(item.referral_count > item.referral_quota && "font-bold text-green-600")}>{item.referral_count}</span> / {item.referral_quota}</p>
+                <p>Số người giới thiệu: {item.referrer_id === 'ads' ? (
+                  <span>{item.referral_count}</span>
+                ) : (
+                  <>
+                    <span className={cn(item.referral_count > item.referral_quota && "font-bold text-green-600")}>{item.referral_count}</span> / {item.referral_quota}
+                  </>
+                )}
+                </p>
                 <p>Tổng doanh thu: {formatCurrency(item.total_revenue)}</p>
                 <p>Tổng hoa hồng: <span className="font-bold text-primary">{formatCurrency(item.total_commission)}</span></p>
                 <Button className="w-full mt-2" onClick={() => setSelectedReferrer(item)}>Xem danh sách</Button>
@@ -142,9 +150,15 @@ const ReferralsPage = () => {
                 <TableRow key={item.referrer_id}>
                   <TableCell className="font-medium">{item.referrer_name}</TableCell>
                   <TableCell>
-                    <span className={cn(item.referral_count > item.referral_quota && "font-bold text-green-600")}>
-                      {item.referral_count}
-                    </span> / {item.referral_quota}
+                    {item.referrer_id === 'ads' ? (
+                      <span>{item.referral_count}</span>
+                    ) : (
+                      <>
+                        <span className={cn(item.referral_count > item.referral_quota && "font-bold text-green-600")}>
+                          {item.referral_count}
+                        </span> / {item.referral_quota}
+                      </>
+                    )}
                   </TableCell>
                   <TableCell>{formatCurrency(item.total_revenue)}</TableCell>
                   <TableCell className="font-semibold text-green-600">{formatCurrency(item.total_commission)}</TableCell>
