@@ -48,6 +48,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -153,33 +154,37 @@ const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, classNa
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                       <Command>
                         <CommandInput placeholder="Tìm kiếm khách..." />
-                        <CommandEmpty>Không tìm thấy khách.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            value=""
-                            onSelect={() => { form.setValue("referrer", ""); }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", !field.value ? "opacity-100" : "opacity-0")} />
-                            (Không có)
-                          </CommandItem>
-                          <CommandItem
-                            value="Ads"
-                            onSelect={() => { form.setValue("referrer", "ads"); }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", field.value === 'ads' ? "opacity-100" : "opacity-0")} />
-                            Ads
-                          </CommandItem>
-                          {allVipGuests.map((guest) => (
-                            <CommandItem
-                              value={guest.name}
-                              key={guest.id}
-                              onSelect={() => { form.setValue("referrer", guest.id); }}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", guest.id === field.value ? "opacity-100" : "opacity-0")} />
-                              {guest.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
+                        <CommandList>
+                          <ScrollArea className="h-72">
+                            <CommandEmpty>Không tìm thấy khách.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem
+                                value=""
+                                onSelect={() => { form.setValue("referrer", ""); }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", !field.value ? "opacity-100" : "opacity-0")} />
+                                (Không có)
+                              </CommandItem>
+                              <CommandItem
+                                value="Ads"
+                                onSelect={() => { form.setValue("referrer", "ads"); }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", field.value === 'ads' ? "opacity-100" : "opacity-0")} />
+                                Ads
+                              </CommandItem>
+                              {allVipGuests.map((guest) => (
+                                <CommandItem
+                                  value={guest.name}
+                                  key={guest.id}
+                                  onSelect={() => { form.setValue("referrer", guest.id); }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", guest.id === field.value ? "opacity-100" : "opacity-0")} />
+                                  {guest.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </ScrollArea>
+                        </CommandList>
                       </Command>
                     </PopoverContent>
                   </Popover>

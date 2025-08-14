@@ -43,6 +43,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -150,33 +151,37 @@ const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfi
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                       <Command>
                         <CommandInput placeholder="Tìm kiếm khách..." />
-                        <CommandEmpty>Không tìm thấy khách.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            value=""
-                            onSelect={() => { form.setValue("referrer", ""); }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", !field.value ? "opacity-100" : "opacity-0")} />
-                            (Không có)
-                          </CommandItem>
-                          <CommandItem
-                            value="Ads"
-                            onSelect={() => { form.setValue("referrer", "ads"); }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", field.value === 'ads' ? "opacity-100" : "opacity-0")} />
-                            Ads
-                          </CommandItem>
-                          {allGuests.filter(g => g.id !== defaultValues?.id).map((guest) => (
-                            <CommandItem
-                              value={guest.name}
-                              key={guest.id}
-                              onSelect={() => { form.setValue("referrer", guest.id); }}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", guest.id === field.value ? "opacity-100" : "opacity-0")} />
-                              {guest.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
+                        <CommandList>
+                          <ScrollArea className="h-72">
+                            <CommandEmpty>Không tìm thấy khách.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem
+                                value=""
+                                onSelect={() => { form.setValue("referrer", ""); }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", !field.value ? "opacity-100" : "opacity-0")} />
+                                (Không có)
+                              </CommandItem>
+                              <CommandItem
+                                value="Ads"
+                                onSelect={() => { form.setValue("referrer", "ads"); }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", field.value === 'ads' ? "opacity-100" : "opacity-0")} />
+                                Ads
+                              </CommandItem>
+                              {allGuests.filter(g => g.id !== defaultValues?.id).map((guest) => (
+                                <CommandItem
+                                  value={guest.name}
+                                  key={guest.id}
+                                  onSelect={() => { form.setValue("referrer", guest.id); }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", guest.id === field.value ? "opacity-100" : "opacity-0")} />
+                                  {guest.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </ScrollArea>
+                        </CommandList>
                       </Command>
                     </PopoverContent>
                   </Popover>
