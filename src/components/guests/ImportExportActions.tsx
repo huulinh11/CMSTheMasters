@@ -201,7 +201,7 @@ export const ImportExportActions = () => {
 
           if (rows.length === 0) throw new Error("File không có dữ liệu.");
 
-          const { data: existingVipGuests, error: vipError } = await supabase.from('vip_guests').select('id, phone');
+          const { data: existingVipGuests, error: vipError } = await supabase.from('vip_guests').select('id, phone, name');
           if (vipError) throw vipError;
           const { data: existingGuests, error: guestError } = await supabase.from('guests').select('id, phone');
           if (guestError) throw guestError;
@@ -211,6 +211,11 @@ export const ImportExportActions = () => {
           const phoneToIdMap = new Map<string, string>();
           (existingVipGuests || []).forEach(g => { if (g.phone) phoneToIdMap.set(g.phone, g.id) });
           (existingGuests || []).forEach(g => { if (g.phone) phoneToIdMap.set(g.phone, g.id) });
+
+          const vipGuestNameMap = new Map<string, string>();
+          (existingVipGuests || []).forEach(g => {
+            if (g.name) vipGuestNameMap.set(g.name.toLowerCase().trim(), g.id);
+          });
 
           const roleTypeMap = new Map(roleConfigs.map(rc => [rc.name, rc.type]));
 
@@ -266,12 +271,20 @@ export const ImportExportActions = () => {
               phoneToIdMap.set(row.phone, guestId);
             }
 
+            let referrerValue = row.referrer ? row.referrer.trim() : null;
+            if (referrerValue && referrerValue.toLowerCase() !== 'ads') {
+                const foundId = vipGuestNameMap.get(referrerValue.toLowerCase());
+                if (foundId) {
+                    referrerValue = foundId;
+                }
+            }
+
             const commonData = {
               id: guestId,
               name: row.name,
               role: row.role,
               phone: row.phone,
-              referrer: row.referrer || null,
+              referrer: referrerValue,
               notes: row.notes || null,
               materials: row.materials || null,
               slug: row.slug || generateGuestSlug(row.name),

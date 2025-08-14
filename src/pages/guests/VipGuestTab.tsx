@@ -147,12 +147,18 @@ const VipGuestTab = () => {
 
   const guestsWithDetails = useMemo(() => {
     const revenueMap = new Map(revenueData.map(r => [r.guest_id, r.sponsorship]));
+    const guestIdSet = new Set(guests.map(g => g.id));
     const guestNameMap = new Map(guests.map(g => [g.id, g.name]));
-    return guests.map(guest => ({
-      ...guest,
-      sponsorship_amount: revenueMap.get(guest.id) || 0,
-      referrerName: guest.referrer ? (guest.referrer === 'ads' ? 'Ads' : guestNameMap.get(guest.referrer)) : undefined,
-    }));
+    return guests.map(guest => {
+      const referrerName = guest.referrer ? (guest.referrer === 'ads' ? 'Ads' : guestNameMap.get(guest.referrer)) : undefined;
+      const isReferrerValid = !guest.referrer || guest.referrer === 'ads' || guestIdSet.has(guest.referrer);
+      return {
+        ...guest,
+        sponsorship_amount: revenueMap.get(guest.id) || 0,
+        referrerName: referrerName,
+        isReferrerValid: isReferrerValid,
+      };
+    });
   }, [guests, revenueData]);
 
   const filteredGuests = useMemo(() => {
@@ -161,7 +167,7 @@ const VipGuestTab = () => {
         guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (guest.phone && guest.phone.includes(searchTerm)) ||
         guest.role.toLowerCase().includes(searchTerm.toLowerCase());
-      const roleMatch = roleFilters.length === 0 || roleFilters.includes(guest.role);
+      const roleMatch = roleFilters.length === 0 || (guest.role && roleFilters.includes(guest.role));
       
       const advancedMatch = Object.entries(advancedFilters).every(([field, value]) => {
         if (!value || value === 'all') return true;

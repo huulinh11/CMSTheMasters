@@ -18,9 +18,10 @@ import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { Guest } from "@/types/guest";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface GuestTableProps {
-  guests: (Guest & { referrerName?: string })[];
+  guests: (Guest & { referrerName?: string; isReferrerValid?: boolean })[];
   selectedGuests: string[];
   onSelectGuest: (id: string) => void;
   onSelectAll: (checked: boolean) => void;
@@ -104,7 +105,7 @@ export const GuestTable = ({
                   </span>
                 </TableCell>
                 <TableCell>{guest.phone}</TableCell>
-                <TableCell>{guest.referrerName || guest.referrer}</TableCell>
+                <TableCell className={!guest.isReferrerValid ? 'text-red-500' : ''}>{guest.referrerName || guest.referrer}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{guest.notes}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

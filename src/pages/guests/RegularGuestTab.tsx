@@ -154,12 +154,18 @@ const RegularGuestTab = () => {
   const guestsWithDetails = useMemo(() => {
     const revenueMap = new Map(revenueData.map(r => [r.guest_id, { sponsorship: r.sponsorship, payment_source: r.payment_source }]));
     const vipGuestNameMap = new Map(vipGuests.map(g => [g.id, g.name]));
-    return guests.map(guest => ({
-      ...guest,
-      sponsorship_amount: revenueMap.get(guest.id)?.sponsorship || 0,
-      payment_source: revenueMap.get(guest.id)?.payment_source,
-      referrerName: guest.referrer ? (guest.referrer === 'ads' ? 'Ads' : vipGuestNameMap.get(guest.referrer)) : undefined,
-    }));
+    const vipGuestIdSet = new Set(vipGuests.map(g => g.id));
+    return guests.map(guest => {
+      const referrerName = guest.referrer ? (guest.referrer === 'ads' ? 'Ads' : vipGuestNameMap.get(guest.referrer)) : undefined;
+      const isReferrerValid = !guest.referrer || guest.referrer === 'ads' || vipGuestIdSet.has(guest.referrer);
+      return {
+        ...guest,
+        sponsorship_amount: revenueMap.get(guest.id)?.sponsorship || 0,
+        payment_source: revenueMap.get(guest.id)?.payment_source,
+        referrerName: referrerName,
+        isReferrerValid: isReferrerValid,
+      };
+    });
   }, [guests, revenueData, vipGuests]);
 
   const filteredGuests = useMemo(() => {

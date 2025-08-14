@@ -118,6 +118,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       const paymentsPromise = supabase.from(paymentTable).select('*').eq('guest_id', guestId);
       const upsaleHistoryPromise = supabase.from('guest_upsale_history').select('*').eq('guest_id', guestId);
       const servicesPromise = supabase.rpc('get_guest_service_details_by_guest_id', { guest_id_in: guestId });
+      const allVipGuestsPromise = supabase.from('vip_guests').select('id, name');
 
       const [
         { data: guestData, error: guestError },
@@ -127,7 +128,8 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         { data: paymentsData, error: paymentsError },
         { data: upsaleHistoryData, error: upsaleHistoryError },
         { data: servicesData, error: servicesError },
-      ] = await Promise.all([guestPromise, revenuePromise, mediaBenefitPromise, tasksPromise, paymentsPromise, upsaleHistoryPromise, servicesPromise]);
+        { data: allVipGuests, error: allVipError },
+      ] = await Promise.all([guestPromise, revenuePromise, mediaBenefitPromise, tasksPromise, paymentsPromise, upsaleHistoryPromise, servicesPromise, allVipGuestsPromise]);
 
       if (guestError) throw new Error(`Guest Error: ${guestError.message}`);
       if (revenueError) throw new Error(`Revenue Error: ${revenueError.message}`);
@@ -136,19 +138,28 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       if (paymentsError) throw new Error(`Payments Error: ${paymentsError.message}`);
       if (upsaleHistoryError) throw new Error(`Upsale History Error: ${upsaleHistoryError.message}`);
       if (servicesError) throw new Error(`Services Error: ${servicesError.message}`);
+      if (allVipError) throw new Error(`All VIPs Error: ${allVipError.message}`);
 
       const revenueData = allRevenueData.find((r: any) => r.id === guestId);
       
+      const vipGuestNameMap = new Map((allVipGuests || []).map(g => [g.id, g.name]));
+      const vipGuestIdSet = new Set((allVipGuests || []).map(g => g.id));
+
       let referrerName: string | null = guestData.referrer;
-      if (guestData.referrer && !allRevenueData.some((r: any) => r.name === guestData.referrer)) {
-        const { data: referrerGuest } = await supabase.from('vip_guests').select('name').eq('id', guestData.referrer).single();
-        if (referrerGuest) {
-          referrerName = referrerGuest.name;
+      let isReferrerValid = true;
+      if (guestData.referrer) {
+        if (guestData.referrer === 'ads') {
+          referrerName = 'Ads';
+        } else if (vipGuestIdSet.has(guestData.referrer)) {
+          referrerName = vipGuestNameMap.get(guestData.referrer) || guestData.referrer;
+        } else {
+          referrerName = guestData.referrer;
+          isReferrerValid = false;
         }
       }
 
       return {
-        guest: { ...guestData, secondaryInfo: guestData.secondary_info, referrer: referrerName },
+        guest: { ...guestData, secondaryInfo: guestData.secondary_info, referrer: referrerName, isReferrerValid },
         revenue: revenueData ? {
           ...revenueData,
           sponsorship: revenueData.sponsorship || 0,
@@ -340,7 +351,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                 </CardHeader>
                 <CardContent className="p-3 md:p-4 pt-0">
                   <InfoRow icon={Phone} label="SĐT" value={guest.phone} />
-                  <InfoRow icon={User} label="Người giới thiệu" value={guest.referrer} />
+                  <InfoRow icon={User} label="Người giới thiệu" value={guest.referrer} valueClass={!guest.isReferrerValid ? 'text-red-500' : ''} />
                   {guest.secondaryInfo && <InfoRow icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} />}
                   {guestType === 'vip' && guest.facebook_link && (
                     <InfoRow icon={LinkIcon} label="Facebook">

@@ -18,9 +18,10 @@ import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { VipGuest } from "@/types/vip-guest";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface VipGuestTableProps {
-  guests: (VipGuest & { referrerName?: string })[];
+  guests: (VipGuest & { referrerName?: string; isReferrerValid?: boolean })[];
   selectedGuests: string[];
   onSelectGuest: (id: string) => void;
   onSelectAll: (checked: boolean) => void;
@@ -109,7 +110,7 @@ export const VipGuestTable = ({
                 </TableCell>
                 <TableCell>{guest.secondaryInfo}</TableCell>
                 <TableCell>{guest.phone}</TableCell>
-                <TableCell>{guest.referrerName || guest.referrer}</TableCell>
+                <TableCell className={!guest.isReferrerValid ? 'text-red-500' : ''}>{guest.referrerName || guest.referrer}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{guest.notes}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

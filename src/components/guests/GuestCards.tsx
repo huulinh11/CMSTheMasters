@@ -11,9 +11,10 @@ import { MoreVertical, Trash2, Edit, Phone, User } from "lucide-react";
 import { Guest } from "@/types/guest";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface GuestCardsProps {
-  guests: (Guest & { referrerName?: string })[];
+  guests: (Guest & { referrerName?: string; isReferrerValid?: boolean })[];
   selectedGuests: string[];
   onSelectGuest: (id: string) => void;
   onEdit: (guest: Guest) => void;
@@ -88,7 +89,7 @@ export const GuestCards = ({
               </div>
               <CardContent className="pt-3 px-0 pb-0 space-y-1 text-xs text-slate-600">
                 <InfoItem icon={Phone} value={guest.phone} />
-                <InfoItem icon={User} value={guest.referrerName || guest.referrer} />
+                <InfoItem icon={User} value={guest.referrerName || guest.referrer} valueClass={!guest.isReferrerValid ? 'text-red-500' : ''} />
               </CardContent>
             </div>
           </Card>
@@ -102,12 +103,12 @@ export const GuestCards = ({
   );
 };
 
-const InfoItem = ({ icon: Icon, value }: { icon: React.ElementType, value?: string | null }) => {
+const InfoItem = ({ icon: Icon, value, valueClass }: { icon: React.ElementType, value?: string | null, valueClass?: string }) => {
   if (!value) return null;
   return (
     <div className="flex items-center text-xs text-slate-600">
       <Icon className="h-3 w-3 mr-1.5 flex-shrink-0" />
-      <span className="truncate">{value}</span>
+      <span className={cn("truncate", valueClass)}>{value}</span>
     </div>
   );
 };
