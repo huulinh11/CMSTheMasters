@@ -22,10 +22,11 @@ interface DuplicateGuestDialogProps {
   onConfirmImportAnyway: () => void;
 }
 
-const CopyButton = ({ text }: { text: string }) => {
+const CopyColumnButton = ({ data, columnKey, label }: { data: any[], columnKey: string, label: string }) => {
   const handleCopy = () => {
-    navigator.clipboard.writeText(text);
-    showSuccess("Đã sao chép!");
+    const textToCopy = data.map(row => row[columnKey] || '').join('\n');
+    navigator.clipboard.writeText(textToCopy);
+    showSuccess(`Đã sao chép danh sách ${label}!`);
   };
   return (
     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopy}>
@@ -54,27 +55,35 @@ export const DuplicateGuestDialog = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tên</TableHead>
-                <TableHead>Vai trò</TableHead>
-                <TableHead>SĐT</TableHead>
-                <TableHead>Người giới thiệu</TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1">
+                    Tên <CopyColumnButton data={duplicates} columnKey="name" label="Tên" />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1">
+                    Vai trò <CopyColumnButton data={duplicates} columnKey="role" label="Vai trò" />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1">
+                    SĐT <CopyColumnButton data={duplicates} columnKey="phone" label="SĐT" />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1">
+                    Người giới thiệu <CopyColumnButton data={duplicates} columnKey="referrer" label="Người giới thiệu" />
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {duplicates.map((row, index) => (
                 <TableRow key={index}>
-                  <TableCell className="flex items-center gap-1">
-                    {row.name} <CopyButton text={row.name} />
-                  </TableCell>
-                  <TableCell className="flex items-center gap-1">
-                    {row.role} <CopyButton text={row.role} />
-                  </TableCell>
-                  <TableCell className="flex items-center gap-1">
-                    {row.phone} <CopyButton text={row.phone} />
-                  </TableCell>
-                  <TableCell className="flex items-center gap-1">
-                    {row.referrer} <CopyButton text={row.referrer} />
-                  </TableCell>
+                  <TableCell>{row.name}</TableCell>
+                  <TableCell>{row.role}</TableCell>
+                  <TableCell>{row.phone}</TableCell>
+                  <TableCell>{row.referrer}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
