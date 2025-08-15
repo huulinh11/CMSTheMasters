@@ -72,7 +72,7 @@ const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, classNa
     resolver: zodResolver(guestFormSchema),
   });
 
-  const { watch, setValue } = form;
+  const { watch, setValue, formState } = form;
   const selectedRole = watch("role");
   const sponsorshipAmount = watch("sponsorship_amount");
 
@@ -83,12 +83,14 @@ const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, classNa
     if (selectedRole) {
       const roleConfig = roleConfigs.find(rc => rc.name === selectedRole);
       if (roleConfig) {
-        const newAmount = roleConfig.sponsorship_amount;
-        setValue("sponsorship_amount", newAmount);
-        setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newAmount));
+        if (!defaultValues || formState.isDirty) {
+          const newAmount = roleConfig.sponsorship_amount;
+          setValue("sponsorship_amount", newAmount);
+          setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newAmount));
+        }
       }
     }
-  }, [selectedRole, roleConfigs, setValue]);
+  }, [selectedRole, roleConfigs, setValue, defaultValues, formState.isDirty]);
 
   useEffect(() => {
     if (defaultValues) {
