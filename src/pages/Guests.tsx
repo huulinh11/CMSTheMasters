@@ -165,6 +165,16 @@ const GuestsPage = () => {
             const { error: revenueError } = await supabase.from('vip_guest_revenue').upsert({ guest_id: values.id, sponsorship: sponsorship_amount }, { onConflict: 'guest_id' });
             if (revenueError) throw revenueError;
         }
+        if (paid_amount !== undefined) {
+            const { data: existingPayments } = await supabase.from('vip_payments').select('amount').eq('guest_id', values.id);
+            const currentPaid = (existingPayments || []).reduce((sum, p) => sum + p.amount, 0);
+            if (currentPaid !== paid_amount) {
+                await supabase.from('vip_payments').delete().eq('guest_id', values.id);
+                if (paid_amount > 0) {
+                    await supabase.from('vip_payments').insert({ guest_id: values.id, amount: paid_amount });
+                }
+            }
+        }
     },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
@@ -183,6 +193,16 @@ const GuestsPage = () => {
           if (sponsorship_amount !== undefined || payment_source) {
               const { error: revenueError } = await supabase.from('guest_revenue').upsert({ guest_id: values.id, sponsorship: sponsorship_amount || 0, payment_source: payment_source || 'Trống' }, { onConflict: 'guest_id' });
               if (revenueError) throw revenueError;
+          }
+          if (paid_amount !== undefined) {
+              const { data: existingPayments } = await supabase.from('guest_payments').select('amount').eq('guest_id', values.id);
+              const currentPaid = (existingPayments || []).reduce((sum, p) => sum + p.amount, 0);
+              if (currentPaid !== paid_amount) {
+                  await supabase.from('guest_payments').delete().eq('guest_id', values.id);
+                  if (paid_amount > 0) {
+                      await supabase.from('guest_payments').insert({ guest_id: values.id, amount: paid_amount });
+                  }
+              }
           }
       },
       onSuccess: () => {
