@@ -92,48 +92,51 @@ interface NavItemProps {
 }
 
 const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, end, isCollapsed, onClick }) => {
-  const navLinkContent = (isActive: boolean) => (
-    <>
-      <Icon className={cn(
-        "w-5 h-5 flex-shrink-0",
-        isActive ? "text-primary" : "text-slate-600"
-      )} />
-      {!isCollapsed && (
-        <span className={cn(
-          "truncate ml-3",
-          isActive ? "text-primary font-semibold" : "text-slate-600"
-        )}>
-          {label}
-        </span>
-      )}
-    </>
-  );
-
-  const navLinkClasses = (isActive: boolean) =>
-    cn(
-      "flex flex-row items-center p-2 my-1 rounded-lg transition-colors w-full",
-      isCollapsed ? "justify-center" : "",
-      isActive ? "bg-primary/10" : "hover:bg-slate-100"
-    );
-
-  const buttonClasses = "flex flex-row items-center p-2 my-1 rounded-lg transition-colors w-full text-slate-600 hover:bg-slate-100";
-
   const content = onClick ? (
-    <button onClick={onClick} className={cn(buttonClasses, isCollapsed ? "justify-center" : "")}>
-      <Icon className="w-5 h-5 flex-shrink-0 text-slate-600" />
-      {!isCollapsed && <span className="truncate ml-3 text-slate-600">{label}</span>}
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center p-2 my-1 rounded-lg transition-colors w-full text-slate-600 hover:bg-slate-100",
+        isCollapsed ? "justify-center" : ""
+      )}
+    >
+      <Icon className="w-5 h-5 flex-shrink-0" />
+      {!isCollapsed && <span className="truncate ml-3">{label}</span>}
     </button>
   ) : (
-    <NavLink to={to} end={end} className={({ isActive }) => navLinkClasses(isActive)}>
-      {({ isActive }) => navLinkContent(isActive)}
+    <NavLink to={to} end={end}>
+      {({ isActive }) => (
+        <div
+          className={cn(
+            "flex items-center p-2 my-1 rounded-lg transition-colors w-full",
+            isCollapsed ? "justify-center" : "",
+            isActive ? "bg-primary/10" : "hover:bg-slate-100"
+          )}
+        >
+          <Icon
+            className={cn(
+              "w-5 h-5 flex-shrink-0",
+              isActive ? "text-primary" : "text-slate-600"
+            )}
+          />
+          {!isCollapsed && (
+            <span
+              className={cn(
+                "truncate ml-3",
+                isActive ? "text-primary font-semibold" : "text-slate-600"
+              )}
+            >
+              {label}
+            </span>
+          )}
+        </div>
+      )}
     </NavLink>
   );
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        {content}
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
       {isCollapsed && (
         <TooltipContent side="right">
           <p>{label}</p>
