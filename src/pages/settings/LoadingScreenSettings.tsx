@@ -186,7 +186,12 @@ const LoadingScreenSettings = () => {
                         value={item.color || '#000000'}
                         onChange={e => handleTextConfigChange(item.id!, 'color', e.target.value)}
                       />
-                      <div className="w-8 h-8 rounded border flex-shrink-0" style={{ backgroundColor: item.color || '#000000' }}></div>
+                      <Input
+                        type="color"
+                        value={item.color || '#000000'}
+                        onChange={e => handleTextConfigChange(item.id!, 'color', e.target.value)}
+                        className="p-1 h-10 w-10 cursor-pointer"
+                      />
                     </div>
                   </div>
                 </div>

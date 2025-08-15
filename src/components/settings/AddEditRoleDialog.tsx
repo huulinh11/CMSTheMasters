@@ -163,7 +163,7 @@ export const AddEditRoleDialog = ({ open, onOpenChange, onSubmit, defaultValues 
                     <FormControl>
                       <div className="flex items-center gap-2">
                         <Input placeholder="#EFF6FF" {...field} />
-                        <div className="w-8 h-8 rounded border flex-shrink-0" style={{ backgroundColor: field.value }}></div>
+                        <Input type="color" value={field.value} onChange={field.onChange} className="p-1 h-10 w-10 cursor-pointer" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -179,7 +179,7 @@ export const AddEditRoleDialog = ({ open, onOpenChange, onSubmit, defaultValues 
                     <FormControl>
                       <div className="flex items-center gap-2">
                         <Input placeholder="#1E40AF" {...field} />
-                        <div className="w-8 h-8 rounded border flex-shrink-0" style={{ backgroundColor: field.value }}></div>
+                        <Input type="color" value={field.value} onChange={field.onChange} className="p-1 h-10 w-10 cursor-pointer" />
                       </div>
                     </FormControl>
                     <FormMessage />
