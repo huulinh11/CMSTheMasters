@@ -23,7 +23,6 @@ import { Filter, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PAYMENT_SOURCES } from "@/types/guest-revenue";
-import { Separator } from "../ui/separator";
 
 export interface AdvancedFilters {
   phone: 'all' | 'yes' | 'no';
@@ -61,66 +60,58 @@ const paymentStatusOptions = [
 ];
 
 const FilterGrid = ({ filters, onFilterChange }: Omit<AdvancedGuestFilterProps, 'onClearFilters'>) => (
-  <div className="space-y-4">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label>Có SĐT</Label>
-        <Select value={filters.phone || 'all'} onValueChange={(value) => onFilterChange('phone', value)}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>{hasDataOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label>Có tài trợ</Label>
-        <Select value={filters.sponsorship || 'all'} onValueChange={(value) => onFilterChange('sponsorship', value)}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>{hasDataOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label>Có thông tin phụ</Label>
-        <Select value={filters.secondaryInfo || 'all'} onValueChange={(value) => onFilterChange('secondaryInfo', value)}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>{hasDataOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label>Có tư liệu</Label>
-        <Select value={filters.materials || 'all'} onValueChange={(value) => onFilterChange('materials', value)}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>{hasDataOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="space-y-2">
+      <Label>Có SĐT</Label>
+      <Select value={filters.phone || 'all'} onValueChange={(value) => onFilterChange('phone', value)}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>{hasDataOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+      </Select>
     </div>
-    <Separator />
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-            <Label>Trạng thái thanh toán</Label>
-            <Select value={filters.paymentStatus || 'all'} onValueChange={(value) => onFilterChange('paymentStatus', value)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{paymentStatusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-            </Select>
-        </div>
-        <div className="space-y-2">
-            <Label>Nguồn thanh toán (Khách mời)</Label>
-            <Select value={filters.paymentSource || 'all'} onValueChange={(value) => onFilterChange('paymentSource', value)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    {PAYMENT_SOURCES.map(source => <SelectItem key={source} value={source}>{source}</SelectItem>)}
-                </SelectContent>
-            </Select>
-        </div>
+    <div className="space-y-2">
+      <Label>Có tài trợ</Label>
+      <Select value={filters.sponsorship || 'all'} onValueChange={(value) => onFilterChange('sponsorship', value)}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>{hasDataOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+      </Select>
     </div>
-    <Separator />
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label>ZNS</Label>
-        <Select value={filters.zns || 'all'} onValueChange={(value) => onFilterChange('zns', value)}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>{znsOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+    <div className="space-y-2">
+      <Label>Có thông tin phụ</Label>
+      <Select value={filters.secondaryInfo || 'all'} onValueChange={(value) => onFilterChange('secondaryInfo', value)}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>{hasDataOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+      </Select>
+    </div>
+    <div className="space-y-2">
+      <Label>Có tư liệu</Label>
+      <Select value={filters.materials || 'all'} onValueChange={(value) => onFilterChange('materials', value)}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>{hasDataOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+      </Select>
+    </div>
+    <div className="space-y-2">
+        <Label>Trạng thái thanh toán</Label>
+        <Select value={filters.paymentStatus || 'all'} onValueChange={(value) => onFilterChange('paymentStatus', value)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{paymentStatusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
         </Select>
-      </div>
+    </div>
+    <div className="space-y-2">
+        <Label>Nguồn thanh toán (Khách mời)</Label>
+        <Select value={filters.paymentSource || 'all'} onValueChange={(value) => onFilterChange('paymentSource', value)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                {PAYMENT_SOURCES.map(source => <SelectItem key={source} value={source}>{source}</SelectItem>)}
+            </SelectContent>
+        </Select>
+    </div>
+    <div className="space-y-2">
+      <Label>ZNS</Label>
+      <Select value={filters.zns || 'all'} onValueChange={(value) => onFilterChange('zns', value)}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>{znsOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+      </Select>
     </div>
   </div>
 );
@@ -158,7 +149,7 @@ export const AdvancedGuestFilter = (props: AdvancedGuestFilterProps) => {
   return (
     <Popover>
       <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
-      <PopoverContent className="w-[500px] p-0">
+      <PopoverContent className="w-[700px] p-0">
         <div className="p-4 border-b flex justify-between items-center">
           <h4 className="font-medium leading-none">Bộ lọc nâng cao</h4>
           <Button variant="ghost" size="sm" onClick={props.onClearFilters}>
