@@ -116,67 +116,85 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
 
       const guestTable = guestType === 'vip' ? 'vip_guests' : 'guests';
       const paymentTable = guestType === 'vip' ? 'vip_payments' : 'guest_payments';
+      const revenueTable = guestType === 'vip' ? 'vip_guest_revenue' : 'guest_revenue';
+      
+      const { data: guestData, error: guestError } = await supabase.from(guestTable).select('*').eq('id', guestId).single();
+      if (guestError) throw new Error(`Guest Error: ${guestError.message}`);
 
-      const guestPromise = supabase.from(guestTable).select('*').eq('id', guestId).single();
-      const revenuePromise = supabase.rpc(guestType === 'vip' ? 'get_vip_guest_revenue_details' : 'get_guest_revenue_details');
-      const mediaBenefitPromise = supabase.from('media_benefits').select('*').eq('guest_id', guestId).single();
-      const tasksPromise = supabase.from('guest_tasks').select('*').eq('guest_id', guestId);
-      const paymentsPromise = supabase.from(paymentTable).select('*').eq('guest_id', guestId);
-      const upsaleHistoryPromise = supabase.from('guest_upsale_history').select('*').eq('guest_id', guestId);
-      const servicesPromise = supabase.rpc('get_guest_service_details_by_guest_id', { guest_id_in: guestId });
-      const allVipGuestsPromise = supabase.from('vip_guests').select('id, name');
+      const promises = [
+        supabase.from('media_benefits').select('*').eq('guest_id', guestId).single(),
+        supabase.from('guest_tasks').select('*').eq('guest_id', guestId),
+        supabase.from('guest_upsale_history').select('*').eq('guest_id', guestId),
+        supabase.rpc('get_guest_service_details_by_guest_id', { guest_id_in: guestId }),
+        (guestData.referrer && guestData.referrer !== 'ads')
+          ? supabase.from('vip_guests').select('name').eq('id', guestData.referrer).single()
+          : Promise.resolve({ data: null, error: null }),
+        supabase.from(revenueTable).select('*').eq('guest_id', guestId).single(),
+        supabase.from(paymentTable).select('*').eq('guest_id', guestId)
+      ];
 
       const [
-        { data: guestData, error: guestError },
-        { data: allRevenueData, error: revenueError },
-        { data: mediaBenefitData, error: mediaBenefitError },
-        { data: tasksData, error: tasksError },
-        { data: paymentsData, error: paymentsError },
-        { data: upsaleHistoryData, error: upsaleHistoryError },
-        { data: servicesData, error: servicesError },
-        { data: allVipGuests, error: allVipError },
-      ] = await Promise.all([guestPromise, revenuePromise, mediaBenefitPromise, tasksPromise, paymentsPromise, upsaleHistoryPromise, servicesPromise, allVipGuestsPromise]);
+          { data: mediaBenefitData, error: mediaBenefitError },
+          { data: tasksData, error: tasksError },
+          { data: upsaleHistoryData, error: upsaleHistoryError },
+          { data: servicesData, error: servicesError },
+          { data: referrerData },
+          { data: revenueData },
+          { data: paymentsData },
+      ] = await Promise.all(promises);
 
-      if (guestError) throw new Error(`Guest Error: ${guestError.message}`);
-      if (revenueError) throw new Error(`Revenue Error: ${revenueError.message}`);
       if (mediaBenefitError && mediaBenefitError.code !== 'PGRST116') throw new Error(`Media Benefit Error: ${mediaBenefitError.message}`);
       if (tasksError) throw new Error(`Tasks Error: ${tasksError.message}`);
-      if (paymentsError) throw new Error(`Payments Error: ${paymentsError.message}`);
       if (upsaleHistoryError) throw new Error(`Upsale History Error: ${upsaleHistoryError.message}`);
       if (servicesError) throw new Error(`Services Error: ${servicesError.message}`);
-      if (allVipError) throw new Error(`All VIPs Error: ${allVipError.message}`);
-
-      const revenueData = allRevenueData.find((r: any) => r.id === guestId);
-      
-      const vipGuestNameMap = new Map((allVipGuests || []).map(g => [g.id, g.name]));
-      const vipGuestIdSet = new Set((allVipGuests || []).map(g => g.id));
 
       let referrerName: string | null = guestData.referrer;
       let isReferrerValid = true;
       if (guestData.referrer) {
-        if (guestData.referrer === 'ads') {
-          referrerName = 'Ads';
-        } else if (vipGuestIdSet.has(guestData.referrer)) {
-          referrerName = vipGuestNameMap.get(guestData.referrer) || guestData.referrer;
-        } else {
-          referrerName = guestData.referrer;
-          isReferrerValid = false;
+          if (guestData.referrer === 'ads') {
+              referrerName = 'Ads';
+          } else if (referrerData) {
+              referrerName = referrerData.name;
+          } else {
+              isReferrerValid = false;
+          }
+      }
+
+      const paidAmount = (paymentsData || []).reduce((sum, p) => sum + p.amount, 0);
+      const latestUpsaleWithBill = (upsaleHistoryData || []).filter(h => h.bill_image_url).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+      
+      const finalRevenue = {
+          ...revenueData,
+          sponsorship: revenueData?.sponsorship || 0,
+          paid: paidAmount,
+          unpaid: (revenueData?.sponsorship || 0) - paidAmount,
+          bill_image_url: latestUpsaleWithBill?.bill_image_url || null,
+      };
+
+      if (guestType === 'regular' && revenueData) {
+        const originalSponsorship = revenueData.sponsorship || 0;
+        let effectiveSponsorship = originalSponsorship;
+        if (revenueData.is_upsaled) {
+            const firstUpsale = (upsaleHistoryData || []).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+            if (firstUpsale && firstUpsale.from_payment_source === 'Chỉ tiêu') {
+                effectiveSponsorship = originalSponsorship - firstUpsale.from_sponsorship;
+            }
+        } else if (revenueData.payment_source === 'Chỉ tiêu') {
+            effectiveSponsorship = 0;
         }
+        finalRevenue.original_sponsorship = originalSponsorship;
+        finalRevenue.sponsorship = effectiveSponsorship;
+        finalRevenue.unpaid = effectiveSponsorship - paidAmount;
       }
 
       return {
-        guest: { ...guestData, secondaryInfo: guestData.secondary_info, referrer: referrerName, isReferrerValid },
-        revenue: revenueData ? {
-          ...revenueData,
-          sponsorship: revenueData.sponsorship || 0,
-          paid: revenueData.paid_amount || 0,
-          unpaid: (revenueData.sponsorship || 0) - (revenueData.paid_amount || 0),
-        } : null,
-        mediaBenefit: mediaBenefitData,
-        tasks: tasksData || [],
-        payments: paymentsData || [],
-        upsaleHistory: upsaleHistoryData || [],
-        services: servicesData || [],
+          guest: { ...guestData, secondaryInfo: guestData.secondary_info, referrer: referrerName, isReferrerValid },
+          revenue: finalRevenue,
+          mediaBenefit: mediaBenefitData,
+          tasks: tasksData || [],
+          payments: paymentsData || [],
+          upsaleHistory: upsaleHistoryData || [],
+          services: servicesData || [],
       };
     },
     enabled: !!guestType && !!guestId,
@@ -280,6 +298,17 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
     }
   };
 
+  const handleEditClick = () => {
+    if (!data) return;
+    const guestToEdit = {
+      ...data.guest,
+      type: guestType === 'vip' ? 'Chức vụ' : 'Khách mời',
+      sponsorship_amount: data.revenue?.sponsorship,
+      payment_source: data.revenue?.payment_source,
+    };
+    onEdit(guestToEdit);
+  };
+
   if (isLoading || isLoadingPermissions) {
     return <div className="p-4 md:p-6 space-y-4"><Skeleton className="h-[80vh] w-full" /></div>;
   }
@@ -353,7 +382,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
               <Card>
                 <CardHeader className="p-3 md:p-4 flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center text-base md:text-lg"><Info className="mr-2" /> Thông tin cơ bản</CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => onEdit(guest)}><Edit className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={handleEditClick}><Edit className="h-4 w-4" /></Button>
                 </CardHeader>
                 <CardContent className="p-3 md:p-4 pt-0">
                   <InfoRow icon={Phone} label="SĐT" value={guest.phone} isTel />
