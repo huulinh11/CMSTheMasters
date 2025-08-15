@@ -31,7 +31,6 @@ export const allNavItems: NavItemType[] = [
   { id: "media-benefits", to: "/media-benefits", icon: Megaphone, label: "Quyền lợi truyền thông", mobileLabel: "Quyền lợi" },
   { id: "event-tasks", to: "/event-tasks", icon: ClipboardList, label: "Tác vụ sự kiện", mobileLabel: "Tác vụ" },
   { id: "information", to: "/information", icon: Info, label: "Thông tin", isMoreLink: true },
-  { id: "revenue", to: "/revenue", icon: CircleDollarSign, label: "Doanh thu", isMoreLink: true },
   { id: "service-sales", to: "/service-sales", icon: Briefcase, label: "Bán dịch vụ", isMoreLink: true },
   { id: "commission", to: "/commission", icon: Percent, label: "Hoa hồng", isMoreLink: true },
   { id: "referrals", to: "/referrals", icon: Share2, label: "Người giới thiệu", isMoreLink: true },

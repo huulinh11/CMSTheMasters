@@ -8,7 +8,6 @@ import Guests from "./pages/Guests";
 import MediaBenefits from "./pages/MediaBenefits";
 import EventTasks from "./pages/EventTasks";
 import Information from "./pages/Information";
-import Revenue from "./pages/Revenue";
 import Timeline from "./pages/Timeline";
 import Account from "./pages/Account";
 import SettingsPage from "./pages/Settings";
@@ -65,7 +64,6 @@ const router = createBrowserRouter([
       { element: <PermissionProtectedRoute permissionId="media-benefits" />, children: [{ path: "media-benefits", element: <MediaBenefits /> }] },
       { element: <PermissionProtectedRoute permissionId="event-tasks" />, children: [{ path: "event-tasks", element: <EventTasks /> }] },
       { element: <PermissionProtectedRoute permissionId="information" />, children: [{ path: "information", element: <Information /> }] },
-      { element: <PermissionProtectedRoute permissionId="revenue" />, children: [{ path: "revenue", element: <Revenue /> }] },
       { element: <PermissionProtectedRoute permissionId="service-sales" />, children: [{ path: "service-sales", element: <ServiceSalesPage /> }] },
       { element: <PermissionProtectedRoute permissionId="commission" />, children: [{ path: "commission", element: <CommissionPage /> }] },
       { element: <PermissionProtectedRoute permissionId="referrals" />, children: [{ path: "referrals", element: <ReferralsPage /> }] },
