@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { ParticipantOption } from "@/types/timeline";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ParticipantComboboxProps {
   options: ParticipantOption[];
@@ -74,40 +75,42 @@ export function ParticipantCombobox({ options, selected, onChange }: Participant
             <CommandInput placeholder="Tìm kiếm..." />
             <CommandList>
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
-              {Object.entries(groups).map(([groupName, groupOptions]) => (
-                <CommandGroup key={groupName} heading={groupName}>
-                  {groupName === 'Vai trò' && roleValues.length > 0 && (
-                    <CommandItem
-                      key="all-roles"
-                      value="Tất cả vai trò"
-                      onSelect={handleSelectAllRoles}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          allRolesSelected ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      Tất cả vai trò
-                    </CommandItem>
-                  )}
-                  {groupOptions.map((option) => (
-                    <CommandItem
-                      key={option.value}
-                      value={option.label}
-                      onSelect={() => handleSelect(option.value)}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selected.includes(option.value) ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {option.label}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              ))}
+              <ScrollArea className="h-72">
+                {Object.entries(groups).map(([groupName, groupOptions]) => (
+                  <CommandGroup key={groupName} heading={groupName}>
+                    {groupName === 'Vai trò' && roleValues.length > 0 && (
+                      <CommandItem
+                        key="all-roles"
+                        value="Tất cả vai trò"
+                        onSelect={handleSelectAllRoles}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            allRolesSelected ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Tất cả vai trò
+                      </CommandItem>
+                    )}
+                    {groupOptions.map((option) => (
+                      <CommandItem
+                        key={option.value}
+                        value={option.label}
+                        onSelect={() => handleSelect(option.value)}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selected.includes(option.value) ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {option.label}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                ))}
+              </ScrollArea>
             </CommandList>
           </Command>
         </PopoverContent>
