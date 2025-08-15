@@ -54,6 +54,15 @@ const Timeline = () => {
   const [editingItem, setEditingItem] = useState<TimelineEvent | null>(null);
   const [isPublishAlertOpen, setIsPublishAlertOpen] = useState(false);
 
+  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['checklist_settings_timeline'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('checklist_settings').select('id, timeline_start_time').limit(1).single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    }
+  });
+
   const { data: dbItems = [], isLoading: isLoadingItems } = useQuery<TimelineEvent[]>({
     queryKey: ['timeline_events'],
     queryFn: async () => {
@@ -96,6 +105,12 @@ const Timeline = () => {
       return data || [];
     }
   });
+
+  useEffect(() => {
+    if (settings?.timeline_start_time) {
+      setBaseTime(settings.timeline_start_time);
+    }
+  }, [settings]);
 
   useEffect(() => {
     const startTimes = calculateTimeline(dbItems, baseTime);
@@ -192,6 +207,36 @@ const Timeline = () => {
     },
   });
 
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (newTime: string) => {
+      if (!settings?.id) {
+        const { error } = await supabase.from('checklist_settings').insert({ timeline_start_time: newTime });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('checklist_settings').update({ timeline_start_time: newTime }).eq('id', settings.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['checklist_settings_timeline'] });
+    },
+    onError: (error: any) => {
+      showError(`Lỗi lưu giờ bắt đầu: ${error.message}`);
+    }
+  });
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (baseTime && settings && settings.timeline_start_time !== baseTime) {
+        updateSettingsMutation.mutate(baseTime);
+      }
+    }, 1000);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [baseTime, settings, updateSettingsMutation]);
+
   const handleOpenAddDialog = () => {
     setEditingItem(null);
     setIsDialogOpen(true);
@@ -223,7 +268,7 @@ const Timeline = () => {
     }
   }
 
-  const isLoading = isLoadingItems || isLoadingPublicItems;
+  const isLoading = isLoadingItems || isLoadingPublicItems || isLoadingSettings;
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
