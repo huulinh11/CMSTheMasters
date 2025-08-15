@@ -563,10 +563,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         onOpenChange={setIsMaterialsOpen} 
         content={guest.materials} 
         guestName={guest.name}
-        onEdit={() => {
-          setIsMaterialsOpen(false);
-          onEdit(guest);
-        }}
+        onEdit={handleEditClick}
       />
       <ImagePreviewDialog
         guest={guest}
