@@ -304,6 +304,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       ...data.guest,
       type: guestType === 'vip' ? 'Chức vụ' : 'Khách mời',
       sponsorship_amount: data.revenue?.sponsorship,
+      paid_amount: data.revenue?.paid,
       payment_source: data.revenue?.payment_source,
     };
     onEdit(guestToEdit);
