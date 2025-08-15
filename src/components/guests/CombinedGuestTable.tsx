@@ -51,7 +51,6 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
             <TableHead>Ảnh</TableHead>
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
-            <TableHead>Loại</TableHead>
             <TableHead>SĐT</TableHead>
             <TableHead>Thông tin phụ</TableHead>
             <TableHead>Người giới thiệu</TableHead>
@@ -90,7 +89,6 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
                     <div className="text-xs text-red-500 font-semibold mt-1">Đã upsale</div>
                   )}
                 </TableCell>
-                <TableCell>{guest.type}</TableCell>
                 <TableCell>{guest.phone || 'N/A'}</TableCell>
                 <TableCell className="max-w-[200px] truncate" title={guest.type === 'Chức vụ' ? guest.secondaryInfo : undefined}>
                   {guest.type === 'Chức vụ' ? guest.secondaryInfo || 'N/A' : 'N/A'}
@@ -122,7 +120,7 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={13} className="h-24 text-center">
+              <TableCell colSpan={12} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>

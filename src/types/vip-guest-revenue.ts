@@ -7,6 +7,7 @@ export type VipGuestRevenue = {
   secondaryInfo?: string;
   phone?: string;
   notes?: string;
+  materials?: string | null;
   sponsorship: number;
   paid: number;
   unpaid: number;

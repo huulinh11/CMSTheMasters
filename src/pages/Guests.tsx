@@ -14,7 +14,7 @@ import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
 import { PaymentSource } from "@/types/guest-revenue";
-import { AdvancedGuestFilter } from "@/components/guests/AdvancedGuestFilter";
+import { AdvancedGuestFilter, AdvancedFilters } from "@/components/guests/AdvancedGuestFilter";
 import { PageHeader } from "@/components/PageHeader";
 import { ImportExportActions } from "@/components/guests/ImportExportActions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -35,6 +35,7 @@ import HistoryDialog from "@/components/Revenue/HistoryDialog";
 import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog";
 import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
   service_revenue: number;
@@ -74,7 +75,8 @@ const GuestsPage = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<'all' | 'Chức vụ' | 'Khách mời'>('all');
-  const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [advancedFilters, setAdvancedFilters] = useState<Partial<AdvancedFilters>>({});
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -223,12 +225,37 @@ const GuestsPage = () => {
     return combinedGuests.filter(guest => {
       const searchMatch = guest.name.toLowerCase().includes(searchTerm.toLowerCase()) || guest.id.toLowerCase().includes(searchTerm.toLowerCase());
       const typeMatch = typeFilter === 'all' || guest.type === typeFilter;
-      const roleMatch = advancedFilters.role === 'all' || !advancedFilters.role || guest.role === advancedFilters.role;
-      const sponsorshipMatch = advancedFilters.sponsorship === 'all' || !advancedFilters.sponsorship || (advancedFilters.sponsorship === 'has_sponsorship' ? guest.sponsorship > 0 : guest.sponsorship === 0);
-      const referrerMatch = advancedFilters.referrer === 'all' || !advancedFilters.referrer || (advancedFilters.referrer === 'has_referrer' ? !!guest.referrer : !guest.referrer);
-      return searchMatch && typeMatch && roleMatch && sponsorshipMatch && referrerMatch;
+      const roleMatch = roleFilter === 'all' || guest.role === roleFilter;
+
+      const hasSecondaryInfo = guest.type === 'Chức vụ' && !!guest.secondaryInfo;
+      const secondaryInfoMatch = !advancedFilters.secondaryInfo || advancedFilters.secondaryInfo === 'all' || (advancedFilters.secondaryInfo === 'yes' ? hasSecondaryInfo : !hasSecondaryInfo);
+      
+      const phoneMatch = !advancedFilters.phone || advancedFilters.phone === 'all' || (advancedFilters.phone === 'yes' ? !!guest.phone : !guest.phone);
+      const sponsorshipMatch = !advancedFilters.sponsorship || advancedFilters.sponsorship === 'all' || (advancedFilters.sponsorship === 'yes' ? guest.sponsorship > 0 : guest.sponsorship === 0);
+      const materialsMatch = !advancedFilters.materials || advancedFilters.materials === 'all' || (advancedFilters.materials === 'yes' ? !!guest.materials : !guest.materials);
+      
+      const paymentStatusMatch = (() => {
+        if (!advancedFilters.paymentStatus || advancedFilters.paymentStatus === 'all') return true;
+        if (guest.total_revenue === 0) return advancedFilters.paymentStatus === 'paid';
+        switch (advancedFilters.paymentStatus) {
+          case 'paid': return guest.unpaid <= 0;
+          case 'partially_paid': return guest.paid > 0 && guest.unpaid > 0;
+          case 'unpaid': return guest.paid === 0 && guest.unpaid > 0;
+          default: return true;
+        }
+      })();
+
+      const paymentSourceMatch = (() => {
+        if (!advancedFilters.paymentSource || advancedFilters.paymentSource === 'all') return true;
+        if (guest.type === 'Khách mời') {
+          return guest.payment_source === advancedFilters.paymentSource;
+        }
+        return true;
+      })();
+
+      return searchMatch && typeMatch && roleMatch && phoneMatch && sponsorshipMatch && secondaryInfoMatch && materialsMatch && paymentStatusMatch && paymentSourceMatch;
     });
-  }, [combinedGuests, searchTerm, typeFilter, advancedFilters]);
+  }, [combinedGuests, searchTerm, typeFilter, roleFilter, advancedFilters]);
 
   const revenueStats = useMemo(() => {
     return filteredGuests.reduce((acc, guest) => { acc.totalSponsorship += guest.sponsorship; acc.totalPaid += guest.paid; acc.totalUnpaid += guest.unpaid; return acc; }, { totalSponsorship: 0, totalPaid: 0, totalUnpaid: 0 });
@@ -256,7 +283,22 @@ const GuestsPage = () => {
       <div className="my-4 flex flex-col md:flex-row items-center gap-2">
         <Input placeholder="Tìm kiếm..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-white/80 flex-grow" />
         <div className="flex w-full md:w-auto items-center gap-2">
-          <AdvancedGuestFilter filters={advancedFilters} onFilterChange={(field, value) => setAdvancedFilters(prev => ({ ...prev, [field]: value }))} onClearFilters={() => setAdvancedFilters({})} filterConfig={{ showReferrer: true }} />
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="Lọc theo vai trò" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả vai trò</SelectItem>
+              {allRoles.map(role => (
+                <SelectItem key={role} value={role}>{role}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <AdvancedGuestFilter 
+            filters={advancedFilters} 
+            onFilterChange={(field, value) => setAdvancedFilters(prev => ({ ...prev, [field]: value as any }))} 
+            onClearFilters={() => setAdvancedFilters({})} 
+          />
           {canDelete && selectedGuests.length > 0 && (<Button variant="destructive" onClick={() => deleteMutation.mutate(selectedGuests)} disabled={deleteMutation.isPending}><Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})</Button>)}
         </div>
       </div>
