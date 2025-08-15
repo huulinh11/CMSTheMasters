@@ -178,7 +178,17 @@ const LoadingScreenSettings = () => {
                   <div><Label>Font</Label><Select value={item.fontFamily || 'sans-serif'} onValueChange={value => handleTextConfigChange(item.id!, 'fontFamily', value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fontFamilies.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent></Select></div>
                   <div><Label>Kiểu</Label><Select value={`${item.fontWeight || 'normal'}-${item.fontStyle || 'normal'}`} onValueChange={value => { const [fontWeight, fontStyle] = value.split('-'); handleTextConfigChange(item.id!, 'fontWeight', fontWeight); handleTextConfigChange(item.id!, 'fontStyle', fontStyle);}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="normal-normal">Thường</SelectItem><SelectItem value="bold-normal">Đậm</SelectItem><SelectItem value="normal-italic">Nghiêng</SelectItem><SelectItem value="bold-italic">Đậm Nghiêng</SelectItem></SelectContent></Select></div>
                   <div><Label>Cỡ chữ (px)</Label><Input type="number" value={item.fontSize || 16} onChange={e => handleTextConfigChange(item.id!, 'fontSize', Number(e.target.value))} /></div>
-                  <div><Label>Màu chữ</Label><Input type="color" value={item.color || '#000000'} onChange={e => handleTextConfigChange(item.id!, 'color', e.target.value)} className="p-1 h-10" /></div>
+                  <div>
+                    <Label>Màu chữ</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="#000000"
+                        value={item.color || '#000000'}
+                        onChange={e => handleTextConfigChange(item.id!, 'color', e.target.value)}
+                      />
+                      <div className="w-8 h-8 rounded border flex-shrink-0" style={{ backgroundColor: item.color || '#000000' }}></div>
+                    </div>
+                  </div>
                 </div>
                 <div><Label>Canh lề</Label><MarginEditor values={item} onChange={(field, value) => handleTextConfigChange(item.id!, field, value)} /></div>
               </div>

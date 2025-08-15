@@ -161,7 +161,10 @@ export const AddEditRoleDialog = ({ open, onOpenChange, onSubmit, defaultValues 
                   <FormItem>
                     <FormLabel>Màu nền</FormLabel>
                     <FormControl>
-                      <Input type="color" {...field} className="p-1 h-10 w-full" />
+                      <div className="flex items-center gap-2">
+                        <Input placeholder="#EFF6FF" {...field} />
+                        <div className="w-8 h-8 rounded border flex-shrink-0" style={{ backgroundColor: field.value }}></div>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -174,7 +177,10 @@ export const AddEditRoleDialog = ({ open, onOpenChange, onSubmit, defaultValues 
                   <FormItem>
                     <FormLabel>Màu chữ</FormLabel>
                     <FormControl>
-                      <Input type="color" {...field} className="p-1 h-10 w-full" />
+                      <div className="flex items-center gap-2">
+                        <Input placeholder="#1E40AF" {...field} />
+                        <div className="w-8 h-8 rounded border flex-shrink-0" style={{ backgroundColor: field.value }}></div>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
