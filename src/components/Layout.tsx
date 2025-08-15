@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isMobile = useIsMobile();
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const isProcessingScanRef = useRef(false);
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -92,7 +93,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <QrScannerProvider openScanner={openScanner}>
       <div className="flex h-[100dvh] bg-transparent">
-        {!isMobile && <Sidebar />}
+        {!isMobile && <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />}
         <div className="flex flex-1 flex-col overflow-hidden">
           <main className="flex-1 overflow-y-auto pb-16">
             {children}
