@@ -52,9 +52,11 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
             <TableHead>Loại</TableHead>
+            <TableHead>SĐT</TableHead>
+            <TableHead>Thông tin phụ</TableHead>
+            <TableHead>Người giới thiệu</TableHead>
+            <TableHead>Ghi chú</TableHead>
             <TableHead>Tài trợ</TableHead>
-            <TableHead>Tiền dịch vụ</TableHead>
-            <TableHead>Tổng tiền</TableHead>
             <TableHead>Đã trả</TableHead>
             <TableHead>Còn lại</TableHead>
             <TableHead className="text-right">Tác vụ</TableHead>
@@ -89,9 +91,15 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
                   )}
                 </TableCell>
                 <TableCell>{guest.type}</TableCell>
+                <TableCell>{guest.phone || 'N/A'}</TableCell>
+                <TableCell className="max-w-[200px] truncate" title={guest.type === 'Chức vụ' ? guest.secondaryInfo : undefined}>
+                  {guest.type === 'Chức vụ' ? guest.secondaryInfo || 'N/A' : 'N/A'}
+                </TableCell>
+                <TableCell>{guest.referrer || 'N/A'}</TableCell>
+                <TableCell className="max-w-[200px] truncate" title={guest.notes || undefined}>
+                  {guest.notes || 'N/A'}
+                </TableCell>
                 <TableCell>{formatCurrency(guest.sponsorship)}</TableCell>
-                <TableCell>{formatCurrency(guest.service_revenue)}</TableCell>
-                <TableCell className="font-bold">{formatCurrency(guest.total_revenue)}</TableCell>
                 <TableCell className="text-green-600">{formatCurrency(guest.paid)}</TableCell>
                 <TableCell className="text-red-600">{formatCurrency(guest.unpaid)}</TableCell>
                 <TableCell className="text-right">
@@ -114,7 +122,7 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center">
+              <TableCell colSpan={13} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>

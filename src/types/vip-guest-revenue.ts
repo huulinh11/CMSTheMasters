@@ -5,6 +5,8 @@ export type VipGuestRevenue = {
   name: string;
   role: VipGuest['role'];
   secondaryInfo?: string;
+  phone?: string;
+  notes?: string;
   sponsorship: number;
   paid: number;
   unpaid: number;

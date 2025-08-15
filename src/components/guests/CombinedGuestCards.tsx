@@ -75,9 +75,11 @@ export const CombinedGuestCards = ({ guests, selectedGuests, onSelectGuest, onVi
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="border-t border-slate-100 pt-3 space-y-2">
+                <InfoRow label="SĐT" value={guest.phone || 'N/A'} />
+                <InfoRow label="Thông tin phụ" value={(guest.type === 'Chức vụ' ? guest.secondaryInfo : '') || 'N/A'} />
+                <InfoRow label="Người GT" value={guest.referrer || 'N/A'} />
+                <InfoRow label="Ghi chú" value={guest.notes || 'N/A'} />
                 <InfoRow label="Tài trợ" value={formatCurrency(guest.sponsorship)} />
-                <InfoRow label="Tiền dịch vụ" value={formatCurrency(guest.service_revenue)} />
-                <InfoRow label="Tổng tiền" value={formatCurrency(guest.total_revenue)} valueClass="font-bold text-primary" />
                 <InfoRow label="Đã thanh toán" value={formatCurrency(guest.paid)} valueClass="text-green-600" />
                 <InfoRow label="Chưa thanh toán" value={formatCurrency(guest.unpaid)} valueClass="text-red-600" />
               </div>
