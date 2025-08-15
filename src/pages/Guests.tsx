@@ -42,6 +42,7 @@ export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | 
   total_revenue: number;
   has_history: boolean;
   image_url?: string | null;
+  zns_sent?: boolean;
 };
 
 type UpsaleHistory = {
@@ -178,6 +179,19 @@ const GuestsPage = () => {
     onError: (error) => showError(error.message),
   });
 
+  const znsUpdateMutation = useMutation({
+    mutationFn: async ({ guest, zns_sent }: { guest: CombinedGuestRevenue, zns_sent: boolean }) => {
+        const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
+        const { error } = await supabase.from(tableName).update({ zns_sent }).eq('id', guest.id);
+        if (error) throw error;
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+        queryClient.invalidateQueries({ queryKey: ['guests'] });
+    },
+    onError: (error: Error) => showError(error.message),
+  });
+
   const handleSelectGuest = (id: string) => {
     setSelectedGuests(prev =>
       prev.includes(id) ? prev.filter(guestId => guestId !== id) : [...prev, id]
@@ -216,10 +230,10 @@ const GuestsPage = () => {
         serviceRevenueByGuest.set(service.guest_id, (serviceRevenueByGuest.get(service.guest_id) || 0) + service.price);
         serviceCountByGuest.set(service.guest_id, (serviceCountByGuest.get(service.guest_id) || 0) + 1);
     });
-    const vips: CombinedGuestRevenue[] = vipRevenueData.map(g => ({ ...g, type: 'Chức vụ', image_url: vipGuests.find(vg => vg.id === g.id)?.image_url, service_revenue: serviceRevenueByGuest.get(g.id) || 0, total_revenue: (g.sponsorship || 0) + (serviceRevenueByGuest.get(g.id) || 0), has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0 }));
-    const regulars: CombinedGuestRevenue[] = regularGuestsWithRevenue.map(g => ({ ...g, type: 'Khách mời', image_url: undefined, service_revenue: serviceRevenueByGuest.get(g.id) || 0, total_revenue: g.sponsorship + (serviceRevenueByGuest.get(g.id) || 0), has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0 }));
+    const vips: CombinedGuestRevenue[] = vipRevenueData.map(g => ({ ...g, type: 'Chức vụ', image_url: vipGuests.find(vg => vg.id === g.id)?.image_url, service_revenue: serviceRevenueByGuest.get(g.id) || 0, total_revenue: (g.sponsorship || 0) + (serviceRevenueByGuest.get(g.id) || 0), has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0, zns_sent: vipGuests.find(vg => vg.id === g.id)?.zns_sent }));
+    const regulars: CombinedGuestRevenue[] = regularGuestsWithRevenue.map(g => ({ ...g, type: 'Khách mời', image_url: undefined, service_revenue: serviceRevenueByGuest.get(g.id) || 0, total_revenue: g.sponsorship + (serviceRevenueByGuest.get(g.id) || 0), has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0, zns_sent: regularGuests.find(rg => rg.id === g.id)?.zns_sent }));
     return [...vips, ...regulars].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [vipRevenueData, regularGuestsWithRevenue, guestServices, upsaleHistory, vipGuests]);
+  }, [vipRevenueData, regularGuestsWithRevenue, guestServices, upsaleHistory, vipGuests, regularGuests]);
 
   const filteredGuests = useMemo(() => {
     return combinedGuests.filter(guest => {
@@ -253,7 +267,9 @@ const GuestsPage = () => {
         return true;
       })();
 
-      return searchMatch && typeMatch && roleMatch && phoneMatch && sponsorshipMatch && secondaryInfoMatch && materialsMatch && paymentStatusMatch && paymentSourceMatch;
+      const znsMatch = !advancedFilters.zns || advancedFilters.zns === 'all' || (advancedFilters.zns === 'yes' ? guest.zns_sent : !guest.zns_sent);
+
+      return searchMatch && typeMatch && roleMatch && phoneMatch && sponsorshipMatch && secondaryInfoMatch && materialsMatch && paymentStatusMatch && paymentSourceMatch && znsMatch;
     });
   }, [combinedGuests, searchTerm, typeFilter, roleFilter, advancedFilters]);
 
@@ -306,9 +322,9 @@ const GuestsPage = () => {
       {isLoading ? <Skeleton className="h-96 w-full rounded-lg mt-4" /> : (
         <div className="mt-4">
           {isMobile ? (
-            <CombinedGuestCards guests={filteredGuests} selectedGuests={selectedGuests} onSelectGuest={handleSelectGuest} onView={(guest) => setViewingGuestId(guest.id)} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={(guest) => guest.type === 'Khách mời' && setUpsaleGuest(guest)} onDelete={(id) => deleteMutation.mutate([id])} canDelete={!!canDelete} />
+            <CombinedGuestCards guests={filteredGuests} selectedGuests={selectedGuests} onSelectGuest={handleSelectGuest} onView={(guest) => setViewingGuestId(guest.id)} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={(guest) => guest.type === 'Khách mời' && setUpsaleGuest(guest)} onDelete={(id) => deleteMutation.mutate([id])} onZnsChange={(guest, sent) => znsUpdateMutation.mutate({ guest, zns_sent: sent })} canDelete={!!canDelete} />
           ) : (
-            <CombinedGuestTable guests={filteredGuests} selectedGuests={selectedGuests} onSelectGuest={handleSelectGuest} onSelectAll={(checked) => setSelectedGuests(checked ? filteredGuests.map(g => g.id) : [])} onView={(guest) => setViewingGuestId(guest.id)} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={(guest) => guest.type === 'Khách mời' && setUpsaleGuest(guest)} onDelete={(id) => deleteMutation.mutate([id])} canDelete={!!canDelete} />
+            <CombinedGuestTable guests={filteredGuests} selectedGuests={selectedGuests} onSelectGuest={handleSelectGuest} onSelectAll={(checked) => setSelectedGuests(checked ? filteredGuests.map(g => g.id) : [])} onView={(guest) => setViewingGuestId(guest.id)} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={(guest) => guest.type === 'Khách mời' && setUpsaleGuest(guest)} onDelete={(id) => deleteMutation.mutate([id])} onZnsChange={(guest, sent) => znsUpdateMutation.mutate({ guest, zns_sent: sent })} canDelete={!!canDelete} />
           )}
         </div>
       )}

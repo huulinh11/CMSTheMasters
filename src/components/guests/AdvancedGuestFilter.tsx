@@ -32,6 +32,7 @@ export interface AdvancedFilters {
   materials: 'all' | 'yes' | 'no';
   paymentStatus: 'all' | 'paid' | 'partially_paid' | 'unpaid';
   paymentSource: string;
+  zns: 'all' | 'yes' | 'no';
 }
 
 interface AdvancedGuestFilterProps {
@@ -44,6 +45,12 @@ const hasDataOptions = [
   { value: 'all', label: 'Tất cả' },
   { value: 'yes', label: 'Có' },
   { value: 'no', label: 'Không' },
+];
+
+const znsOptions = [
+  { value: 'all', label: 'Tất cả' },
+  { value: 'yes', label: 'Đã gửi' },
+  { value: 'no', label: 'Chưa gửi' },
 ];
 
 const paymentStatusOptions = [
@@ -104,6 +111,16 @@ const FilterGrid = ({ filters, onFilterChange }: Omit<AdvancedGuestFilterProps, 
                 </SelectContent>
             </Select>
         </div>
+    </div>
+    <Separator />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Label>ZNS</Label>
+        <Select value={filters.zns || 'all'} onValueChange={(value) => onFilterChange('zns', value)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>{znsOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
     </div>
   </div>
 );

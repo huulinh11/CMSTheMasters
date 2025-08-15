@@ -22,6 +22,7 @@ interface CombinedGuestCardsProps {
   onHistory: (guest: CombinedGuestRevenue) => void;
   onUpsale: (guest: CombinedGuestRevenue) => void;
   onDelete: (id: string) => void;
+  onZnsChange: (guest: CombinedGuestRevenue, sent: boolean) => void;
   canDelete: boolean;
 }
 
@@ -32,7 +33,7 @@ const InfoRow = ({ label, value, valueClass }: { label: string; value: string; v
   </div>
 );
 
-export const CombinedGuestCards = ({ guests, selectedGuests, onSelectGuest, onView, onEdit, onPay, onHistory, onUpsale, onDelete, canDelete }: CombinedGuestCardsProps) => {
+export const CombinedGuestCards = ({ guests, selectedGuests, onSelectGuest, onView, onEdit, onPay, onHistory, onUpsale, onDelete, onZnsChange, canDelete }: CombinedGuestCardsProps) => {
   return (
     <div className="space-y-4">
       {guests.length > 0 ? (
@@ -75,10 +76,17 @@ export const CombinedGuestCards = ({ guests, selectedGuests, onSelectGuest, onVi
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="border-t border-slate-100 pt-3 space-y-2">
-                <InfoRow label="SĐT" value={guest.phone || 'N/A'} />
-                <InfoRow label="Thông tin phụ" value={(guest.type === 'Chức vụ' ? guest.secondaryInfo : '') || 'N/A'} />
-                <InfoRow label="Người GT" value={guest.referrer || 'N/A'} />
-                <InfoRow label="Ghi chú" value={guest.notes || 'N/A'} />
+                <InfoRow label="SĐT" value={guest.phone || ''} />
+                <InfoRow label="Thông tin phụ" value={(guest.type === 'Chức vụ' ? guest.secondaryInfo : '') || ''} />
+                <InfoRow label="Người GT" value={guest.referrer || ''} />
+                <InfoRow label="Ghi chú" value={guest.notes || ''} />
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">ZNS đã gửi</span>
+                  <Checkbox
+                    checked={!!guest.zns_sent}
+                    onCheckedChange={(checked) => onZnsChange(guest, !!checked)}
+                  />
+                </div>
                 <InfoRow label="Tài trợ" value={formatCurrency(guest.sponsorship)} />
                 <InfoRow label="Đã thanh toán" value={formatCurrency(guest.paid)} valueClass="text-green-600" />
                 <InfoRow label="Chưa thanh toán" value={formatCurrency(guest.unpaid)} valueClass="text-red-600" />

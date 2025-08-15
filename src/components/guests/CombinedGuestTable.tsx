@@ -30,10 +30,11 @@ interface CombinedGuestTableProps {
   onHistory: (guest: CombinedGuestRevenue) => void;
   onUpsale: (guest: CombinedGuestRevenue) => void;
   onDelete: (id: string) => void;
+  onZnsChange: (guest: CombinedGuestRevenue, sent: boolean) => void;
   canDelete: boolean;
 }
 
-export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSelectAll, onView, onEdit, onPay, onHistory, onUpsale, onDelete, canDelete }: CombinedGuestTableProps) => {
+export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSelectAll, onView, onEdit, onPay, onHistory, onUpsale, onDelete, onZnsChange, canDelete }: CombinedGuestTableProps) => {
   const allSelected = guests.length > 0 && selectedGuests.length === guests.length;
 
   return (
@@ -52,9 +53,10 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
             <TableHead>Tên</TableHead>
             <TableHead>Vai trò</TableHead>
             <TableHead>SĐT</TableHead>
-            <TableHead>Thông tin phụ</TableHead>
+            <TableHead className="w-48">Thông tin phụ</TableHead>
             <TableHead>Người giới thiệu</TableHead>
-            <TableHead>Ghi chú</TableHead>
+            <TableHead className="w-48">Ghi chú</TableHead>
+            <TableHead>ZNS</TableHead>
             <TableHead>Tài trợ</TableHead>
             <TableHead>Đã trả</TableHead>
             <TableHead>Còn lại</TableHead>
@@ -89,13 +91,19 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
                     <div className="text-xs text-red-500 font-semibold mt-1">Đã upsale</div>
                   )}
                 </TableCell>
-                <TableCell>{guest.phone || 'N/A'}</TableCell>
-                <TableCell className="max-w-[200px] truncate" title={guest.type === 'Chức vụ' ? guest.secondaryInfo : undefined}>
-                  {guest.type === 'Chức vụ' ? guest.secondaryInfo || 'N/A' : 'N/A'}
+                <TableCell>{guest.phone || ''}</TableCell>
+                <TableCell className="break-words" title={guest.type === 'Chức vụ' ? guest.secondaryInfo : undefined}>
+                  {guest.type === 'Chức vụ' ? guest.secondaryInfo || '' : ''}
                 </TableCell>
-                <TableCell>{guest.referrer || 'N/A'}</TableCell>
-                <TableCell className="max-w-[200px] truncate" title={guest.notes || undefined}>
-                  {guest.notes || 'N/A'}
+                <TableCell>{guest.referrer || ''}</TableCell>
+                <TableCell className="break-words" title={guest.notes || undefined}>
+                  {guest.notes || ''}
+                </TableCell>
+                <TableCell>
+                  <Checkbox
+                    checked={!!guest.zns_sent}
+                    onCheckedChange={(checked) => onZnsChange(guest, !!checked)}
+                  />
                 </TableCell>
                 <TableCell>{formatCurrency(guest.sponsorship)}</TableCell>
                 <TableCell className="text-green-600">{formatCurrency(guest.paid)}</TableCell>
@@ -120,7 +128,7 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={12} className="h-24 text-center">
+              <TableCell colSpan={13} className="h-24 text-center">
                 Không tìm thấy kết quả.
               </TableCell>
             </TableRow>
