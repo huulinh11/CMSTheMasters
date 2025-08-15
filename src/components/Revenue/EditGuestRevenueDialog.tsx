@@ -57,7 +57,7 @@ const EditGuestRevenueDialog = ({ guest, open, onOpenChange, mode = "edit", role
 
   useEffect(() => {
     if (guest && open) {
-      const initialSponsorship = guest.original_sponsorship;
+      const initialSponsorship = guest.original_sponsorship ?? guest.sponsorship;
       setSponsorship(initialSponsorship);
       setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(initialSponsorship));
       setPaymentSource(guest.payment_source || "");

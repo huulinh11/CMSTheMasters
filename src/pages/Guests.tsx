@@ -154,6 +154,46 @@ const GuestsPage = () => {
     onSettled: () => setIsAddDialogOpen(false),
   });
 
+  const editVipMutation = useMutation({
+    mutationFn: async (values: VipGuestFormValues & { id: string }) => {
+        const { sponsorship_amount, paid_amount, ...guestValues } = values;
+        const { secondaryInfo, ...rest } = guestValues;
+        const guestForDb = { ...rest, secondary_info: secondaryInfo };
+        const { error: guestError } = await supabase.from('vip_guests').update(guestForDb).eq('id', values.id);
+        if (guestError) throw guestError;
+        if (sponsorship_amount !== undefined) {
+            const { error: revenueError } = await supabase.from('vip_guest_revenue').upsert({ guest_id: values.id, sponsorship: sponsorship_amount }, { onConflict: 'guest_id' });
+            if (revenueError) throw revenueError;
+        }
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+        queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+        showSuccess("Cập nhật khách thành công!");
+    },
+    onError: (error: any) => showError(error.message),
+    onSettled: () => setEditingGuest(null),
+  });
+
+  const editRegularMutation = useMutation({
+      mutationFn: async (values: GuestFormValues & { id: string }) => {
+          const { sponsorship_amount, paid_amount, payment_source, ...guestValues } = values;
+          const { error: guestError } = await supabase.from('guests').update(guestValues).eq('id', values.id);
+          if (guestError) throw guestError;
+          if (sponsorship_amount !== undefined || payment_source) {
+              const { error: revenueError } = await supabase.from('guest_revenue').upsert({ guest_id: values.id, sponsorship: sponsorship_amount || 0, payment_source: payment_source || 'Trống' }, { onConflict: 'guest_id' });
+              if (revenueError) throw revenueError;
+          }
+      },
+      onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['guests'] });
+          queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+          showSuccess("Cập nhật khách mời thành công!");
+      },
+      onError: (error: any) => showError(error.message),
+      onSettled: () => setEditingGuest(null),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
       if (!canDelete) throw new Error("Bạn không có quyền xóa khách.");
@@ -329,9 +369,9 @@ const GuestsPage = () => {
         </div>
       )}
       <AddCombinedGuestDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} onVipSubmit={(values) => addVipMutation.mutate(values)} onRegularSubmit={(values) => addRegularMutation.mutate(values)} allVipGuests={vipGuests} roleConfigs={roleConfigs} />
-      <GuestDetailsDialog guestId={viewingGuestId} guestType={combinedGuests.find(g => g.id === viewingGuestId)?.type === 'Chức vụ' ? 'vip' : 'regular'} open={!!viewingGuestId} onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)} onEdit={setEditingGuest} onDelete={handleDelete} roleConfigs={roleConfigs} />
-      {editingGuest?.type === 'Chức vụ' && <AddVipGuestDialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)} onSubmit={(values) => { /* edit logic here */ }} defaultValues={editingGuest} allGuests={vipGuests} roleConfigs={roleConfigs.filter(r => r.type === 'Chức vụ')} />}
-      {editingGuest?.type === 'Khách mời' && <AddGuestDialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)} onSubmit={(values) => { /* edit logic here */ }} defaultValues={editingGuest} allVipGuests={vipGuests} roleConfigs={roleConfigs.filter(r => r.type === 'Khách mời')} />}
+      <GuestDetailsDialog guestId={viewingGuestId} guestType={combinedGuests.find(g => g.id === viewingGuestId)?.type === 'Chức vụ' ? 'vip' : 'regular'} open={!!viewingGuestId} onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)} onEdit={(guest) => { setViewingGuestId(null); setEditingGuest(guest); }} onDelete={handleDelete} roleConfigs={roleConfigs} />
+      {editingGuest?.type === 'Chức vụ' && <AddVipGuestDialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)} onSubmit={(values) => editVipMutation.mutate({ ...values, id: editingGuest!.id })} defaultValues={editingGuest as any} allGuests={vipGuests} roleConfigs={roleConfigs.filter(r => r.type === 'Chức vụ')} />}
+      {editingGuest?.type === 'Khách mời' && <AddGuestDialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)} onSubmit={(values) => editRegularMutation.mutate({ ...values, id: editingGuest!.id })} defaultValues={editingGuest as any} allVipGuests={vipGuests} roleConfigs={roleConfigs.filter(r => r.type === 'Khách mời')} />}
       {payingGuest?.type === 'Chức vụ' && <PaymentDialog guest={payingGuest} open={!!payingGuest} onOpenChange={(open) => !open && setPayingGuest(null)} />}
       {payingGuest?.type === 'Khách mời' && <GuestPaymentDialog guest={payingGuest} open={!!payingGuest} onOpenChange={(open) => !open && setPayingGuest(null)} />}
       {historyGuest?.type === 'Chức vụ' && <HistoryDialog guest={historyGuest} open={!!historyGuest} onOpenChange={(open) => !open && setHistoryGuest(null)} />}
