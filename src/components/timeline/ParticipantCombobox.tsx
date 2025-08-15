@@ -39,6 +39,20 @@ export function ParticipantCombobox({ options, selected, onChange }: Participant
     return acc;
   }, {} as Record<string, ParticipantOption[]>);
 
+  const roleOptions = options.filter(o => o.group === 'Vai trò');
+  const roleValues = roleOptions.map(o => o.value);
+  const allRolesSelected = roleValues.length > 0 && roleValues.every(v => selected.includes(v));
+
+  const handleSelectAllRoles = () => {
+    const otherSelected = selected.filter(v => !roleValues.includes(v));
+    if (allRolesSelected) {
+      onChange(otherSelected);
+    } else {
+      const newSelection = [...new Set([...otherSelected, ...roleValues])];
+      onChange(newSelection);
+    }
+  };
+
   return (
     <div className="space-y-2">
       <Popover open={open} onOpenChange={setOpen}>
@@ -62,6 +76,21 @@ export function ParticipantCombobox({ options, selected, onChange }: Participant
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
               {Object.entries(groups).map(([groupName, groupOptions]) => (
                 <CommandGroup key={groupName} heading={groupName}>
+                  {groupName === 'Vai trò' && roleValues.length > 0 && (
+                    <CommandItem
+                      key="all-roles"
+                      value="Tất cả vai trò"
+                      onSelect={handleSelectAllRoles}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          allRolesSelected ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      Tất cả vai trò
+                    </CommandItem>
+                  )}
                   {groupOptions.map((option) => (
                     <CommandItem
                       key={option.value}
