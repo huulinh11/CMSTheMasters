@@ -101,18 +101,22 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, end, isCollaps
       )}
     >
       <Icon className="w-5 h-5 flex-shrink-0" />
-      {!isCollapsed && <span className="truncate ml-3">{label}</span>}
+      {!isCollapsed && <span className="ml-3 whitespace-nowrap">{label}</span>}
     </button>
   ) : (
-    <NavLink to={to} end={end}>
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center p-2 my-1 rounded-lg transition-colors w-full",
+          isCollapsed ? "justify-center" : "",
+          isActive ? "bg-primary/10" : "hover:bg-slate-100"
+        )
+      }
+    >
       {({ isActive }) => (
-        <div
-          className={cn(
-            "flex items-center p-2 my-1 rounded-lg transition-colors w-full",
-            isCollapsed ? "justify-center" : "",
-            isActive ? "bg-primary/10" : "hover:bg-slate-100"
-          )}
-        >
+        <>
           <Icon
             className={cn(
               "w-5 h-5 flex-shrink-0",
@@ -122,28 +126,30 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, end, isCollaps
           {!isCollapsed && (
             <span
               className={cn(
-                "truncate ml-3",
+                "ml-3 whitespace-nowrap",
                 isActive ? "text-primary font-semibold" : "text-slate-600"
               )}
             >
               {label}
             </span>
           )}
-        </div>
+        </>
       )}
     </NavLink>
   );
 
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{content}</TooltipTrigger>
-      {isCollapsed && (
+  if (isCollapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
         <TooltipContent side="right">
           <p>{label}</p>
         </TooltipContent>
-      )}
-    </Tooltip>
-  );
+      </Tooltip>
+    );
+  }
+
+  return content;
 };
 
 export default Sidebar;
