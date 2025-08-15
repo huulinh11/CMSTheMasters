@@ -91,8 +91,12 @@ const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfi
 
   useEffect(() => {
     if (defaultValues) {
-      form.reset(defaultValues);
-      const sponsorship = defaultValues.sponsorship_amount || 0;
+      const valuesForForm = {
+        ...defaultValues,
+        sponsorship_amount: (defaultValues as any).sponsorship ?? defaultValues.sponsorship_amount ?? 0,
+      };
+      form.reset(valuesForForm);
+      const sponsorship = valuesForForm.sponsorship_amount;
       setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(sponsorship));
     } else {
       form.reset({
