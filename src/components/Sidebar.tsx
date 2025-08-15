@@ -44,7 +44,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
   return (
     <aside className={cn(
       "relative flex-shrink-0 bg-white border-r border-slate-200 hidden md:flex flex-col transition-all duration-300 ease-in-out",
-      isCollapsed ? "w-20 p-2" : "w-64 p-4"
+      isCollapsed ? "w-16 p-2" : "w-64 p-4"
     )}>
       <div className="flex-grow">
         <div className={cn(
@@ -104,19 +104,15 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, end, isCollaps
       {!isCollapsed && <span className="ml-3 whitespace-nowrap">{label}</span>}
     </button>
   ) : (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive }) =>
-        cn(
-          "flex items-center p-2 my-1 rounded-lg transition-colors w-full",
-          isCollapsed ? "justify-center" : "",
-          isActive ? "bg-primary/10" : "hover:bg-slate-100"
-        )
-      }
-    >
+    <NavLink to={to} end={end} className="block">
       {({ isActive }) => (
-        <>
+        <div
+          className={cn(
+            "flex items-center p-2 my-1 rounded-lg transition-colors w-full",
+            isCollapsed ? "justify-center" : "",
+            isActive ? "bg-primary/10" : "hover:bg-slate-100"
+          )}
+        >
           <Icon
             className={cn(
               "w-5 h-5 flex-shrink-0",
@@ -133,7 +129,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, end, isCollaps
               {label}
             </span>
           )}
-        </>
+        </div>
       )}
     </NavLink>
   );
