@@ -9,11 +9,11 @@ export const guestFormSchema = z.object({
     required_error: "Vui lòng chọn một vai trò.",
   }),
   phone: z.string().refine(val => val.length === 0 || val.length >= 10, { message: "Số điện thoại phải có ít nhất 10 ký tự hoặc để trống." }),
-  referrer: z.string().optional(),
-  notes: z.string().optional(),
+  referrer: z.string().nullish(),
+  notes: z.string().nullish(),
   sponsorship_amount: z.number().min(0, "Số tiền không được âm.").optional(),
   paid_amount: z.number().min(0, "Số tiền không được âm.").optional(),
-  payment_source: z.enum(PAYMENT_SOURCES).optional(),
+  payment_source: z.enum(PAYMENT_SOURCES).nullish(),
 });
 
 export type GuestFormValues = z.infer<typeof guestFormSchema>;
