@@ -5,6 +5,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface PresentersTabProps {
   categories: HonorCategory[];
@@ -15,6 +18,7 @@ export const PresentersTab = ({ categories, vipGuests }: PresentersTabProps) => 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
+  const isMobile = useIsMobile();
 
   const presentersData = useMemo(() => {
     const presenterMap = new Map<string, { guest: VipGuest; categories: string[] }>();
@@ -69,36 +73,59 @@ export const PresentersTab = ({ categories, vipGuests }: PresentersTabProps) => 
           </Select>
         </div>
       </div>
-      <div className="rounded-lg border bg-white">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]">STT</TableHead>
-              <TableHead>Tên</TableHead>
-              <TableHead>Chức vụ</TableHead>
-              <TableHead>Trao giải</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.length > 0 ? (
-              filteredData.map(({ guest, categories }, index) => (
-                <TableRow key={guest.id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell className="font-medium">{guest.name}</TableCell>
-                  <TableCell>{guest.role}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1 items-start">
-                      {categories.map(catName => <Badge key={catName} variant="outline">{catName}</Badge>)}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow><TableCell colSpan={4} className="h-24 text-center">Không tìm thấy kết quả.</TableCell></TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {isMobile ? (
+        <div className="space-y-4">
+          {filteredData.map(({ guest, categories }) => (
+            <Card key={guest.id} className={cn(categories.length > 0 && "bg-green-50 border-green-200")}>
+              <CardHeader>
+                <CardTitle className={cn("text-base", categories.length > 0 && "text-green-900")}>{guest.name}</CardTitle>
+                <p className="text-sm text-muted-foreground">{guest.role}</p>
+              </CardHeader>
+              <CardContent>
+                <h4 className="text-sm font-semibold mb-2">Trao giải cho hạng mục:</h4>
+                {categories.length > 0 ? (
+                  <div className="flex flex-col items-start gap-1">
+                    {categories.map(catName => <Badge key={catName} variant="outline">{catName}</Badge>)}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Chưa được phân công.</p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border bg-white">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]">STT</TableHead>
+                <TableHead>Tên</TableHead>
+                <TableHead>Chức vụ</TableHead>
+                <TableHead>Trao giải</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredData.length > 0 ? (
+                filteredData.map(({ guest, categories }, index) => (
+                  <TableRow key={guest.id} className={cn(categories.length > 0 && "bg-green-50")}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell className={cn("font-medium", categories.length > 0 && "text-green-900")}>{guest.name}</TableCell>
+                    <TableCell>{guest.role}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1 items-start">
+                        {categories.map(catName => <Badge key={catName} variant="outline">{catName}</Badge>)}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow><TableCell colSpan={4} className="h-24 text-center">Không tìm thấy kết quả.</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 };
