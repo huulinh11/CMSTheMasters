@@ -13,6 +13,7 @@ import {
   Percent,
   Briefcase,
   Share2,
+  Award,
 } from "lucide-react";
 
 export type NavItemType = {

@@ -18,6 +18,7 @@ import GeneralSettings from "./pages/settings/GeneralSettings";
 import MenuSettings from "./pages/settings/MenuSettings";
 import LoadingScreenSettings from "./pages/settings/LoadingScreenSettings";
 import ImageLibrary from "./pages/settings/ImageLibrary";
+import HonorRollSettings from "./pages/settings/HonorRollSettings";
 import NotFound from "./pages/NotFound";
 import PublicUser from "./pages/PublicUser";
 import PublicProfile from "./pages/public/PublicProfile";
@@ -81,6 +82,7 @@ const router = createBrowserRouter([
               { path: "roles", element: <RoleSettings /> },
               { path: "tasks", element: <TaskSettings /> },
               { path: "benefits", element: <BenefitSettings /> },
+              { path: "honor-roll", element: <HonorRollSettings /> },
               { path: "menu", element: <MenuSettings /> },
               { path: "general", element: <GeneralSettings /> },
               { path: "loading-screen", element: <LoadingScreenSettings /> },
