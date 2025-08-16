@@ -31,7 +31,7 @@ const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts }: Sorta
   return (
     <TableRow ref={setNodeRef} style={style}>
       <TableCell className="w-12"><button {...attributes} {...listeners} className="cursor-grab p-2"><GripVertical className="h-5 w-5 text-slate-400" /></button></TableCell>
-      <TableCell className="font-medium">{category.name}</TableCell>
+      <TableCell className="font-medium text-primary">{category.name}</TableCell>
       <TableCell>
         <div className="flex items-start gap-2">
           <div className="flex flex-col items-start">
@@ -58,16 +58,32 @@ const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts }: Sorta
       </TableCell>
       <TableCell>{category.honorees?.length || 0}</TableCell>
       <TableCell>
-        <div className="flex flex-wrap gap-1 max-w-xs">
-          {category.presenters?.map(p => {
-            const presenterCount = presenterCounts[p.guest_id] || 0;
-            const isReused = presenterCount > 1;
-            return (
-              <Badge key={p.guest_id} variant="outline" className={cn(isReused && "bg-green-100 text-green-800 border-green-200")}>
-                {p.guest_name} ({presenterCount})
-              </Badge>
-            );
-          })}
+        <div className="flex items-start gap-2">
+          <div className="flex flex-col items-start">
+            {category.presenters?.map(p => {
+              const presenterCount = presenterCounts[p.guest_id] || 0;
+              return (
+                <p key={p.guest_id} className="text-sm py-0.5">
+                  {p.guest_name} ({presenterCount})
+                </p>
+              );
+            })}
+          </div>
+          {category.presenters && category.presenters.length > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                const names = category.presenters.map(p => p.guest_name).join('\n');
+                navigator.clipboard.writeText(names);
+                showSuccess("Đã sao chép danh sách!");
+              }}
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+          )}
         </div>
       </TableCell>
       <TableCell className="text-right space-x-2">
