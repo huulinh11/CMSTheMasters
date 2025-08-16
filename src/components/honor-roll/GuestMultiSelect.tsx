@@ -2,7 +2,7 @@ import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -60,17 +60,24 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
               </Select>
             </div>
             <CommandInput placeholder="Tìm khách..." />
-            <CommandList className="max-h-56">
+            <ScrollArea className="h-56">
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
               <CommandGroup>
                 {filteredGuests.map((guest) => (
-                  <CommandItem key={guest.id} value={guest.name} onSelect={() => handleSelect(guest)}>
-                    <Check className={cn("mr-2 h-4 w-4", selectedIds.has(guest.id) ? "opacity-100" : "opacity-0")} />
-                    {guest.name} <span className="text-xs text-muted-foreground ml-2">({guest.role})</span>
+                  <CommandItem
+                    key={guest.id}
+                    value={guest.name}
+                    onSelect={() => handleSelect(guest)}
+                    className="whitespace-normal h-auto"
+                  >
+                    <Check className={cn("mr-2 h-4 w-4 flex-shrink-0", selectedIds.has(guest.id) ? "opacity-100" : "opacity-0")} />
+                    <div className="flex-1">
+                      {guest.name} <span className="text-xs text-muted-foreground ml-2">({guest.role})</span>
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
-            </CommandList>
+            </ScrollArea>
           </Command>
         </PopoverContent>
       </Popover>
