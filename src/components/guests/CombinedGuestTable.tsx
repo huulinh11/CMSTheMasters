@@ -38,7 +38,7 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
   const allSelected = guests.length > 0 && selectedGuests.length === guests.length;
 
   return (
-    <div className="rounded-lg border bg-white">
+    <div className="rounded-lg border bg-white overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
