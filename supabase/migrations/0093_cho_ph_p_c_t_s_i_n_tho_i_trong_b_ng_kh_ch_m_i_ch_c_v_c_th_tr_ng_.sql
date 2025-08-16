@@ -1,0 +1,1 @@
+ALTER TABLE public.vip_guests ALTER COLUMN phone DROP NOT NULL;
