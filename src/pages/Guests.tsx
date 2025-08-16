@@ -253,6 +253,29 @@ const GuestsPage = () => {
     onError: (error: Error) => showError(error.message),
   });
 
+  const bulkZnsUpdateMutation = useMutation({
+    mutationFn: async ({ guestIds, zns_sent }: { guestIds: string[], zns_sent: boolean }) => {
+      const vipsToUpdate = guestIds.filter(id => vipGuests.some(g => g.id === id));
+      const regularsToUpdate = guestIds.filter(id => regularGuests.some(g => g.id === id));
+
+      if (vipsToUpdate.length > 0) {
+        const { error } = await supabase.from('vip_guests').update({ zns_sent }).in('id', vipsToUpdate);
+        if (error) throw error;
+      }
+      if (regularsToUpdate.length > 0) {
+        const { error } = await supabase.from('guests').update({ zns_sent }).in('id', regularsToUpdate);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      showSuccess(`Đã cập nhật ZNS cho ${variables.guestIds.length} khách.`);
+      setSelectedGuests([]);
+    },
+    onError: (error: Error) => showError(error.message),
+  });
+
   const handleSelectGuest = (id: string) => {
     setSelectedGuests(prev =>
       prev.includes(id) ? prev.filter(guestId => guestId !== id) : [...prev, id]
@@ -380,7 +403,21 @@ const GuestsPage = () => {
             onFilterChange={(field, value) => setAdvancedFilters(prev => ({ ...prev, [field]: value as any }))} 
             onClearFilters={() => setAdvancedFilters({})} 
           />
-          {canDelete && selectedGuests.length > 0 && (<Button variant="destructive" onClick={() => deleteMutation.mutate(selectedGuests)} disabled={deleteMutation.isPending}><Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})</Button>)}
+          {selectedGuests.length > 0 && (
+            <>
+              <Button variant="outline" onClick={() => bulkZnsUpdateMutation.mutate({ guestIds: selectedGuests, zns_sent: true })} disabled={bulkZnsUpdateMutation.isPending}>
+                Đã gửi ZNS
+              </Button>
+              <Button variant="outline" onClick={() => bulkZnsUpdateMutation.mutate({ guestIds: selectedGuests, zns_sent: false })} disabled={bulkZnsUpdateMutation.isPending}>
+                Chưa gửi ZNS
+              </Button>
+              {canDelete && (
+                <Button variant="destructive" onClick={() => deleteMutation.mutate(selectedGuests)} disabled={deleteMutation.isPending}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Xóa ({selectedGuests.length})
+                </Button>
+              )}
+            </>
+          )}
         </div>
       </div>
       <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
