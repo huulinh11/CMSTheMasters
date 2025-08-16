@@ -27,4 +27,5 @@ export type Guest = GuestFormValues & {
   template_id?: string | null;
   zns_sent?: boolean;
   created_at: string;
+  name: string;
 };

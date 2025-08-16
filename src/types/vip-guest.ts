@@ -30,4 +30,5 @@ export type VipGuest = VipGuestFormValues & {
   template_id?: string | null;
   zns_sent?: boolean;
   created_at: string;
+  name: string;
 };

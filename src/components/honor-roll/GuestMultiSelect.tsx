@@ -60,18 +60,16 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
               </Select>
             </div>
             <CommandInput placeholder="Tìm khách..." />
-            <CommandList>
-              <ScrollArea className="h-48">
-                <CommandEmpty>Không tìm thấy.</CommandEmpty>
-                <CommandGroup>
-                  {filteredGuests.map((guest) => (
-                    <CommandItem key={guest.id} value={guest.name} onSelect={() => handleSelect(guest)}>
-                      <Check className={cn("mr-2 h-4 w-4", selectedIds.has(guest.id) ? "opacity-100" : "opacity-0")} />
-                      {guest.name} <span className="text-xs text-muted-foreground ml-2">({guest.role})</span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </ScrollArea>
+            <CommandList className="max-h-56">
+              <CommandEmpty>Không tìm thấy.</CommandEmpty>
+              <CommandGroup>
+                {filteredGuests.map((guest) => (
+                  <CommandItem key={guest.id} value={guest.name} onSelect={() => handleSelect(guest)}>
+                    <Check className={cn("mr-2 h-4 w-4", selectedIds.has(guest.id) ? "opacity-100" : "opacity-0")} />
+                    {guest.name} <span className="text-xs text-muted-foreground ml-2">({guest.role})</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
             </CommandList>
           </Command>
         </PopoverContent>
