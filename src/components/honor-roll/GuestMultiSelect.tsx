@@ -18,9 +18,10 @@ interface GuestMultiSelectProps {
   selected: { guest_id: string; guest_name: string }[];
   onChange: (selected: { guest_id: string; guest_name: string }[]) => void;
   placeholder: string;
+  badgeClassName?: string;
 }
 
-export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, placeholder }: GuestMultiSelectProps) {
+export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, placeholder, badgeClassName }: GuestMultiSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [roleFilter, setRoleFilter] = React.useState("all");
 
@@ -85,7 +86,12 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
       </Popover>
       <div className="space-x-1 space-y-1">
         {selected.map((s) => (
-          <Badge key={s.guest_id} variant="secondary" className="cursor-pointer" onClick={() => onChange(selected.filter(item => item.guest_id !== s.guest_id))}>
+          <Badge
+            key={s.guest_id}
+            variant="secondary"
+            className={cn("cursor-pointer", badgeClassName)}
+            onClick={() => onChange(selected.filter(item => item.guest_id !== s.guest_id))}
+          >
             {s.guest_name} &times;
           </Badge>
         ))}

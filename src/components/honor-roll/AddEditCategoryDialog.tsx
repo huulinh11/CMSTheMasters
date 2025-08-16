@@ -51,7 +51,7 @@ export const AddEditCategoryDialog = ({ open, onOpenChange, onSave, isSaving, ca
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-5xl">
         <DialogHeader>
           <DialogTitle>{category ? 'Sửa Hạng mục' : 'Thêm Hạng mục mới'}</DialogTitle>
         </DialogHeader>
@@ -60,25 +60,30 @@ export const AddEditCategoryDialog = ({ open, onOpenChange, onSave, isSaving, ca
             <Label htmlFor="category-name">Tên Hạng mục</Label>
             <Input id="category-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label>Danh sách vinh danh</Label>
-            <GuestMultiSelect
-              allGuests={allGuests}
-              roleConfigs={roleConfigs}
-              selected={honorees}
-              onChange={setHonorees}
-              placeholder="Chọn người được vinh danh..."
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Người lên trao</Label>
-            <GuestMultiSelect
-              allGuests={presentersWithCount}
-              roleConfigs={roleConfigs.filter(r => r.type === 'Chức vụ')}
-              selected={presenters}
-              onChange={setPresenters}
-              placeholder="Chọn người lên trao..."
-            />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label>Danh sách vinh danh</Label>
+              <GuestMultiSelect
+                allGuests={allGuests}
+                roleConfigs={roleConfigs}
+                selected={honorees}
+                onChange={setHonorees}
+                placeholder="Chọn người được vinh danh..."
+                badgeClassName="bg-blue-100 text-blue-800 hover:bg-blue-200"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Người lên trao</Label>
+              <GuestMultiSelect
+                allGuests={presentersWithCount}
+                roleConfigs={roleConfigs.filter(r => r.type === 'Chức vụ')}
+                selected={presenters}
+                onChange={setPresenters}
+                placeholder="Chọn người lên trao..."
+                badgeClassName="bg-purple-100 text-purple-800 hover:bg-purple-200"
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>
