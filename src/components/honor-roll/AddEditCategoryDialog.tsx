@@ -45,7 +45,7 @@ export const AddEditCategoryDialog = ({ open, onOpenChange, onSave, isSaving, ca
   const presentersWithCount = useMemo(() => {
     return vipGuests.map(g => ({
       ...g,
-      name: `${g.name} (${presenterCounts[g.id] || 0})`,
+      presenterCount: presenterCounts[g.id] || 0,
     }));
   }, [vipGuests, presenterCounts]);
 

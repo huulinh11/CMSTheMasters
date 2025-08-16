@@ -6,7 +6,7 @@ import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ArrowRightLeft, Edit, Trash2, GripVertical } from "lucide-react";
+import { PlusCircle, ArrowRightLeft, Edit, Trash2, GripVertical, Copy } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -32,15 +32,38 @@ const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts }: Sorta
     <TableRow ref={setNodeRef} style={style}>
       <TableCell className="w-12"><button {...attributes} {...listeners} className="cursor-grab p-2"><GripVertical className="h-5 w-5 text-slate-400" /></button></TableCell>
       <TableCell className="font-medium">{category.name}</TableCell>
-      <TableCell><div className="flex flex-wrap gap-1 max-w-xs">{category.honorees?.map(h => <Badge key={h.guest_id} variant="secondary">{h.guest_name}</Badge>)}</div></TableCell>
+      <TableCell>
+        <div className="flex items-start gap-2">
+          <div className="flex flex-col items-start">
+            {category.honorees?.map(h => (
+              <p key={h.guest_id} className="text-sm py-0.5">{h.guest_name}</p>
+            ))}
+          </div>
+          {category.honorees && category.honorees.length > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                const names = category.honorees.map(h => h.guest_name).join('\n');
+                navigator.clipboard.writeText(names);
+                showSuccess("Đã sao chép danh sách!");
+              }}
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      </TableCell>
       <TableCell>{category.honorees?.length || 0}</TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-1 max-w-xs">
           {category.presenters?.map(p => {
             const count = presenterCounts[p.guest_id] || 0;
-            const hasPresentedBefore = count > 1 || (count === 1 && !category.presenters?.some(cp => cp.guest_id === p.guest_id));
+            const isReused = count > 1;
             return (
-              <Badge key={p.guest_id} variant="outline" className={cn(hasPresentedBefore && "bg-green-100 text-green-800 border-green-200")}>
+              <Badge key={p.guest_id} variant="outline" className={cn(isReused && "bg-green-100 text-green-800 border-green-200")}>
                 {p.guest_name} ({count})
               </Badge>
             );
