@@ -22,7 +22,6 @@ interface SortableTableRowProps {
   onEdit: (category: HonorCategory) => void;
   onDelete: (id: string) => void;
   presenterCounts: Record<string, number>;
-  honoreeCounts: Record<string, number>;
 }
 
 const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts }: SortableTableRowProps) => {
@@ -102,16 +101,6 @@ export const HonorRollTab = ({ categories: initialCategories, allGuests, vipGues
     categories.forEach(c => {
       c.presenters?.forEach(p => {
         counts[p.guest_id] = (counts[p.guest_id] || 0) + 1;
-      });
-    });
-    return counts;
-  }, [categories]);
-
-  const honoreeCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    categories.forEach(c => {
-      c.honorees?.forEach(h => {
-        counts[h.guest_id] = (counts[h.guest_id] || 0) + 1;
       });
     });
     return counts;
@@ -201,7 +190,7 @@ export const HonorRollTab = ({ categories: initialCategories, allGuests, vipGues
               <TableBody>
                 {categories.length > 0 ? (
                   categories.map((category) => (
-                    <SortableTableRow key={category.id} category={category} onEdit={setEditingCategory} onDelete={deleteMutation.mutate} presenterCounts={presenterCounts} honoreeCounts={honoreeCounts} />
+                    <SortableTableRow key={category.id} category={category} onEdit={setEditingCategory} onDelete={deleteMutation.mutate} presenterCounts={presenterCounts} />
                   ))
                 ) : (
                   <TableRow><TableCell colSpan={6} className="h-24 text-center">Chưa có hạng mục nào.</TableCell></TableRow>
