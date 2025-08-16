@@ -2,10 +2,9 @@ import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
@@ -49,18 +48,18 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+          <div className="p-2 border-b">
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger><SelectValue placeholder="Lọc theo vai trò" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả vai trò</SelectItem>
+                {roleConfigs.map(role => <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <Command>
-            <div className="p-2 border-b">
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger><SelectValue placeholder="Lọc theo vai trò" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả vai trò</SelectItem>
-                  {roleConfigs.map(role => <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
             <CommandInput placeholder="Tìm khách..." />
-            <ScrollArea className="h-56">
+            <CommandList>
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
               <CommandGroup>
                 {filteredGuests.map((guest) => (
@@ -68,16 +67,16 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
                     key={guest.id}
                     value={guest.name}
                     onSelect={() => handleSelect(guest)}
-                    className="whitespace-normal h-auto"
+                    className="h-auto items-start"
                   >
-                    <Check className={cn("mr-2 h-4 w-4 flex-shrink-0", selectedIds.has(guest.id) ? "opacity-100" : "opacity-0")} />
-                    <div className="flex-1">
+                    <Check className={cn("mr-2 h-4 w-4 flex-shrink-0 mt-1", selectedIds.has(guest.id) ? "opacity-100" : "opacity-0")} />
+                    <div className="flex-1 whitespace-normal">
                       {guest.name} <span className="text-xs text-muted-foreground ml-2">({guest.role})</span>
                     </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
-            </ScrollArea>
+            </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
