@@ -36,6 +36,7 @@ import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog";
 import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { removeAccents } from "@/lib/utils";
 
 export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
   service_revenue: number;
@@ -297,7 +298,11 @@ const GuestsPage = () => {
 
   const filteredGuests = useMemo(() => {
     return combinedGuests.filter(guest => {
-      const searchMatch = guest.name.toLowerCase().includes(searchTerm.toLowerCase()) || guest.id.toLowerCase().includes(searchTerm.toLowerCase());
+      const normalizedSearchTerm = removeAccents(searchTerm.toLowerCase());
+      const searchMatch = 
+        removeAccents(guest.name.toLowerCase()).includes(normalizedSearchTerm) ||
+        guest.id.toLowerCase().includes(normalizedSearchTerm);
+      
       const typeMatch = typeFilter === 'all' || guest.type === typeFilter;
       const roleMatch = roleFilter === 'all' || guest.role === roleFilter;
 
