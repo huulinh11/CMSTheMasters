@@ -14,24 +14,21 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { AddEditCategoryDialog } from "./AddEditCategoryDialog";
 import { SwapPresentersDialog } from "./SwapPresentersDialog";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 
 interface SortableTableRowProps {
   category: HonorCategory;
   onEdit: (category: HonorCategory) => void;
   onDelete: (id: string) => void;
-  presenterCounts: Record<string, number>;
 }
 
-const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts }: SortableTableRowProps) => {
+const SortableTableRow = ({ category, onEdit, onDelete }: SortableTableRowProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 1 : 0 };
 
   return (
     <TableRow ref={setNodeRef} style={style}>
       <TableCell className="w-12"><button {...attributes} {...listeners} className="cursor-grab p-2"><GripVertical className="h-5 w-5 text-slate-400" /></button></TableCell>
-      <TableCell className="font-medium text-primary">{category.name}</TableCell>
+      <TableCell className="font-medium text-orange-600">{category.name}</TableCell>
       <TableCell>
         <div className="flex items-start gap-2">
           <div className="flex flex-col items-start">
@@ -60,14 +57,9 @@ const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts }: Sorta
       <TableCell>
         <div className="flex items-start gap-2">
           <div className="flex flex-col items-start">
-            {category.presenters?.map(p => {
-              const presenterCount = presenterCounts[p.guest_id] || 0;
-              return (
-                <p key={p.guest_id} className="text-sm py-0.5">
-                  {p.guest_name} ({presenterCount})
-                </p>
-              );
-            })}
+            {category.presenters?.map(p => (
+              <p key={p.guest_id} className="text-sm py-0.5">{p.guest_name}</p>
+            ))}
           </div>
           {category.presenters && category.presenters.length > 0 && (
             <Button
@@ -206,7 +198,7 @@ export const HonorRollTab = ({ categories: initialCategories, allGuests, vipGues
               <TableBody>
                 {categories.length > 0 ? (
                   categories.map((category) => (
-                    <SortableTableRow key={category.id} category={category} onEdit={setEditingCategory} onDelete={deleteMutation.mutate} presenterCounts={presenterCounts} />
+                    <SortableTableRow key={category.id} category={category} onEdit={setEditingCategory} onDelete={deleteMutation.mutate} />
                   ))
                 ) : (
                   <TableRow><TableCell colSpan={6} className="h-24 text-center">Chưa có hạng mục nào.</TableCell></TableRow>
