@@ -47,7 +47,7 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent side="bottom" align="start" className="w-[--radix-popover-trigger-width] p-0">
+        <PopoverContent side="bottom" align="start" className="w-[--radix-popover-trigger-width] p-0" avoidCollisions={false}>
           <Command>
             <div className="p-2 border-b">
               <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -59,9 +59,9 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
               </Select>
             </div>
             <CommandInput placeholder="Tìm khách..." />
-            <CommandList className="max-h-56">
+            <CommandList onWheel={(e) => e.stopPropagation()}>
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
-              <CommandGroup>
+              <CommandGroup className="max-h-[224px] overflow-y-auto">
                 {filteredGuests.map((guest) => (
                   <CommandItem
                     key={guest.id}
