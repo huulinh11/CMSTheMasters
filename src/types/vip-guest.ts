@@ -7,7 +7,7 @@ export const vipGuestFormSchema = z.object({
     required_error: "Vui lòng chọn một vai trò.",
   }),
   secondaryInfo: z.string().nullish(),
-  phone: z.string().refine(val => val.length === 0 || val.length >= 10, { message: "Số điện thoại phải có ít nhất 10 ký tự hoặc để trống." }),
+  phone: z.string().optional(),
   referrer: z.string().nullish(),
   notes: z.string().nullish(),
   sponsorship_amount: z.number().min(0, "Số tiền không được âm.").optional(),
