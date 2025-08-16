@@ -43,12 +43,22 @@ export const AddEditCategoryDialog = ({ open, onOpenChange, onSave, isSaving, ca
     onSave({ values: { name, honorees, presenters }, originalId: category?.id });
   };
 
+  const honoreeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    allGuests.forEach(guest => {
+      const honoreeCount = honorees.filter(h => h.guest_id === guest.id).length;
+      counts[guest.id] = honoreeCount;
+    });
+    return counts;
+  }, [allGuests, honorees]);
+
   const presentersWithCount = useMemo(() => {
     return vipGuests.map(g => ({
       ...g,
       presenterCount: presenterCounts[g.id] || 0,
+      honoreeCount: honoreeCounts[g.id] || 0,
     }));
-  }, [vipGuests, presenterCounts]);
+  }, [vipGuests, presenterCounts, honoreeCounts]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

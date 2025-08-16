@@ -10,7 +10,7 @@ import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { RoleConfiguration } from "@/types/role-configuration";
 
-type CombinedGuest = (Guest | VipGuest) & { name: string; presenterCount?: number };
+type CombinedGuest = (Guest | VipGuest) & { name: string; presenterCount?: number; honoreeCount?: number };
 
 interface GuestMultiSelectProps {
   allGuests: CombinedGuest[];
@@ -75,7 +75,7 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
                   >
                     <Check className={cn("mr-2 h-4 w-4 flex-shrink-0 mt-1", selectedIds.has(guest.id) ? "opacity-100" : "opacity-0")} />
                     <div className="flex-1 whitespace-normal">
-                      {guest.name} {guest.presenterCount !== undefined && `(${guest.presenterCount})`} <span className="text-xs text-muted-foreground ml-2">({guest.role})</span>
+                      {guest.name} {guest.honoreeCount !== undefined && `(${guest.honoreeCount})`} {guest.presenterCount !== undefined && `(${guest.presenterCount})`} <span className="text-xs text-muted-foreground ml-2">({guest.role})</span>
                     </div>
                   </CommandItem>
                 ))}

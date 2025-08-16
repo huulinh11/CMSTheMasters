@@ -22,9 +22,10 @@ interface SortableTableRowProps {
   onEdit: (category: HonorCategory) => void;
   onDelete: (id: string) => void;
   presenterCounts: Record<string, number>;
+  honoreeCounts: Record<string, number>;
 }
 
-const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts }: SortableTableRowProps) => {
+const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts, honoreeCounts }: SortableTableRowProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 1 : 0 };
 
@@ -60,11 +61,12 @@ const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts }: Sorta
       <TableCell>
         <div className="flex flex-wrap gap-1 max-w-xs">
           {category.presenters?.map(p => {
-            const count = presenterCounts[p.guest_id] || 0;
-            const isReused = count > 1;
+            const presenterCount = presenterCounts[p.guest_id] || 0;
+            const honoreeCount = honoreeCounts[p.guest_id] || 0;
+            const isReused = presenterCount > 1;
             return (
               <Badge key={p.guest_id} variant="outline" className={cn(isReused && "bg-green-100 text-green-800 border-green-200")}>
-                {p.guest_name} ({count})
+                {p.guest_name} ({honoreeCount}) ({presenterCount})
               </Badge>
             );
           })}
@@ -101,6 +103,16 @@ export const HonorRollTab = ({ categories: initialCategories, allGuests, vipGues
     categories.forEach(c => {
       c.presenters?.forEach(p => {
         counts[p.guest_id] = (counts[p.guest_id] || 0) + 1;
+      });
+    });
+    return counts;
+  }, [categories]);
+
+  const honoreeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    categories.forEach(c => {
+      c.honorees?.forEach(h => {
+        counts[h.guest_id] = (counts[h.guest_id] || 0) + 1;
       });
     });
     return counts;
@@ -190,7 +202,7 @@ export const HonorRollTab = ({ categories: initialCategories, allGuests, vipGues
               <TableBody>
                 {categories.length > 0 ? (
                   categories.map((category) => (
-                    <SortableTableRow key={category.id} category={category} onEdit={setEditingCategory} onDelete={deleteMutation.mutate} presenterCounts={presenterCounts} />
+                    <SortableTableRow key={category.id} category={category} onEdit={setEditingCategory} onDelete={deleteMutation.mutate} presenterCounts={presenterCounts} honoreeCounts={honoreeCounts} />
                   ))
                 ) : (
                   <TableRow><TableCell colSpan={6} className="h-24 text-center">Chưa có hạng mục nào.</TableCell></TableRow>
