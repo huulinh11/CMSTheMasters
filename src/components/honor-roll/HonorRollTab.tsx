@@ -28,7 +28,7 @@ const SortableTableRow = ({ category, onEdit, onDelete }: SortableTableRowProps)
   return (
     <TableRow ref={setNodeRef} style={style}>
       <TableCell className="w-12"><button {...attributes} {...listeners} className="cursor-grab p-2"><GripVertical className="h-5 w-5 text-slate-400" /></button></TableCell>
-      <TableCell className="font-medium text-primary">{category.name}</TableCell>
+      <TableCell className="font-medium text-orange-600">{category.name}</TableCell>
       <TableCell>
         <div className="flex items-start gap-2">
           <div className="flex flex-col items-start">
