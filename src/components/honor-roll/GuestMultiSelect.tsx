@@ -61,7 +61,7 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
             <CommandInput placeholder="Tìm khách..." />
             <CommandList onWheel={(e) => e.stopPropagation()}>
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
-              <CommandGroup>
+              <CommandGroup className="max-h-[224px] overflow-y-auto">
                 {filteredGuests.map((guest) => (
                   <CommandItem
                     key={guest.id}
