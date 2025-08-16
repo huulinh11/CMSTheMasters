@@ -25,7 +25,7 @@ interface SortableTableRowProps {
   honoreeCounts: Record<string, number>;
 }
 
-const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts, honoreeCounts }: SortableTableRowProps) => {
+const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts }: SortableTableRowProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 1 : 0 };
 
@@ -62,11 +62,10 @@ const SortableTableRow = ({ category, onEdit, onDelete, presenterCounts, honoree
         <div className="flex flex-wrap gap-1 max-w-xs">
           {category.presenters?.map(p => {
             const presenterCount = presenterCounts[p.guest_id] || 0;
-            const honoreeCount = honoreeCounts[p.guest_id] || 0;
             const isReused = presenterCount > 1;
             return (
               <Badge key={p.guest_id} variant="outline" className={cn(isReused && "bg-green-100 text-green-800 border-green-200")}>
-                {p.guest_name} ({honoreeCount}) ({presenterCount})
+                {p.guest_name} ({presenterCount})
               </Badge>
             );
           })}
