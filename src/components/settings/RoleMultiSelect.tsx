@@ -51,10 +51,10 @@ export function RoleMultiSelect({ options, selected, onChange }: RoleMultiSelect
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <PopoverContent side="bottom" align="start" className="w-[--radix-popover-trigger-width] p-0" avoidCollisions={false}>
           <Command>
             <CommandInput placeholder="Tìm vai trò..." />
-            <CommandList>
+            <CommandList onWheel={(e) => e.stopPropagation()}>
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
               <ScrollArea className="h-72">
                 <CommandGroup>

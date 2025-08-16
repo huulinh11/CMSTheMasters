@@ -70,10 +70,10 @@ export function ParticipantCombobox({ options, selected, onChange }: Participant
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <PopoverContent side="bottom" align="start" className="w-[--radix-popover-trigger-width] p-0" avoidCollisions={false}>
           <Command>
             <CommandInput placeholder="Tìm kiếm..." />
-            <CommandList>
+            <CommandList onWheel={(e) => e.stopPropagation()}>
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
               <ScrollArea className="h-72">
                 {Object.entries(groups).map(([groupName, groupOptions]) => (
