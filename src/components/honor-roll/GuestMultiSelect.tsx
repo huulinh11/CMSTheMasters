@@ -48,18 +48,18 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-          <div className="p-2 border-b">
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger><SelectValue placeholder="Lọc theo vai trò" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả vai trò</SelectItem>
-                {roleConfigs.map(role => <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
           <Command>
+            <div className="p-2 border-b">
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger><SelectValue placeholder="Lọc theo vai trò" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả vai trò</SelectItem>
+                  {roleConfigs.map(role => <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <CommandInput placeholder="Tìm khách..." />
-            <CommandList>
+            <CommandList onWheel={(e) => e.stopPropagation()}>
               <CommandEmpty>Không tìm thấy.</CommandEmpty>
               <CommandGroup>
                 {filteredGuests.map((guest) => (
