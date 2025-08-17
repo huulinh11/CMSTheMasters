@@ -118,7 +118,7 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
               <CardContent className="text-sm space-y-3">
                 <InfoRow label="Đã trả" value={formatCurrency(service.paid_amount)} valueClass="text-green-600" />
                 <InfoRow label="Còn lại" value={formatCurrency(service.unpaid_amount)} valueClass="text-red-600" />
-                <InfoRow label="Người giới thiệu" value={service.referrer_name || 'N/A'} />
+                <InfoRow label="Người giới thiệu" value={service.referrer_name || ''} />
                 <div className="space-y-2">
                   <Label>Trạng thái</Label>
                   {serviceMaster && serviceMaster.statuses.length > 0 ? (
@@ -129,7 +129,7 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
                       <SelectTrigger><SelectValue placeholder="Chọn trạng thái" /></SelectTrigger>
                       <SelectContent>{serviceMaster.statuses.map(status => (<SelectItem key={status} value={status}>{status}</SelectItem>))}</SelectContent>
                     </Select>
-                  ) : (<p className="text-sm text-muted-foreground">N/A</p>)}
+                  ) : (<p className="text-sm text-muted-foreground">Trống</p>)}
                 </div>
                 {service.notes && (
                   <div className="text-sm text-slate-600 bg-slate-50 p-2 rounded-md whitespace-pre-wrap">
