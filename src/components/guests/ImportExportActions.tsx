@@ -6,9 +6,8 @@ import { showSuccess, showError, showLoading, dismissToast, showNotice } from "@
 import Papa from "papaparse";
 import { useQueryClient } from "@tanstack/react-query";
 import { generateGuestSlug } from "@/lib/slug";
-import { VipGuest } from "@/types/vip-guest";
-import { Guest } from "@/types/guest";
 import { DuplicateGuestDialog } from "./DuplicateGuestDialog";
+import { CombinedGuestRevenue } from "@/pages/Guests";
 
 // Define headers for the CSV file
 const CSV_HEADERS = [
@@ -21,7 +20,11 @@ const CSV_DISPLAY_HEADERS = [
   "Thông tin phụ (cho Chức vụ)", "Tài trợ", "Số tiền đã thanh toán (chỉ cho khách mới)", "Nguồn thanh toán (cho Khách mời)", "Tư liệu", "Link Facebook (cho Chức vụ)"
 ];
 
-export const ImportExportActions = () => {
+interface ImportExportActionsProps {
+  guestsToExport: CombinedGuestRevenue[];
+}
+
+export const ImportExportActions = ({ guestsToExport }: ImportExportActionsProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -105,50 +108,31 @@ export const ImportExportActions = () => {
     const toastId = showLoading("Đang xuất dữ liệu...");
 
     try {
-      // Fetch all data
-      const { data: vipGuests, error: vipError } = await supabase.from('vip_guests').select('*');
-      if (vipError) throw vipError;
-      const { data: guests, error: guestError } = await supabase.from('guests').select('*');
-      if (guestError) throw guestError;
-      const { data: vipRevenue, error: vipRevenueError } = await supabase.from('vip_guest_revenue').select('*');
-      if (vipRevenueError) throw vipRevenueError;
-      const { data: guestRevenue, error: guestRevenueError } = await supabase.from('guest_revenue').select('*');
-      if (guestRevenueError) throw guestRevenueError;
-
-      const vipRevenueMap = new Map(vipRevenue.map(r => [r.guest_id, r]));
-      const guestRevenueMap = new Map(guestRevenue.map(r => [r.guest_id, r]));
-
-      const combinedData = [
-        ...vipGuests.map(g => ({
-          ...g,
-          type: 'Chức vụ',
-          secondary_info: g.secondary_info,
-          sponsorship: vipRevenueMap.get(g.id)?.sponsorship || 0,
+      const csvData = guestsToExport.map(row => {
+        const rowForCsv = {
+          id: row.id,
+          name: row.name,
+          role: row.role,
+          phone: row.phone,
+          type: row.type,
+          referrer: row.referrer,
+          notes: row.notes,
+          secondary_info: row.type === 'Chức vụ' ? row.secondaryInfo : '',
+          sponsorship: row.sponsorship,
           paid_amount: 0, // Paid amount is not exported
-          payment_source: '',
-          facebook_link: g.facebook_link || '',
-        })),
-        ...guests.map(g => ({
-          ...g,
-          type: 'Khách mời',
-          secondary_info: '',
-          sponsorship: guestRevenueMap.get(g.id)?.sponsorship || 0,
-          paid_amount: 0, // Paid amount is not exported
-          payment_source: guestRevenueMap.get(g.id)?.payment_source || '',
-          facebook_link: '',
-        })),
-      ];
-
-      const csvData = combinedData.map(row => {
+          payment_source: row.type === 'Khách mời' ? row.payment_source : '',
+          materials: row.materials,
+          facebook_link: row.type === 'Chức vụ' ? row.facebook_link : '',
+        };
         return CSV_HEADERS.map(header => {
-          const value = (row as any)[header];
+          const value = (rowForCsv as any)[header];
           if (value === null || value === undefined) return '';
-          return `"${String(value).replace(/"/g, '""')}"`; // Escape quotes
+          return `"${String(value).replace(/"/g, '""')}"`;
         }).join(',');
       });
 
       const csv = [CSV_DISPLAY_HEADERS.join(','), CSV_HEADERS.join(','), ...csvData].join('\n');
-      const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Excel
+      const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);

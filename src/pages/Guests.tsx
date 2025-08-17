@@ -38,7 +38,7 @@ import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { removeAccents } from "@/lib/utils";
 
-export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
+export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ', facebook_link?: string | null })) & {
   service_revenue: number;
   total_revenue: number;
   has_history: boolean;
@@ -352,7 +352,19 @@ const GuestsPage = () => {
         serviceRevenueByGuest.set(service.guest_id, (serviceRevenueByGuest.get(service.guest_id) || 0) + service.price);
         serviceCountByGuest.set(service.guest_id, (serviceCountByGuest.get(service.guest_id) || 0) + 1);
     });
-    const vips: CombinedGuestRevenue[] = vipRevenueData.map(g => ({ ...g, type: 'Chức vụ', image_url: vipGuests.find(vg => vg.id === g.id)?.image_url, service_revenue: serviceRevenueByGuest.get(g.id) || 0, total_revenue: (g.sponsorship || 0) + (serviceRevenueByGuest.get(g.id) || 0), has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0, zns_sent: vipGuests.find(vg => vg.id === g.id)?.zns_sent }));
+    const vips: CombinedGuestRevenue[] = vipRevenueData.map(g => {
+      const fullVipGuest = vipGuests.find(vg => vg.id === g.id);
+      return {
+        ...g,
+        type: 'Chức vụ',
+        image_url: fullVipGuest?.image_url,
+        facebook_link: fullVipGuest?.facebook_link,
+        service_revenue: serviceRevenueByGuest.get(g.id) || 0,
+        total_revenue: (g.sponsorship || 0) + (serviceRevenueByGuest.get(g.id) || 0),
+        has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0,
+        zns_sent: fullVipGuest?.zns_sent
+      };
+    });
     const regulars: CombinedGuestRevenue[] = regularGuestsWithRevenue.map(g => ({ ...g, type: 'Khách mời', image_url: undefined, service_revenue: serviceRevenueByGuest.get(g.id) || 0, total_revenue: g.sponsorship + (serviceRevenueByGuest.get(g.id) || 0), has_history: (g.paid > 0) || (upsaleHistory.some(h => h.guest_id === g.id)) || (serviceCountByGuest.get(g.id) || 0) > 0, zns_sent: regularGuests.find(rg => rg.id === g.id)?.zns_sent }));
     return [...vips, ...regulars].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [vipRevenueData, regularGuestsWithRevenue, guestServices, upsaleHistory, vipGuests, regularGuests]);
@@ -413,7 +425,7 @@ const GuestsPage = () => {
     <div className="p-4 md:p-6">
       <PageHeader title="Quản lý khách mời">
         <div className="flex items-center gap-2">
-          {!isMobile && <ImportExportActions />}
+          {!isMobile && <ImportExportActions guestsToExport={filteredGuests} />}
           <Button onClick={() => setIsAddDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
         </div>
       </PageHeader>
