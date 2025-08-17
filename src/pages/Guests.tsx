@@ -57,16 +57,34 @@ const generateVipId = (role: string, existingGuests: VipGuest[]): string => {
     const prefixMap: Record<string, string> = { "Prime Speaker": "PS", "Guest Speaker": "GS", "Mentor kiến tạo": "ME", "Phó BTC": "PB", "Đại sứ": "DS", "Cố vấn": "CV", "Giám đốc": "GD", "Nhà tài trợ": "NT" };
     const prefix = prefixMap[role] || role.substring(0, 2).toUpperCase();
     const roleGuests = existingGuests.filter(g => g.id.startsWith(prefix));
-    const nextId = roleGuests.length + 1;
-    return `${prefix}${String(nextId).padStart(3, '0')}`;
+    
+    let maxNum = 0;
+    roleGuests.forEach(g => {
+        const numPart = parseInt(g.id.replace(prefix, ''), 10);
+        if (!isNaN(numPart) && numPart > maxNum) {
+            maxNum = numPart;
+        }
+    });
+    
+    const nextIdNum = maxNum + 1;
+    return `${prefix}${String(nextIdNum).padStart(3, '0')}`;
 };
 
 const generateRegularId = (role: string, existingGuests: Guest[]): string => {
     const prefixMap: Record<string, string> = { "Khách phổ thông": "KPT", "VIP": "VIP", "V-Vip": "VVP", "Super Vip": "SVP", "Vé trải nghiệm": "VTN" };
     const prefix = prefixMap[role] || role.substring(0, 3).toUpperCase();
     const roleGuests = existingGuests.filter(g => g.id.startsWith(prefix));
-    const nextId = roleGuests.length + 1;
-    return `${prefix}${String(nextId).padStart(3, '0')}`;
+
+    let maxNum = 0;
+    roleGuests.forEach(g => {
+        const numPart = parseInt(g.id.replace(prefix, ''), 10);
+        if (!isNaN(numPart) && numPart > maxNum) {
+            maxNum = numPart;
+        }
+    });
+
+    const nextIdNum = maxNum + 1;
+    return `${prefix}${String(nextIdNum).padStart(3, '0')}`;
 };
 
 const GuestsPage = () => {
@@ -117,10 +135,10 @@ const GuestsPage = () => {
       const slug = generateGuestSlug(values.name);
       const { secondaryInfo, ...rest } = guestValues;
       const guestForDb = { ...rest, id: guestId, slug, secondary_info: secondaryInfo };
-      const { error: guestError } = await supabase.from('vip_guests').upsert(guestForDb);
+      const { error: guestError } = await supabase.from('vip_guests').insert(guestForDb);
       if (guestError) throw guestError;
       if (sponsorship_amount !== undefined) {
-        const { error: revenueError } = await supabase.from('vip_guest_revenue').upsert({ guest_id: guestId, sponsorship: sponsorship_amount }, { onConflict: 'guest_id' });
+        const { error: revenueError } = await supabase.from('vip_guest_revenue').insert({ guest_id: guestId, sponsorship: sponsorship_amount });
         if (revenueError) throw revenueError;
       }
       if (paid_amount && paid_amount > 0) {
@@ -139,10 +157,10 @@ const GuestsPage = () => {
       const guestId = generateRegularId(values.role, regularGuests);
       const slug = generateGuestSlug(values.name);
       const guestForDb = { ...guestValues, id: guestId, slug };
-      const { error: guestError } = await supabase.from('guests').upsert(guestForDb);
+      const { error: guestError } = await supabase.from('guests').insert(guestForDb);
       if (guestError) throw guestError;
       if (sponsorship_amount !== undefined || payment_source) {
-        const { error: revenueError } = await supabase.from('guest_revenue').upsert({ guest_id: guestId, sponsorship: sponsorship_amount || 0, payment_source: payment_source || 'Trống' }, { onConflict: 'guest_id' });
+        const { error: revenueError } = await supabase.from('guest_revenue').insert({ guest_id: guestId, sponsorship: sponsorship_amount || 0, payment_source: payment_source || 'Trống' });
         if (revenueError) throw revenueError;
       }
       if (paid_amount && paid_amount > 0) {
