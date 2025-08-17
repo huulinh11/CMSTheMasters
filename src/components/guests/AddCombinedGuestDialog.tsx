@@ -37,7 +37,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GuestFormValues, guestFormSchema } from "@/types/guest";
 import { VipGuestFormValues, vipGuestFormSchema } from "@/types/vip-guest";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Popover,
   PopoverContent,
@@ -209,11 +209,13 @@ export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegu
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("vip");
   const [formKey, setFormKey] = useState(0);
+  const wasOpen = useRef(false);
 
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpen.current) {
       setFormKey(prev => prev + 1);
     }
+    wasOpen.current = open;
   }, [open]);
 
   const vipRoleConfigs = roleConfigs.filter(r => r.type === 'Chức vụ');
