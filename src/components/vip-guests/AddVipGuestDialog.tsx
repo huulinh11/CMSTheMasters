@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -118,7 +119,7 @@ const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfi
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-4", className)}>
+      <form id="vip-guest-form" onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-4", className)}>
         <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-4">
           <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Tên</FormLabel><FormControl><Input placeholder="Nhập tên khách mời" {...field} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Số điện thoại</FormLabel><FormControl><Input placeholder="Nhập số điện thoại" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -196,7 +197,7 @@ const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfi
         </div>
         <FormField control={form.control} name="materials" render={({ field }) => (<FormItem><FormLabel>Tư liệu</FormLabel><FormControl><Textarea placeholder="Nhập tư liệu" {...field} /></FormControl><FormMessage /></FormItem>)} />
         <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Ghi chú</FormLabel><FormControl><Textarea placeholder="Nhập ghi chú" {...field} /></FormControl><FormMessage /></FormItem>)} />
-        <Button type="submit" className="w-full">Lưu</Button>
+        <Button type="submit" className="w-full md:hidden">Lưu</Button>
       </form>
     </Form>
   );
@@ -218,7 +219,7 @@ export const AddVipGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues,
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[90vh] flex flex-col">
           <DrawerHeader className="text-left flex-shrink-0"><DrawerTitle>{title}</DrawerTitle><DrawerDescription>{description}</DrawerDescription></DrawerHeader>
-          <ScrollArea className="overflow-y-auto flex-grow"><VipGuestForm className="px-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} /></ScrollArea>
+          <ScrollArea className="overflow-y-auto flex-grow"><VipGuestForm className="px-4 pb-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} /></ScrollArea>
           <DrawerFooter className="pt-2 flex-shrink-0"><DrawerClose asChild><Button variant="outline">Hủy</Button></DrawerClose></DrawerFooter>
         </DrawerContent>
       </Drawer>
@@ -227,7 +228,21 @@ export const AddVipGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader><VipGuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} /></DialogContent>
+      <DialogContent className="sm:max-w-2xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-4 flex-shrink-0">
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="flex-grow min-h-0">
+          <div className="px-6">
+            <VipGuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
+          </div>
+        </ScrollArea>
+        <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
+          <Button type="submit" form="vip-guest-form">Lưu</Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 };

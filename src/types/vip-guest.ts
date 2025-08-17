@@ -7,7 +7,7 @@ export const vipGuestFormSchema = z.object({
     required_error: "Vui lòng chọn một vai trò.",
   }),
   secondaryInfo: z.string().nullish(),
-  phone: z.string().optional(),
+  phone: z.string().nullish(),
   referrer: z.string().nullish(),
   notes: z.string().nullish(),
   materials: z.string().nullish(),

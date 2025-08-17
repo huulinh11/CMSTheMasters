@@ -8,7 +8,7 @@ export const guestFormSchema = z.object({
   role: z.string({
     required_error: "Vui lòng chọn một vai trò.",
   }),
-  phone: z.string().optional(),
+  phone: z.string().nullish(),
   referrer: z.string().nullish(),
   notes: z.string().nullish(),
   materials: z.string().nullish(),

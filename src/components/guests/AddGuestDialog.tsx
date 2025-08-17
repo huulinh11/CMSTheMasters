@@ -230,7 +230,21 @@ export const AddGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, al
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader><GuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} /><DialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button><Button type="submit" form="guest-form">Lưu</Button></DialogFooter></DialogContent>
+      <DialogContent className="sm:max-w-2xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-4 flex-shrink-0">
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="flex-grow min-h-0">
+          <div className="px-6">
+            <GuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} />
+          </div>
+        </ScrollArea>
+        <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
+          <Button type="submit" form="guest-form">Lưu</Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 };
