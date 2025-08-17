@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { VipGuest, VipGuestFormValues } from "@/types/vip-guest";
 import { Guest, GuestFormValues } from "@/types/guest";
@@ -312,6 +312,18 @@ const GuestsPage = () => {
     deleteMutation.mutate([guestId]);
   };
 
+  const handleEditVipSubmit = useCallback((values: VipGuestFormValues) => {
+    if (editingGuest) {
+        editVipMutation.mutate({ ...values, id: editingGuest.id });
+    }
+  }, [editingGuest, editVipMutation]);
+
+  const handleEditRegularSubmit = useCallback((values: GuestFormValues) => {
+      if (editingGuest) {
+          editRegularMutation.mutate({ ...values, id: editingGuest.id });
+      }
+  }, [editingGuest, editRegularMutation]);
+
   const regularGuestsWithRevenue = useMemo((): GuestRevenue[] => {
     const historyMap = new Map<string, UpsaleHistory[]>();
     upsaleHistory.forEach(h => {
@@ -466,8 +478,8 @@ const GuestsPage = () => {
         onDelete={handleDelete}
         roleConfigs={roleConfigs}
       />
-      {editingGuest?.type === 'Chức vụ' && <AddVipGuestDialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)} onSubmit={(values) => editVipMutation.mutate({ ...values, id: editingGuest!.id })} defaultValues={editingGuest as any} allGuests={vipGuests} roleConfigs={roleConfigs.filter(r => r.type === 'Chức vụ')} />}
-      {editingGuest?.type === 'Khách mời' && <AddGuestDialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)} onSubmit={(values) => editRegularMutation.mutate({ ...values, id: editingGuest!.id })} defaultValues={editingGuest as any} allVipGuests={vipGuests} roleConfigs={roleConfigs.filter(r => r.type === 'Khách mời')} />}
+      {editingGuest?.type === 'Chức vụ' && <AddVipGuestDialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)} onSubmit={handleEditVipSubmit} defaultValues={editingGuest as any} allGuests={vipGuests} roleConfigs={roleConfigs.filter(r => r.type === 'Chức vụ')} />}
+      {editingGuest?.type === 'Khách mời' && <AddGuestDialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)} onSubmit={handleEditRegularSubmit} defaultValues={editingGuest as any} allVipGuests={vipGuests} roleConfigs={roleConfigs.filter(r => r.type === 'Khách mời')} />}
       {payingGuest?.type === 'Chức vụ' && <PaymentDialog guest={payingGuest} open={!!payingGuest} onOpenChange={(open) => !open && setPayingGuest(null)} />}
       {payingGuest?.type === 'Khách mời' && <GuestPaymentDialog guest={payingGuest} open={!!payingGuest} onOpenChange={(open) => !open && setPayingGuest(null)} />}
       {historyGuest?.type === 'Chức vụ' && <HistoryDialog guest={historyGuest} open={!!historyGuest} onOpenChange={(open) => !open && setHistoryGuest(null)} />}

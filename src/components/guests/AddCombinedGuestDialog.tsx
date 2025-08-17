@@ -62,7 +62,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // --- VIP Guest Form ---
 const VipGuestForm = ({ form, onSubmit, allGuests, roleConfigs }: { form: UseFormReturn<VipGuestFormValues>, onSubmit: (values: VipGuestFormValues) => void, allGuests: VipGuest[], roleConfigs: RoleConfiguration[] }) => {
-  const { watch, setValue, getValues } = form;
+  const { watch, setValue, getValues, formState: { isDirty } } = form;
   const sponsorshipAmount = watch("sponsorship_amount");
   const paidAmount = watch("paid_amount");
 
@@ -103,7 +103,7 @@ const VipGuestForm = ({ form, onSubmit, allGuests, roleConfigs }: { form: UseFor
         <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-4">
           <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Tên</FormLabel><FormControl><Input placeholder="Nhập tên khách mời" {...field} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Số điện thoại</FormLabel><FormControl><Input placeholder="Nhập số điện thoại" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Vai trò</FormLabel><Select onValueChange={(value) => { field.onChange(value); const roleConfig = roleConfigs.find(rc => rc.name === value); if (roleConfig) { const newAmount = roleConfig.sponsorship_amount; setValue("sponsorship_amount", newAmount); setValue("paid_amount", 0); } }} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Chọn vai trò" /></SelectTrigger></FormControl><SelectContent>{roleConfigs.map((role) => (<SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Vai trò</FormLabel><Select onValueChange={(value) => { field.onChange(value); const roleConfig = roleConfigs.find(rc => rc.name === value); if (roleConfig && !isDirty) { const newAmount = roleConfig.sponsorship_amount; setValue("sponsorship_amount", newAmount); setValue("paid_amount", 0); } }} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Chọn vai trò" /></SelectTrigger></FormControl><SelectContent>{roleConfigs.map((role) => (<SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="secondaryInfo" render={({ field }) => (<FormItem><FormLabel>Thông tin phụ</FormLabel><FormControl><Input placeholder="Nhập thông tin phụ" {...field} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="sponsorship_amount" render={() => (<FormItem><FormLabel>Số tiền tài trợ (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={sponsorshipInput} onChange={(e) => handleAmountChange(e, "sponsorship_amount", setSponsorshipInput)} onBlur={(e) => handleAmountBlur(e, "sponsorship_amount")} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="paid_amount" render={() => (<FormItem><FormLabel>Số tiền đã thanh toán (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={paidInput} onChange={(e) => handleAmountChange(e, "paid_amount", setPaidInput)} onBlur={(e) => handleAmountBlur(e, "paid_amount")} /></FormControl><Button type="button" size="sm" variant="link" className="p-0 h-auto mt-1" onClick={() => { const amount = sponsorshipAmount || 0; setValue("paid_amount", amount); }}>Thanh toán đủ</Button><FormMessage /></FormItem>)} />
@@ -118,7 +118,7 @@ const VipGuestForm = ({ form, onSubmit, allGuests, roleConfigs }: { form: UseFor
 
 // --- Regular Guest Form ---
 const RegularGuestForm = ({ form, onSubmit, allVipGuests, roleConfigs }: { form: UseFormReturn<GuestFormValues>, onSubmit: (values: GuestFormValues) => void, allVipGuests: Pick<VipGuest, 'id' | 'name'>[], roleConfigs: RoleConfiguration[] }) => {
-  const { watch, setValue, getValues } = form;
+  const { watch, setValue, getValues, formState: { isDirty } } = form;
   const sponsorshipAmount = watch("sponsorship_amount");
   const paidAmount = watch("paid_amount");
 
@@ -163,7 +163,7 @@ const RegularGuestForm = ({ form, onSubmit, allVipGuests, roleConfigs }: { form:
         <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-4">
           <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Tên</FormLabel><FormControl><Input placeholder="Nhập tên khách mời" {...field} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Số điện thoại</FormLabel><FormControl><Input placeholder="Nhập số điện thoại" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Vai trò</FormLabel><Select onValueChange={(value) => { field.onChange(value); const roleConfig = roleConfigs.find(rc => rc.name === value); if (roleConfig) { const newAmount = roleConfig.sponsorship_amount; setValue("sponsorship_amount", newAmount); setValue("paid_amount", 0); } }} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Chọn vai trò" /></SelectTrigger></FormControl><SelectContent>{roleConfigs.map((role) => (<SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Vai trò</FormLabel><Select onValueChange={(value) => { field.onChange(value); const roleConfig = roleConfigs.find(rc => rc.name === value); if (roleConfig && !isDirty) { const newAmount = roleConfig.sponsorship_amount; setValue("sponsorship_amount", newAmount); setValue("paid_amount", 0); } }} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Chọn vai trò" /></SelectTrigger></FormControl><SelectContent>{roleConfigs.map((role) => (<SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="payment_source" render={({ field }) => (<FormItem><FormLabel>Nguồn thanh toán</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Chọn nguồn" /></SelectTrigger></FormControl><SelectContent>{PAYMENT_SOURCES.map(source => (<SelectItem key={source} value={source}>{source}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="sponsorship_amount" render={() => (<FormItem><FormLabel>Số tiền tài trợ (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={sponsorshipInput} onChange={(e) => handleAmountChange(e, "sponsorship_amount", setSponsorshipInput)} onBlur={(e) => handleAmountBlur(e, "sponsorship_amount")} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="paid_amount" render={() => (<FormItem><FormLabel>Số tiền đã thanh toán (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={paidInput} onChange={(e) => handleAmountChange(e, "paid_amount", setPaidInput)} onBlur={(e) => handleAmountBlur(e, "paid_amount")} /></FormControl><Button type="button" size="sm" variant="link" className="p-0 h-auto mt-1" onClick={() => { const amount = sponsorshipAmount || 0; setValue("paid_amount", amount); }}>Thanh toán đủ</Button><FormMessage /></FormItem>)} />
@@ -184,6 +184,41 @@ interface AddCombinedGuestDialogProps {
   allVipGuests: VipGuest[];
   roleConfigs: RoleConfiguration[];
 }
+
+const FormContent = ({
+  activeTab,
+  onTabChange,
+  vipForm,
+  onVipSubmit,
+  allVipGuests,
+  vipRoleConfigs,
+  regularForm,
+  onRegularSubmit,
+  regularRoleConfigs,
+}: {
+  activeTab: string;
+  onTabChange: (value: string) => void;
+  vipForm: UseFormReturn<VipGuestFormValues>;
+  onVipSubmit: (values: VipGuestFormValues) => void;
+  allVipGuests: VipGuest[];
+  vipRoleConfigs: RoleConfiguration[];
+  regularForm: UseFormReturn<GuestFormValues>;
+  onRegularSubmit: (values: GuestFormValues) => void;
+  regularRoleConfigs: RoleConfiguration[];
+}) => (
+  <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+    <TabsList className="grid w-full grid-cols-2">
+      <TabsTrigger value="vip">Chức vụ</TabsTrigger>
+      <TabsTrigger value="regular">Khách mời</TabsTrigger>
+    </TabsList>
+    <TabsContent value="vip">
+      <VipGuestForm form={vipForm} onSubmit={onVipSubmit} allGuests={allVipGuests} roleConfigs={vipRoleConfigs} />
+    </TabsContent>
+    <TabsContent value="regular">
+      <RegularGuestForm form={regularForm} onSubmit={onRegularSubmit} allVipGuests={allVipGuests} roleConfigs={regularRoleConfigs} />
+    </TabsContent>
+  </Tabs>
+);
 
 export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegularSubmit, allVipGuests, roleConfigs }: AddCombinedGuestDialogProps) => {
   const isMobile = useIsMobile();
@@ -224,21 +259,6 @@ export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegu
   const DialogComponent = isMobile ? Drawer : Dialog;
   const DialogContentComponent = isMobile ? DrawerContent : DialogContent;
 
-  const FormContent = () => (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="vip">Chức vụ</TabsTrigger>
-        <TabsTrigger value="regular">Khách mời</TabsTrigger>
-      </TabsList>
-      <TabsContent value="vip">
-        <VipGuestForm form={vipForm} onSubmit={onVipSubmit} allGuests={allVipGuests} roleConfigs={vipRoleConfigs} />
-      </TabsContent>
-      <TabsContent value="regular">
-        <RegularGuestForm form={regularForm} onSubmit={onRegularSubmit} allVipGuests={allVipGuests} roleConfigs={regularRoleConfigs} />
-      </TabsContent>
-    </Tabs>
-  );
-
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
@@ -248,10 +268,20 @@ export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegu
             <DrawerDescription>Chọn loại khách và điền thông tin.</DrawerDescription>
           </DrawerHeader>
           <ScrollArea className="overflow-y-auto flex-grow px-4">
-            <FormContent />
+            <FormContent
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              vipForm={vipForm}
+              onVipSubmit={onVipSubmit}
+              allVipGuests={allVipGuests}
+              vipRoleConfigs={vipRoleConfigs}
+              regularForm={regularForm}
+              onRegularSubmit={onRegularSubmit}
+              regularRoleConfigs={regularRoleConfigs}
+            />
           </ScrollArea>
           <DrawerFooter className="pt-2 flex-shrink-0 flex-row gap-2">
-            <Button type="submit" form={activeTab === 'vip' ? 'vip-guest-form' : 'regular-guest-form'} className="flex-1">Lưu</Button>
+            <Button type="submit" className="flex-1" onClick={activeTab === 'vip' ? vipForm.handleSubmit(onVipSubmit) : regularForm.handleSubmit(onRegularSubmit)}>Lưu</Button>
             <DrawerClose asChild><Button variant="outline" className="flex-1">Hủy</Button></DrawerClose>
           </DrawerFooter>
         </DrawerContent>
@@ -268,12 +298,22 @@ export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegu
         </DialogHeader>
         <ScrollArea className="flex-grow min-h-0">
           <div className="px-6">
-            <FormContent />
+            <FormContent
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              vipForm={vipForm}
+              onVipSubmit={onVipSubmit}
+              allVipGuests={allVipGuests}
+              vipRoleConfigs={vipRoleConfigs}
+              regularForm={regularForm}
+              onRegularSubmit={onRegularSubmit}
+              regularRoleConfigs={regularRoleConfigs}
+            />
           </div>
         </ScrollArea>
         <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
-          <Button type="submit" form={activeTab === 'vip' ? 'vip-guest-form' : 'regular-guest-form'}>Lưu</Button>
+          <Button type="submit" onClick={activeTab === 'vip' ? vipForm.handleSubmit(onVipSubmit) : regularForm.handleSubmit(onRegularSubmit)}>Lưu</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
