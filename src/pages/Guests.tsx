@@ -53,7 +53,7 @@ type UpsaleHistory = {
   created_at: string;
 };
 
-const generateVipId = (role: string, existingGuests: VipGuest[]): string => {
+const generateVipId = (role: string, existingGuests: Pick<VipGuest, 'id'>[]): string => {
     const prefixMap: Record<string, string> = { "Prime Speaker": "PS", "Guest Speaker": "GS", "Mentor kiến tạo": "ME", "Phó BTC": "PB", "Đại sứ": "DS", "Cố vấn": "CV", "Giám đốc": "GD", "Nhà tài trợ": "NT" };
     const prefix = prefixMap[role] || role.substring(0, 2).toUpperCase();
     const roleGuests = existingGuests.filter(g => g.id.startsWith(prefix));
@@ -70,7 +70,7 @@ const generateVipId = (role: string, existingGuests: VipGuest[]): string => {
     return `${prefix}${String(nextIdNum).padStart(3, '0')}`;
 };
 
-const generateRegularId = (role: string, existingGuests: Guest[]): string => {
+const generateRegularId = (role: string, existingGuests: Pick<Guest, 'id'>[]): string => {
     const prefixMap: Record<string, string> = { "Khách phổ thông": "KPT", "VIP": "VIP", "V-Vip": "VVP", "Super Vip": "SVP", "Vé trải nghiệm": "VTN" };
     const prefix = prefixMap[role] || role.substring(0, 3).toUpperCase();
     const roleGuests = existingGuests.filter(g => g.id.startsWith(prefix));
@@ -130,8 +130,11 @@ const GuestsPage = () => {
 
   const addVipMutation = useMutation({
     mutationFn: async (values: VipGuestFormValues) => {
+      const { data: existingVipGuests, error: fetchError } = await supabase.from('vip_guests').select('id');
+      if (fetchError) throw fetchError;
+
       const { sponsorship_amount, paid_amount, ...guestValues } = values;
-      const guestId = generateVipId(values.role, vipGuests);
+      const guestId = generateVipId(values.role, existingVipGuests as VipGuest[]);
       const slug = generateGuestSlug(values.name);
       const { secondaryInfo, ...rest } = guestValues;
       const guestForDb = { ...rest, id: guestId, slug, secondary_info: secondaryInfo };
@@ -153,8 +156,11 @@ const GuestsPage = () => {
 
   const addRegularMutation = useMutation({
     mutationFn: async (values: GuestFormValues) => {
+      const { data: existingGuests, error: fetchError } = await supabase.from('guests').select('id');
+      if (fetchError) throw fetchError;
+
       const { sponsorship_amount, paid_amount, payment_source, ...guestValues } = values;
-      const guestId = generateRegularId(values.role, regularGuests);
+      const guestId = generateRegularId(values.role, existingGuests as Guest[]);
       const slug = generateGuestSlug(values.name);
       const guestForDb = { ...guestValues, id: guestId, slug };
       const { error: guestError } = await supabase.from('guests').insert(guestForDb);
