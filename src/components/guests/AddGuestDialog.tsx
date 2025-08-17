@@ -67,26 +67,42 @@ interface AddGuestDialogProps {
   roleConfigs: RoleConfiguration[];
 }
 
-const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, className }: Omit<AddGuestDialogProps, 'open' | 'onOpenChange'> & { className?: string }) => {
+const GuestForm = ({ open, onSubmit, defaultValues, allVipGuests, roleConfigs, className }: Omit<AddGuestDialogProps, 'open' | 'onOpenChange'> & { open: boolean, className?: string }) => {
   const form = useForm<GuestFormValues>({
     resolver: zodResolver(guestFormSchema),
-    defaultValues: defaultValues ? {
-      ...defaultValues,
-      sponsorship_amount: (defaultValues as any).sponsorship ?? defaultValues.sponsorship_amount ?? 0,
-      paid_amount: (defaultValues as any).paid ?? 0,
-    } : {
-      name: "", role: undefined, phone: "", referrer: "", notes: "",
-      sponsorship_amount: 0, paid_amount: 0, payment_source: 'Trống'
-    }
   });
 
-  const { watch, setValue, getValues, formState } = form;
+  const { watch, setValue, getValues, formState, reset } = form;
   const selectedRole = watch("role");
   const sponsorshipAmount = watch("sponsorship_amount");
   const prevRoleRef = useRef<string | undefined>();
+  const wasOpen = useRef(false);
 
-  const [formattedSponsorship, setFormattedSponsorship] = useState(() => new Intl.NumberFormat('vi-VN').format(getValues("sponsorship_amount") || 0));
-  const [formattedPaid, setFormattedPaid] = useState(() => new Intl.NumberFormat('vi-VN').format(getValues("paid_amount") || 0));
+  const [formattedSponsorship, setFormattedSponsorship] = useState("0");
+  const [formattedPaid, setFormattedPaid] = useState("0");
+
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      if (defaultValues) {
+        const valuesForForm = {
+          ...defaultValues,
+          sponsorship_amount: (defaultValues as any).sponsorship ?? defaultValues.sponsorship_amount ?? 0,
+          paid_amount: (defaultValues as any).paid ?? 0,
+        };
+        reset(valuesForForm);
+        setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(valuesForForm.sponsorship_amount));
+        setFormattedPaid(new Intl.NumberFormat('vi-VN').format(valuesForForm.paid_amount));
+      } else {
+        reset({
+          name: "", role: undefined, phone: "", referrer: "", notes: "",
+          sponsorship_amount: 0, paid_amount: 0, payment_source: 'Trống'
+        });
+        setFormattedSponsorship("0");
+        setFormattedPaid("0");
+      }
+    }
+    wasOpen.current = open;
+  }, [open, defaultValues, reset]);
 
   useEffect(() => {
     if (selectedRole && selectedRole !== prevRoleRef.current) {
@@ -251,7 +267,7 @@ export const AddGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, al
         <DrawerContent className="max-h-[90vh] flex flex-col">
           <DrawerHeader className="text-left flex-shrink-0"><DrawerTitle>{title}</DrawerTitle><DrawerDescription>{description}</DrawerDescription></DrawerHeader>
           <ScrollArea className="overflow-y-auto flex-grow">
-            <GuestForm key={defaultValues?.id || 'new-guest'} onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} className="px-4 pb-4" />
+            <GuestForm open={open} key={defaultValues?.id || 'new-guest'} onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} className="px-4 pb-4" />
           </ScrollArea>
           <DrawerFooter className="pt-2 flex-shrink-0"><DrawerClose asChild><Button variant="outline">Hủy</Button></DrawerClose></DrawerFooter>
         </DrawerContent>
@@ -261,14 +277,14 @@ export const AddGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, al
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl h-[90vh] flex flex-col p-0">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-4 flex-shrink-0">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-grow min-h-0">
           <div className="px-6">
-            <GuestForm key={defaultValues?.id || 'new-guest'} onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} />
+            <GuestForm open={open} key={defaultValues?.id || 'new-guest'} onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} />
           </div>
         </ScrollArea>
         <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
