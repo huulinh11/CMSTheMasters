@@ -265,7 +265,7 @@ export const AddGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, al
         <DrawerContent className="max-h-[90vh] flex flex-col">
           <DrawerHeader className="text-left flex-shrink-0"><DrawerTitle>{title}</DrawerTitle><DrawerDescription>{description}</DrawerDescription></DrawerHeader>
           <ScrollArea className="overflow-y-auto flex-grow">
-            <GuestForm open={open} key={defaultValues?.id || 'new-guest'} onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} className="px-4 pb-4" />
+            <GuestForm open={open} onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} className="px-4 pb-4" />
           </ScrollArea>
           <DrawerFooter className="pt-2 flex-shrink-0"><DrawerClose asChild><Button variant="outline">Hủy</Button></DrawerClose></DrawerFooter>
         </DrawerContent>
@@ -282,7 +282,7 @@ export const AddGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, al
         </DialogHeader>
         <ScrollArea className="flex-grow min-h-0">
           <div className="px-6">
-            <GuestForm open={open} key={defaultValues?.id || 'new-guest'} onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} />
+            <GuestForm open={open} onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} />
           </div>
         </ScrollArea>
         <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">

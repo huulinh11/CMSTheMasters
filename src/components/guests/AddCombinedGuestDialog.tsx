@@ -79,8 +79,8 @@ const VipGuestForm = ({ form, onSubmit, allGuests, roleConfigs }: { form: UseFor
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, field: "sponsorship_amount" | "paid_amount", setter: React.Dispatch<React.SetStateAction<string>>) => {
     const rawValue = e.target.value;
-    const numericValue = parseInt(rawValue.replace(/[^0-9]/g, ''), 10) || 0;
     setter(rawValue);
+    const numericValue = parseInt(rawValue.replace(/[^0-9]/g, ''), 10) || 0;
     setValue(field, numericValue, { shouldDirty: true });
 
     if (field === 'sponsorship_amount') {
