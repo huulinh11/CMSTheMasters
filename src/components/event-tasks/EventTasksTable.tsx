@@ -57,7 +57,7 @@ export const EventTasksTable = ({ guests, onViewDetails, onImageClick, onOpenChe
                     </button>
                   </TableCell>
                   <TableCell>{guest.role}</TableCell>
-                  <TableCell>{guest.secondaryInfo || 'N/A'}</TableCell>
+                  <TableCell>{guest.secondaryInfo || ''}</TableCell>
                   <TableCell>
                     {guest.phone ? (
                       <a href={`tel:${guest.phone}`} className="hover:underline">{guest.phone}</a>

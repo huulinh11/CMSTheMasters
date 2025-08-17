@@ -122,7 +122,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       if (guestError) throw new Error(`Guest Error: ${guestError.message}`);
 
       const promises = [
-        supabase.from('media_benefits').select('*').eq('guest_id', guestId).single(),
+        supabase.from('media_benefits').select('*').eq('guest_id', guestId),
         supabase.from('guest_tasks').select('*').eq('guest_id', guestId),
         supabase.from('guest_upsale_history').select('*').eq('guest_id', guestId),
         supabase.rpc('get_guest_service_details_by_guest_id', { guest_id_in: guestId }),
@@ -143,7 +143,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
           { data: paymentsData },
       ] = await Promise.all(promises);
 
-      if (mediaBenefitError && mediaBenefitError.code !== 'PGRST116') throw new Error(`Media Benefit Error: ${mediaBenefitError.message}`);
+      if (mediaBenefitError) throw new Error(`Media Benefit Error: ${mediaBenefitError.message}`);
       if (tasksError) throw new Error(`Tasks Error: ${tasksError.message}`);
       if (upsaleHistoryError) throw new Error(`Upsale History Error: ${upsaleHistoryError.message}`);
       if (servicesError) throw new Error(`Services Error: ${servicesError.message}`);
@@ -190,7 +190,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       return {
           guest: { ...guestData, secondaryInfo: guestData.secondary_info, referrer: referrerName, isReferrerValid },
           revenue: finalRevenue,
-          mediaBenefit: mediaBenefitData,
+          mediaBenefit: (mediaBenefitData && mediaBenefitData.length > 0) ? mediaBenefitData[0] : null,
           tasks: tasksData || [],
           payments: paymentsData || [],
           upsaleHistory: upsaleHistoryData || [],
@@ -338,16 +338,10 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
               const firstUpsale = (upsaleHistory as any[]).sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
               if (firstUpsale.from_payment_source === 'Chỉ tiêu') {
                   effectiveSponsorship = originalSponsorship - firstUpsale.from_sponsorship;
-              } else {
-                  effectiveSponsorship = originalSponsorship;
               }
-          } else {
-              effectiveSponsorship = originalSponsorship;
           }
       } else if (revenue.payment_source === 'Chỉ tiêu' && guest.referrer) {
           effectiveSponsorship = 0;
-      } else {
-          effectiveSponsorship = originalSponsorship;
       }
   }
 
