@@ -194,6 +194,7 @@ const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfi
             }}
           />
         </div>
+        <FormField control={form.control} name="materials" render={({ field }) => (<FormItem><FormLabel>Tư liệu</FormLabel><FormControl><Textarea placeholder="Nhập tư liệu" {...field} /></FormControl><FormMessage /></FormItem>)} />
         <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Ghi chú</FormLabel><FormControl><Textarea placeholder="Nhập ghi chú" {...field} /></FormControl><FormMessage /></FormItem>)} />
         <Button type="submit" className="w-full">Lưu</Button>
       </form>
