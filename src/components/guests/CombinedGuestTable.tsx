@@ -55,7 +55,7 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
             <TableHead>SĐT</TableHead>
             <TableHead className="w-48">Thông tin phụ</TableHead>
             <TableHead>Người giới thiệu</TableHead>
-            <TableHead className="w-48">Ghi chú</TableHead>
+            <TableHead>Ghi chú</TableHead>
             <TableHead>ZNS</TableHead>
             <TableHead>Tài trợ</TableHead>
             <TableHead>Đã trả</TableHead>
@@ -96,8 +96,10 @@ export const CombinedGuestTable = ({ guests, selectedGuests, onSelectGuest, onSe
                   {guest.type === 'Chức vụ' ? guest.secondaryInfo || '' : ''}
                 </TableCell>
                 <TableCell>{guest.referrer || ''}</TableCell>
-                <TableCell className="break-words" title={guest.notes || undefined}>
-                  {guest.notes || ''}
+                <TableCell>
+                  <p className="truncate max-w-[150px]" title={guest.notes || undefined}>
+                    {guest.notes || ''}
+                  </p>
                 </TableCell>
                 <TableCell>
                   <Checkbox
