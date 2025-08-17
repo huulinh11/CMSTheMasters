@@ -362,7 +362,10 @@ const GuestsPage = () => {
       const normalizedSearchTerm = removeAccents(searchTerm.toLowerCase());
       const searchMatch = 
         removeAccents(guest.name.toLowerCase()).includes(normalizedSearchTerm) ||
-        guest.id.toLowerCase().includes(normalizedSearchTerm);
+        guest.id.toLowerCase().includes(normalizedSearchTerm) ||
+        (guest.phone && removeAccents(guest.phone).includes(normalizedSearchTerm)) ||
+        (guest.type === 'Chức vụ' && guest.secondaryInfo && removeAccents(guest.secondaryInfo.toLowerCase()).includes(normalizedSearchTerm)) ||
+        (guest.notes && removeAccents(guest.notes.toLowerCase()).includes(normalizedSearchTerm));
       
       const typeMatch = typeFilter === 'all' || guest.type === typeFilter;
       const roleMatch = roleFilter === 'all' || guest.role === roleFilter;
