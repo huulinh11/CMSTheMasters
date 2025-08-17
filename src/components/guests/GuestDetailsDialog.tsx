@@ -368,11 +368,6 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                       <p className="text-slate-500 mt-1">{guest.role} ({guest.id})</p>
                   </div>
               </div>
-              {canDelete && !isMobile && (
-                <Button variant="destructive" onClick={() => setIsDeleteAlertOpen(true)}>
-                  <Trash2 className="mr-2 h-4 w-4" /> Xóa
-                </Button>
-              )}
           </div>
         </header>
 
@@ -537,14 +532,14 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
               </Card>
             </div>
           </div>
-          {isMobile && canDelete && (
-            <div className="p-4">
-              <Button variant="destructive" className="w-full" onClick={() => setIsDeleteAlertOpen(true)}>
-                <Trash2 className="mr-2 h-4 w-4" /> Xóa khách mời
-              </Button>
-            </div>
-          )}
         </ScrollArea>
+        {canDelete && (
+          <div className="p-4 md:p-6 flex-shrink-0 border-t border-slate-200/50 flex justify-end">
+            <Button variant="destructive" onClick={() => setIsDeleteAlertOpen(true)}>
+              <Trash2 className="mr-2 h-4 w-4" /> Xóa khách mời
+            </Button>
+          </div>
+        )}
       </div>
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
@@ -574,9 +569,9 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         guestType={guestType}
       />
       <EditAllMediaBenefitsDialog
+        guest={{ ...guest, media_benefit: mediaBenefit }}
         open={isMediaDialogOpen}
         onOpenChange={setIsMediaDialogOpen}
-        guest={{ ...guest, media_benefit: mediaBenefit }}
         onSave={(guestId, benefits) => mediaBenefitMutation.mutate({ guestId, benefits })}
         benefitsByRole={benefitsByRole}
         allBenefits={allBenefits}
