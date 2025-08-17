@@ -14,6 +14,7 @@ export type VipGuestRevenue = {
   referrer?: string;
   commission: number; // Placeholder
   created_at: string;
+  facebook_link?: string | null;
 };
 
 export type Payment = {
