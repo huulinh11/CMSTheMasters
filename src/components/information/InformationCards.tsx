@@ -15,7 +15,7 @@ interface InformationCardsProps {
 }
 
 const InfoItem = ({ icon: Icon, label, value, isLink = false, isTel = false, isCopyable = false, truncate = false }: { icon: React.ElementType, label: string, value?: string | null, isLink?: boolean, isTel?: boolean, isCopyable?: boolean, truncate?: boolean }) => {
-  if (value === undefined) return null;
+  if (!value) return null;
 
   const handleCopy = (textToCopy: string) => {
     navigator.clipboard.writeText(textToCopy);

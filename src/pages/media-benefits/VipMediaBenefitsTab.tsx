@@ -189,22 +189,8 @@ export default function VipMediaBenefitsTab() {
   });
 
   const handleUpdateBenefit = useCallback((guestId: string, field: string, value: any) => {
-    const standardFields = ['invitation_status', 'page_post_link', 'btc_post_link', 'pre_event_news', 'post_event_news', 'red_carpet_video_link', 'news_video', 'beauty_ai_photos_link'];
-    
     const existingBenefit = benefitsMap.get(guestId) || {};
-    let payload: Partial<MediaBenefit>;
-
-    if (standardFields.includes(field)) {
-      payload = { ...existingBenefit, [field]: value };
-    } else {
-      payload = {
-        ...existingBenefit,
-        custom_data: {
-          ...(existingBenefit as MediaBenefit)?.custom_data,
-          [field]: value,
-        }
-      };
-    }
+    const payload = { ...existingBenefit, [field]: value };
     mutation.mutate({ guestId, benefits: payload });
   }, [mutation, benefitsMap]);
 
