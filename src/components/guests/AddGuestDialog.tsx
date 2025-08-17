@@ -36,7 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Guest, GuestFormValues, guestFormSchema } from "@/types/guest";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Popover,
   PopoverContent,
@@ -70,45 +70,37 @@ interface AddGuestDialogProps {
 const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, className }: Omit<AddGuestDialogProps, 'open' | 'onOpenChange'> & { className?: string }) => {
   const form = useForm<GuestFormValues>({
     resolver: zodResolver(guestFormSchema),
+    defaultValues: defaultValues ? {
+      ...defaultValues,
+      sponsorship_amount: (defaultValues as any).sponsorship ?? defaultValues.sponsorship_amount ?? 0,
+      paid_amount: (defaultValues as any).paid ?? 0,
+    } : {
+      name: "", role: undefined, phone: "", referrer: "", notes: "",
+      sponsorship_amount: 0, paid_amount: 0, payment_source: 'Trống'
+    }
   });
 
-  const { watch, setValue, getValues } = form;
+  const { watch, setValue, getValues, formState } = form;
   const selectedRole = watch("role");
   const sponsorshipAmount = watch("sponsorship_amount");
+  const prevRoleRef = useRef<string | undefined>();
 
-  const [formattedSponsorship, setFormattedSponsorship] = useState("0");
-  const [formattedPaid, setFormattedPaid] = useState("0");
-
-  useEffect(() => {
-    if (defaultValues) {
-      const valuesForForm = {
-        ...defaultValues,
-        sponsorship_amount: (defaultValues as any).sponsorship ?? defaultValues.sponsorship_amount ?? 0,
-        paid_amount: (defaultValues as any).paid ?? 0,
-      };
-      form.reset(valuesForForm);
-      setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(valuesForForm.sponsorship_amount));
-      setFormattedPaid(new Intl.NumberFormat('vi-VN').format(valuesForForm.paid_amount));
-    } else {
-      form.reset({
-        name: "", role: undefined, phone: "", referrer: "", notes: "",
-        sponsorship_amount: 0, paid_amount: 0, payment_source: 'Trống'
-      });
-      setFormattedSponsorship("0");
-      setFormattedPaid("0");
-    }
-  }, [defaultValues, form]);
+  const [formattedSponsorship, setFormattedSponsorship] = useState(() => new Intl.NumberFormat('vi-VN').format(getValues("sponsorship_amount") || 0));
+  const [formattedPaid, setFormattedPaid] = useState(() => new Intl.NumberFormat('vi-VN').format(getValues("paid_amount") || 0));
 
   useEffect(() => {
-    if (selectedRole) {
+    if (selectedRole && selectedRole !== prevRoleRef.current) {
       const roleConfig = roleConfigs.find(rc => rc.name === selectedRole);
       if (roleConfig) {
-        const newAmount = roleConfig.sponsorship_amount;
-        setValue("sponsorship_amount", newAmount, { shouldDirty: true });
-        setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newAmount));
+        if (!formState.isDirty || !defaultValues) {
+          const newAmount = roleConfig.sponsorship_amount;
+          setValue("sponsorship_amount", newAmount, { shouldDirty: true });
+          setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newAmount));
+        }
       }
     }
-  }, [selectedRole, roleConfigs, setValue]);
+    prevRoleRef.current = selectedRole;
+  }, [selectedRole, roleConfigs, setValue, defaultValues, formState.isDirty]);
 
   const handleSponsorshipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
@@ -145,12 +137,6 @@ const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, classNa
                 <Select
                   onValueChange={(value) => {
                     field.onChange(value);
-                    const roleConfig = roleConfigs.find(rc => rc.name === value);
-                    if (roleConfig) {
-                      const newAmount = roleConfig.sponsorship_amount;
-                      setValue("sponsorship_amount", newAmount, { shouldDirty: true });
-                      setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newAmount));
-                    }
                   }}
                   value={field.value}
                 >
@@ -264,7 +250,9 @@ export const AddGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, al
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[90vh] flex flex-col">
           <DrawerHeader className="text-left flex-shrink-0"><DrawerTitle>{title}</DrawerTitle><DrawerDescription>{description}</DrawerDescription></DrawerHeader>
-          <ScrollArea className="overflow-y-auto flex-grow"><GuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} className="px-4 pb-4" /></ScrollArea>
+          <ScrollArea className="overflow-y-auto flex-grow">
+            <GuestForm key={defaultValues?.id || 'new-guest'} onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} className="px-4 pb-4" />
+          </ScrollArea>
           <DrawerFooter className="pt-2 flex-shrink-0"><DrawerClose asChild><Button variant="outline">Hủy</Button></DrawerClose></DrawerFooter>
         </DrawerContent>
       </Drawer>
@@ -280,7 +268,7 @@ export const AddGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, al
         </DialogHeader>
         <ScrollArea className="flex-grow min-h-0">
           <div className="px-6">
-            <GuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} />
+            <GuestForm key={defaultValues?.id || 'new-guest'} onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} />
           </div>
         </ScrollArea>
         <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
