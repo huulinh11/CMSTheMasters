@@ -12,6 +12,7 @@ import { StatusSelect } from "./StatusSelect";
 import { SimpleLinkDisplay, ComplexBenefitDisplay } from "./BenefitDisplays";
 import { BenefitItem } from "@/types/benefit-configuration";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { benefitNameToFieldMap } from "@/config/benefits";
 
 interface VipMediaBenefitsTableProps {
   guests: MediaVipGuest[];
@@ -20,11 +21,14 @@ interface VipMediaBenefitsTableProps {
   benefitsToDisplay: BenefitItem[];
 }
 
-const getBenefitValue = (benefitName: keyof MediaBenefit | string, mediaBenefit?: MediaBenefit) => {
+const getBenefitValue = (benefitName: string, mediaBenefit?: MediaBenefit) => {
   if (!mediaBenefit) return null;
-  if (benefitName in mediaBenefit) {
-    return mediaBenefit[benefitName as keyof MediaBenefit];
+  const fieldName = benefitNameToFieldMap[benefitName];
+  
+  if (fieldName && mediaBenefit[fieldName as keyof MediaBenefit]) {
+    return mediaBenefit[fieldName as keyof MediaBenefit];
   }
+  
   return mediaBenefit.custom_data?.[benefitName] || null;
 };
 
@@ -64,7 +68,7 @@ export const VipMediaBenefitsTable = ({ guests, onUpdateBenefit, onEdit, benefit
                   <TableCell key={benefit.name}>
                     {benefit.field_type === 'status_select' && (
                       <StatusSelect
-                        value={getBenefitValue('invitation_status', guest.media_benefit) || 'Trống'}
+                        value={getBenefitValue('Thư mời', guest.media_benefit) || 'Trống'}
                         onUpdate={(value) => onUpdateBenefit(guest.id, 'invitation_status', value)}
                       />
                     )}

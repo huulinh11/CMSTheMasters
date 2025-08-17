@@ -9,6 +9,7 @@ import { Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 import { BenefitItem } from "@/types/benefit-configuration";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { benefitNameToFieldMap } from "@/config/benefits";
 
 interface RegularMediaBenefitsCardsProps {
   guests: MediaRegularGuest[];
@@ -18,11 +19,14 @@ interface RegularMediaBenefitsCardsProps {
   allBenefits: BenefitItem[];
 }
 
-const getBenefitValue = (benefitName: keyof MediaBenefit | string, mediaBenefit?: MediaBenefit) => {
+const getBenefitValue = (benefitName: string, mediaBenefit?: MediaBenefit) => {
   if (!mediaBenefit) return null;
-  if (benefitName in mediaBenefit) {
-    return mediaBenefit[benefitName as keyof MediaBenefit];
+  const fieldName = benefitNameToFieldMap[benefitName];
+  
+  if (fieldName && mediaBenefit[fieldName as keyof MediaBenefit]) {
+    return mediaBenefit[fieldName as keyof MediaBenefit];
   }
+  
   return mediaBenefit.custom_data?.[benefitName] || null;
 };
 

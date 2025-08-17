@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { BenefitItem } from "@/types/benefit-configuration";
 import { useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { benefitNameToFieldMap } from "@/config/benefits";
 
 interface VipMediaBenefitsCardsProps {
   guests: MediaVipGuest[];
@@ -16,11 +17,14 @@ interface VipMediaBenefitsCardsProps {
   allBenefits: BenefitItem[];
 }
 
-const getBenefitValue = (benefitName: keyof MediaBenefit | string, mediaBenefit?: MediaBenefit) => {
+const getBenefitValue = (benefitName: string, mediaBenefit?: MediaBenefit) => {
   if (!mediaBenefit) return null;
-  if (benefitName in mediaBenefit) {
-    return mediaBenefit[benefitName as keyof MediaBenefit];
+  const fieldName = benefitNameToFieldMap[benefitName];
+  
+  if (fieldName && mediaBenefit[fieldName as keyof MediaBenefit]) {
+    return mediaBenefit[fieldName as keyof MediaBenefit];
   }
+  
   return mediaBenefit.custom_data?.[benefitName] || null;
 };
 

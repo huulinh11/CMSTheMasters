@@ -15,28 +15,7 @@ import { PlusCircle, Trash2, Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 import { StatusSelect } from "./StatusSelect";
 import { BenefitItem } from "@/types/benefit-configuration";
-
-const benefitNameToFieldMap: Record<string, keyof Omit<MediaBenefit, 'guest_id' | 'custom_data'>> = {
-  "Thư mời": "invitation_status",
-  "Post bài page": "page_post_link",
-  "Post bài BTC": "btc_post_link",
-  "Báo trước sự kiện": "pre_event_news",
-  "Báo sau sự kiện": "post_event_news",
-  "Video thảm đỏ": "red_carpet_video_link",
-  "Video đưa tin": "news_video",
-  "Bộ ảnh Beauty AI": "beauty_ai_photos_link",
-};
-
-const standardFields = Object.values(benefitNameToFieldMap);
-
-interface EditAllMediaBenefitsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSave: (guestId: string, benefits: any) => void;
-  guest: AnyMediaGuest | null;
-  benefitsByRole: Record<string, string[]>;
-  allBenefits: BenefitItem[];
-}
+import { benefitNameToFieldMap, standardFields } from "@/config/benefits";
 
 const InputWithCopy = ({ value, onChange, placeholder, label }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, placeholder: string, label: string }) => {
   return (
@@ -132,6 +111,14 @@ const VideoEditor = ({ video, setVideo, title }: { video: NewsVideo, setVideo: (
   );
 };
 
+interface EditAllMediaBenefitsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (guestId: string, benefits: any) => void;
+  guest: AnyMediaGuest | null;
+  benefitsByRole: Record<string, string[]>;
+  allBenefits: BenefitItem[];
+}
 
 export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, benefitsByRole, allBenefits }: EditAllMediaBenefitsDialogProps) => {
   const [benefits, setBenefits] = useState<Partial<MediaBenefit>>({});
@@ -150,8 +137,7 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, 
       let wasMigrated = false;
 
       for (const [displayName, fieldName] of Object.entries(benefitNameToFieldMap)) {
-        // Check if data exists in custom_data and not in the standard field
-        if (customData[displayName] !== undefined && migratedBenefits[fieldName] === undefined) {
+        if (customData[displayName] !== undefined && !migratedBenefits[fieldName]) {
           migratedBenefits[fieldName] = customData[displayName];
           delete customData[displayName];
           wasMigrated = true;
@@ -219,7 +205,7 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, 
                     key={benefit.id}
                     label={benefit.name} 
                     placeholder="Link" 
-                    value={isStandardField ? (benefits[fieldName as keyof MediaBenefit] || '') : (benefits.custom_data?.[fieldName] || '')} 
+                    value={(isStandardField ? (benefits[fieldName as keyof MediaBenefit] || '') : (benefits.custom_data?.[fieldName] || '')) ?? ''} 
                     onChange={(e) => {
                       if (isStandardField) {
                         updateField(fieldName as keyof MediaBenefit, e.target.value);
