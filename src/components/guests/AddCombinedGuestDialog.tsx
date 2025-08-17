@@ -70,7 +70,7 @@ const VipGuestForm = ({ onSubmit, allGuests, roleConfigs }: { onSubmit: (values:
     }
   });
 
-  const { watch, setValue, getValues } = form;
+  const { watch, setValue, getValues } from form;
   const selectedRole = watch("role");
   const sponsorshipAmount = watch("sponsorship_amount");
   const prevRoleRef = useRef<string | undefined>();
@@ -228,7 +228,7 @@ export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegu
   const DialogComponent = isMobile ? Drawer : Dialog;
   const DialogContentComponent = isMobile ? DrawerContent : DialogContent;
 
-  const FormContent = () => (
+  const dialogContent = (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="vip">Chức vụ</TabsTrigger>
@@ -252,7 +252,7 @@ export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegu
             <DrawerDescription>Chọn loại khách và điền thông tin.</DrawerDescription>
           </DrawerHeader>
           <ScrollArea className="overflow-y-auto flex-grow px-4">
-            <FormContent />
+            {dialogContent}
           </ScrollArea>
           <DrawerFooter className="pt-2 flex-shrink-0 flex-row gap-2">
             <Button type="submit" form={activeTab === 'vip' ? 'vip-guest-form' : 'regular-guest-form'} className="flex-1">Lưu</Button>
@@ -270,7 +270,7 @@ export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegu
           <DialogTitle>Thêm khách mới</DialogTitle>
           <DialogDescription>Chọn loại khách và điền thông tin.</DialogDescription>
         </DialogHeader>
-        <FormContent />
+        {dialogContent}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
           <Button type="submit" form={activeTab === 'vip' ? 'vip-guest-form' : 'regular-guest-form'}>Lưu</Button>
