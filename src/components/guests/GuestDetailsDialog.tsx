@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2, QrCode, Briefcase } from "lucide-react";
+import { User, Phone, Info, FileText, DollarSign, CheckCircle, AlertCircle, Megaphone, ClipboardList, History, Link as LinkIcon, ExternalLink, Copy, Edit, CreditCard, TrendingUp, Trash2, QrCode, Briefcase, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,8 +11,8 @@ import { format } from "date-fns";
 import { MediaBenefitDisplay } from "@/components/public-checklist/MediaBenefitDisplay";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerHeader } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerClose } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { showSuccess, showError } from "@/utils/toast";
@@ -368,6 +368,26 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                       <p className="text-slate-500 mt-1">{guest.role} ({guest.id})</p>
                   </div>
               </div>
+              <div className="flex items-center gap-2">
+                {canDelete && (
+                  <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-500" onClick={() => setIsDeleteAlertOpen(true)}>
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
+                )}
+                {isMobile ? (
+                  <DrawerClose asChild>
+                    <Button variant="destructive" size="icon" className="h-10 w-10">
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </DrawerClose>
+                ) : (
+                  <DialogClose asChild>
+                    <Button variant="destructive" size="icon" className="h-10 w-10">
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </DialogClose>
+                )}
+              </div>
           </div>
         </header>
 
@@ -533,13 +553,6 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
             </div>
           </div>
         </ScrollArea>
-        {canDelete && (
-          <div className="p-4 md:p-6 flex-shrink-0 border-t border-slate-200/50 flex justify-end">
-            <Button variant="destructive" onClick={() => setIsDeleteAlertOpen(true)}>
-              <Trash2 className="mr-2 h-4 w-4" /> Xóa khách mời
-            </Button>
-          </div>
-        )}
       </div>
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
@@ -672,7 +685,7 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
         </Drawer>
       ) : (
         <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="max-w-7xl h-[90vh] p-0 bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col">
+          <DialogContent className="max-w-7xl h-[90vh] p-0 bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col [&>button]:hidden">
             {guestId && guestType && <GuestDetailsContent isMobile={isMobile} guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DialogContent>
         </Dialog>
