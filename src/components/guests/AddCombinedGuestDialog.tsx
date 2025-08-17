@@ -73,12 +73,13 @@ const VipGuestForm = ({ onSubmit, allGuests, roleConfigs }: { onSubmit: (values:
   const { watch, setValue, getValues } = form;
   const selectedRole = watch("role");
   const sponsorshipAmount = watch("sponsorship_amount");
+  const prevRoleRef = useRef<string | undefined>();
 
   const [formattedSponsorship, setFormattedSponsorship] = useState("0");
   const [formattedPaid, setFormattedPaid] = useState("0");
 
   useEffect(() => {
-    if (selectedRole) {
+    if (selectedRole && selectedRole !== prevRoleRef.current) {
       const roleConfig = roleConfigs.find(rc => rc.name === selectedRole);
       if (roleConfig) {
         const newAmount = roleConfig.sponsorship_amount;
@@ -88,6 +89,7 @@ const VipGuestForm = ({ onSubmit, allGuests, roleConfigs }: { onSubmit: (values:
         setFormattedPaid("0");
       }
     }
+    prevRoleRef.current = selectedRole;
   }, [selectedRole, roleConfigs, setValue]);
 
   const handleSponsorshipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,12 +143,13 @@ const RegularGuestForm = ({ onSubmit, allVipGuests, roleConfigs }: { onSubmit: (
   const { watch, setValue, getValues } = form;
   const selectedRole = watch("role");
   const sponsorshipAmount = watch("sponsorship_amount");
+  const prevRoleRef = useRef<string | undefined>();
 
   const [formattedSponsorship, setFormattedSponsorship] = useState("0");
   const [formattedPaid, setFormattedPaid] = useState("0");
 
   useEffect(() => {
-    if (selectedRole) {
+    if (selectedRole && selectedRole !== prevRoleRef.current) {
       const roleConfig = roleConfigs.find(rc => rc.name === selectedRole);
       if (roleConfig) {
         const newAmount = roleConfig.sponsorship_amount;
@@ -156,6 +159,7 @@ const RegularGuestForm = ({ onSubmit, allVipGuests, roleConfigs }: { onSubmit: (
         setFormattedPaid("0");
       }
     }
+    prevRoleRef.current = selectedRole;
   }, [selectedRole, roleConfigs, setValue]);
 
   const handleSponsorshipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
