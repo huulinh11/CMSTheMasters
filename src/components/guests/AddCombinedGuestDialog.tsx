@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GuestFormValues, guestFormSchema } from "@/types/guest";
 import { VipGuestFormValues, vipGuestFormSchema } from "@/types/vip-guest";
@@ -61,22 +61,14 @@ import { PAYMENT_SOURCES } from "@/types/guest-revenue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // --- VIP Guest Form ---
-const VipGuestForm = ({ onSubmit, allGuests, roleConfigs }: { onSubmit: (values: VipGuestFormValues) => void, allGuests: VipGuest[], roleConfigs: RoleConfiguration[] }) => {
-  const form = useForm<VipGuestFormValues>({
-    resolver: zodResolver(vipGuestFormSchema),
-    defaultValues: {
-      name: "", role: undefined, secondaryInfo: "", phone: "", referrer: "", notes: "",
-      sponsorship_amount: 0, paid_amount: 0,
-    }
-  });
-
+const VipGuestForm = ({ form, onSubmit, allGuests, roleConfigs }: { form: UseFormReturn<VipGuestFormValues>, onSubmit: (values: VipGuestFormValues) => void, allGuests: VipGuest[], roleConfigs: RoleConfiguration[] }) => {
   const { watch, setValue, getValues } = form;
   const selectedRole = watch("role");
   const sponsorshipAmount = watch("sponsorship_amount");
   const prevRoleRef = useRef<string | undefined>();
 
-  const [formattedSponsorship, setFormattedSponsorship] = useState("0");
-  const [formattedPaid, setFormattedPaid] = useState("0");
+  const [formattedSponsorship, setFormattedSponsorship] = useState(() => new Intl.NumberFormat('vi-VN').format(getValues("sponsorship_amount") || 0));
+  const [formattedPaid, setFormattedPaid] = useState(() => new Intl.NumberFormat('vi-VN').format(getValues("paid_amount") || 0));
 
   useEffect(() => {
     if (selectedRole && selectedRole !== prevRoleRef.current) {
@@ -131,15 +123,7 @@ const VipGuestForm = ({ onSubmit, allGuests, roleConfigs }: { onSubmit: (values:
 }
 
 // --- Regular Guest Form ---
-const RegularGuestForm = ({ onSubmit, allVipGuests, roleConfigs }: { onSubmit: (values: GuestFormValues) => void, allVipGuests: Pick<VipGuest, 'id' | 'name'>[], roleConfigs: RoleConfiguration[] }) => {
-  const form = useForm<GuestFormValues>({
-    resolver: zodResolver(guestFormSchema),
-    defaultValues: {
-      name: "", role: undefined, phone: "", referrer: "", notes: "",
-      sponsorship_amount: 0, paid_amount: 0, payment_source: 'Trống'
-    }
-  });
-
+const RegularGuestForm = ({ form, onSubmit, allVipGuests, roleConfigs }: { form: UseFormReturn<GuestFormValues>, onSubmit: (values: GuestFormValues) => void, allVipGuests: Pick<VipGuest, 'id' | 'name'>[], roleConfigs: RoleConfiguration[] }) => {
   const { watch, setValue, getValues } = form;
   const selectedRole = watch("role");
   const sponsorshipAmount = watch("sponsorship_amount");
@@ -212,15 +196,35 @@ interface AddCombinedGuestDialogProps {
 export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegularSubmit, allVipGuests, roleConfigs }: AddCombinedGuestDialogProps) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("vip");
-  const [formKey, setFormKey] = useState(0);
-  const wasOpen = useRef(false);
+
+  const vipForm = useForm<VipGuestFormValues>({
+    resolver: zodResolver(vipGuestFormSchema),
+    defaultValues: {
+      name: "", role: undefined, secondaryInfo: "", phone: "", referrer: "", notes: "",
+      sponsorship_amount: 0, paid_amount: 0,
+    }
+  });
+
+  const regularForm = useForm<GuestFormValues>({
+    resolver: zodResolver(guestFormSchema),
+    defaultValues: {
+      name: "", role: undefined, phone: "", referrer: "", notes: "",
+      sponsorship_amount: 0, paid_amount: 0, payment_source: 'Trống'
+    }
+  });
 
   useEffect(() => {
-    if (open && !wasOpen.current) {
-      setFormKey(prev => prev + 1);
+    if (open) {
+      vipForm.reset({
+        name: "", role: undefined, secondaryInfo: "", phone: "", referrer: "", notes: "",
+        sponsorship_amount: 0, paid_amount: 0,
+      });
+      regularForm.reset({
+        name: "", role: undefined, phone: "", referrer: "", notes: "",
+        sponsorship_amount: 0, paid_amount: 0, payment_source: 'Trống'
+      });
     }
-    wasOpen.current = open;
-  }, [open]);
+  }, [open, vipForm, regularForm]);
 
   const vipRoleConfigs = roleConfigs.filter(r => r.type === 'Chức vụ');
   const regularRoleConfigs = roleConfigs.filter(r => r.type === 'Khách mời');
@@ -235,10 +239,10 @@ export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegu
         <TabsTrigger value="regular">Khách mời</TabsTrigger>
       </TabsList>
       <TabsContent value="vip">
-        <VipGuestForm key={`vip-${formKey}`} onSubmit={onVipSubmit} allGuests={allVipGuests} roleConfigs={vipRoleConfigs} />
+        <VipGuestForm form={vipForm} onSubmit={onVipSubmit} allGuests={allVipGuests} roleConfigs={vipRoleConfigs} />
       </TabsContent>
       <TabsContent value="regular">
-        <RegularGuestForm key={`regular-${formKey}`} onSubmit={onRegularSubmit} allVipGuests={allVipGuests} roleConfigs={regularRoleConfigs} />
+        <RegularGuestForm form={regularForm} onSubmit={onRegularSubmit} allVipGuests={allVipGuests} roleConfigs={regularRoleConfigs} />
       </TabsContent>
     </Tabs>
   );
