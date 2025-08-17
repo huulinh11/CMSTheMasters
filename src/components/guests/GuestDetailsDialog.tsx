@@ -685,7 +685,14 @@ export const GuestDetailsDialog = ({ guestId, guestType, open, onOpenChange, onE
         </Drawer>
       ) : (
         <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="max-w-7xl h-[90vh] p-0 bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col [&>button]:hidden">
+          <DialogContent 
+            className="max-w-7xl h-[90vh] p-0 bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex flex-col [&>button]:hidden"
+            onInteractOutside={(e) => {
+              if ((e.target as HTMLElement).closest('[data-radix-dialog-content]')) {
+                e.preventDefault();
+              }
+            }}
+          >
             {guestId && guestType && <GuestDetailsContent isMobile={isMobile} guestId={guestId} guestType={guestType} onEdit={onEdit} onDelete={onDelete} roleConfigs={roleConfigs} />}
           </DialogContent>
         </Dialog>
