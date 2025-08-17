@@ -20,9 +20,10 @@ interface AddEditCategoryDialogProps {
   vipGuests: VipGuest[];
   roleConfigs: RoleConfiguration[];
   presenterCounts: Record<string, number>;
+  honoreeCounts: Record<string, number>;
 }
 
-export const AddEditCategoryDialog = ({ open, onOpenChange, onSave, isSaving, category, allGuests, vipGuests, roleConfigs, presenterCounts }: AddEditCategoryDialogProps) => {
+export const AddEditCategoryDialog = ({ open, onOpenChange, onSave, isSaving, category, allGuests, vipGuests, roleConfigs, presenterCounts, honoreeCounts }: AddEditCategoryDialogProps) => {
   const [name, setName] = useState('');
   const [honorees, setHonorees] = useState<{ guest_id: string; guest_name: string }[]>([]);
   const [presenters, setPresenters] = useState<{ guest_id: string; guest_name: string }[]>([]);
@@ -42,6 +43,16 @@ export const AddEditCategoryDialog = ({ open, onOpenChange, onSave, isSaving, ca
   const handleSave = () => {
     onSave({ values: { name, honorees, presenters }, originalId: category?.id });
   };
+
+  const allGuestsWithHonoreeCount = useMemo(() => {
+    return allGuests.map(g => {
+      let honoreeCount = honoreeCounts[g.id] || 0;
+      if (category && category.honorees?.some(h => h.guest_id === g.id)) {
+        honoreeCount = Math.max(0, honoreeCount - 1);
+      }
+      return { ...g, honoreeCount };
+    });
+  }, [allGuests, honoreeCounts, category]);
 
   const presentersWithCount = useMemo(() => {
     return vipGuests.map(g => ({
@@ -68,12 +79,13 @@ export const AddEditCategoryDialog = ({ open, onOpenChange, onSave, isSaving, ca
                 <div className="space-y-2">
                   <Label>Danh sách vinh danh</Label>
                   <GuestMultiSelect
-                    allGuests={allGuests}
+                    allGuests={allGuestsWithHonoreeCount}
                     roleConfigs={roleConfigs}
                     selected={honorees}
                     onChange={setHonorees}
                     placeholder="Chọn người được vinh danh..."
                     badgeClassName="bg-blue-100 text-blue-800 hover:bg-blue-200"
+                    showHonoreeFilter
                   />
                 </div>
                 <div className="space-y-2">

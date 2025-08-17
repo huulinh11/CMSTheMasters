@@ -114,6 +114,16 @@ export const HonorRollTab = ({ categories: initialCategories, allGuests, vipGues
     return counts;
   }, [categories]);
 
+  const honoreeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    categories.forEach(c => {
+      c.honorees?.forEach(h => {
+        counts[h.guest_id] = (counts[h.guest_id] || 0) + 1;
+      });
+    });
+    return counts;
+  }, [categories]);
+
   const mutation = useMutation({
     mutationFn: async ({ values, originalId }: { values: HonorCategoryFormValues, originalId?: string }) => {
       const { error } = await supabase.from('honor_categories').upsert({
@@ -218,6 +228,7 @@ export const HonorRollTab = ({ categories: initialCategories, allGuests, vipGues
         vipGuests={vipGuests}
         roleConfigs={roleConfigs}
         presenterCounts={presenterCounts}
+        honoreeCounts={honoreeCounts}
       />
       <SwapPresentersDialog
         open={isSwapDialogOpen}

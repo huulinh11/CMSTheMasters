@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { RoleConfiguration } from "@/types/role-configuration";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 type CombinedGuest = (Guest | VipGuest) & { name: string; presenterCount?: number; honoreeCount?: number };
 
@@ -19,16 +21,24 @@ interface GuestMultiSelectProps {
   onChange: (selected: { guest_id: string; guest_name: string }[]) => void;
   placeholder: string;
   badgeClassName?: string;
+  showHonoreeFilter?: boolean;
 }
 
-export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, placeholder, badgeClassName }: GuestMultiSelectProps) {
+export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, placeholder, badgeClassName, showHonoreeFilter = false }: GuestMultiSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [roleFilter, setRoleFilter] = React.useState("all");
+  const [showOnlyUnhonored, setShowOnlyUnhonored] = React.useState(false);
 
   const filteredGuests = React.useMemo(() => {
-    if (roleFilter === "all") return allGuests;
-    return allGuests.filter(g => g.role === roleFilter);
-  }, [allGuests, roleFilter]);
+    let guests = allGuests;
+    if (roleFilter !== "all") {
+      guests = guests.filter(g => g.role === roleFilter);
+    }
+    if (showHonoreeFilter && showOnlyUnhonored) {
+      guests = guests.filter(g => (g.honoreeCount || 0) === 0);
+    }
+    return guests;
+  }, [allGuests, roleFilter, showHonoreeFilter, showOnlyUnhonored]);
 
   const handleSelect = (guest: CombinedGuest) => {
     const newSelected = selected.some(s => s.guest_id === guest.id)
@@ -58,6 +68,18 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
                   {roleConfigs.map(role => <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {showHonoreeFilter && (
+                <div className="flex items-center space-x-2 mt-2 px-1">
+                  <Checkbox
+                    id="show-unhonored"
+                    checked={showOnlyUnhonored}
+                    onCheckedChange={(checked) => setShowOnlyUnhonored(!!checked)}
+                  />
+                  <Label htmlFor="show-unhonored" className="text-sm font-medium">
+                    Chưa vinh danh
+                  </Label>
+                </div>
+              )}
             </div>
             <CommandInput placeholder="Tìm khách..." />
             <CommandList onWheel={(e) => e.stopPropagation()}>
@@ -70,7 +92,7 @@ export function GuestMultiSelect({ allGuests, roleConfigs, selected, onChange, p
                     onSelect={() => handleSelect(guest)}
                     className={cn(
                       "h-auto items-start",
-                      guest.presenterCount && guest.presenterCount > 0 && "text-green-600"
+                      showHonoreeFilter && guest.honoreeCount && guest.honoreeCount > 0 && "text-green-600"
                     )}
                   >
                     <Check className={cn("mr-2 h-4 w-4 flex-shrink-0 mt-1", selectedIds.has(guest.id) ? "opacity-100" : "opacity-0")} />
