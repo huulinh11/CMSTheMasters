@@ -74,7 +74,6 @@ const GuestForm = ({ open, onSubmit, defaultValues, allVipGuests, roleConfigs, c
 
   const { watch, setValue, getValues, formState: { isDirty }, reset } = form;
   const sponsorshipAmount = watch("sponsorship_amount");
-  const paidAmount = watch("paid_amount");
   const wasOpen = useRef(false);
 
   useEffect(() => {

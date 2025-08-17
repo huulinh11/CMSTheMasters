@@ -49,7 +49,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { VipGuest, VipGuestFormValues, vipGuestFormSchema } from "@/types/vip-guest";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -72,7 +72,6 @@ const VipGuestForm = ({ open, className, onSubmit, defaultValues, allGuests, rol
 
   const { watch, setValue, getValues, formState: { isDirty }, reset } = form;
   const sponsorshipAmount = watch("sponsorship_amount");
-  const paidAmount = watch("paid_amount");
   const wasOpen = useRef(false);
 
   useEffect(() => {
