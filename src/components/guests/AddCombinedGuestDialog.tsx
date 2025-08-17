@@ -61,7 +61,7 @@ import { PAYMENT_SOURCES } from "@/types/guest-revenue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // --- VIP Guest Form ---
-const VipGuestForm = ({ onSubmit, allGuests, roleConfigs }: { onSubmit: (values: VipGuestFormValues) => void, allGuests: VipGuest[], roleConfigs: RoleConfiguration[] }) => {
+const VipGuestForm = ({ onSubmit, allGuests, roleConfigs, open }: { onSubmit: (values: VipGuestFormValues) => void, allGuests: VipGuest[], roleConfigs: RoleConfiguration[], open: boolean }) => {
   const form = useForm<VipGuestFormValues>({
     resolver: zodResolver(vipGuestFormSchema),
   });
@@ -72,6 +72,23 @@ const VipGuestForm = ({ onSubmit, allGuests, roleConfigs }: { onSubmit: (values:
 
   const [formattedSponsorship, setFormattedSponsorship] = useState("0");
   const [formattedPaid, setFormattedPaid] = useState("0");
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: "",
+        role: undefined,
+        secondaryInfo: "",
+        phone: "",
+        referrer: "",
+        notes: "",
+        sponsorship_amount: 0,
+        paid_amount: 0,
+      });
+      setFormattedSponsorship("0");
+      setFormattedPaid("0");
+    }
+  }, [open, form]);
 
   useEffect(() => {
     if (selectedRole) {
@@ -110,7 +127,7 @@ const VipGuestForm = ({ onSubmit, allGuests, roleConfigs }: { onSubmit: (values:
 }
 
 // --- Regular Guest Form ---
-const RegularGuestForm = ({ onSubmit, allVipGuests, roleConfigs }: { onSubmit: (values: GuestFormValues) => void, allVipGuests: Pick<VipGuest, 'id' | 'name'>[], roleConfigs: RoleConfiguration[] }) => {
+const RegularGuestForm = ({ onSubmit, allVipGuests, roleConfigs, open }: { onSubmit: (values: GuestFormValues) => void, allVipGuests: Pick<VipGuest, 'id' | 'name'>[], roleConfigs: RoleConfiguration[], open: boolean }) => {
   const form = useForm<GuestFormValues>({
     resolver: zodResolver(guestFormSchema),
   });
@@ -121,6 +138,23 @@ const RegularGuestForm = ({ onSubmit, allVipGuests, roleConfigs }: { onSubmit: (
 
   const [formattedSponsorship, setFormattedSponsorship] = useState("0");
   const [formattedPaid, setFormattedPaid] = useState("0");
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: "",
+        role: undefined,
+        phone: "",
+        referrer: "",
+        notes: "",
+        sponsorship_amount: 0,
+        paid_amount: 0,
+        payment_source: 'Trống',
+      });
+      setFormattedSponsorship("0");
+      setFormattedPaid("0");
+    }
+  }, [open, form]);
 
   useEffect(() => {
     if (selectedRole) {
@@ -177,10 +211,10 @@ export const AddCombinedGuestDialog = ({ open, onOpenChange, onVipSubmit, onRegu
         <TabsTrigger value="regular">Khách mời</TabsTrigger>
       </TabsList>
       <TabsContent value="vip">
-        <VipGuestForm onSubmit={onVipSubmit} allGuests={allVipGuests} roleConfigs={vipRoleConfigs} />
+        <VipGuestForm onSubmit={onVipSubmit} allGuests={allVipGuests} roleConfigs={vipRoleConfigs} open={open} />
       </TabsContent>
       <TabsContent value="regular">
-        <RegularGuestForm onSubmit={onRegularSubmit} allVipGuests={allVipGuests} roleConfigs={regularRoleConfigs} />
+        <RegularGuestForm onSubmit={onRegularSubmit} allVipGuests={allVipGuests} roleConfigs={regularRoleConfigs} open={open} />
       </TabsContent>
     </Tabs>
   );
