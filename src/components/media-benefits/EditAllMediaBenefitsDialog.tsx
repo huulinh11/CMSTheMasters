@@ -144,7 +144,25 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, 
 
   useEffect(() => {
     if (guest) {
-      setBenefits(guest.media_benefit || {});
+      const initialBenefits: Partial<MediaBenefit> = guest.media_benefit || {};
+      const migratedBenefits: Partial<MediaBenefit> = { ...initialBenefits };
+      let customData = { ...(initialBenefits.custom_data || {}) };
+      let wasMigrated = false;
+
+      for (const [displayName, fieldName] of Object.entries(benefitNameToFieldMap)) {
+        // Check if data exists in custom_data and not in the standard field
+        if (customData[displayName] !== undefined && migratedBenefits[fieldName] === undefined) {
+          migratedBenefits[fieldName] = customData[displayName];
+          delete customData[displayName];
+          wasMigrated = true;
+        }
+      }
+
+      if (wasMigrated) {
+        migratedBenefits.custom_data = customData;
+      }
+      
+      setBenefits(migratedBenefits);
     }
   }, [guest, open]);
 
