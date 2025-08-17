@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AnyMediaGuest, NewsItem, NewsVideo, MediaBenefit } from "@/types/media-benefit";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { PlusCircle, Trash2, Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
 import { StatusSelect } from "./StatusSelect";
@@ -122,6 +122,7 @@ interface EditAllMediaBenefitsDialogProps {
 
 export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, benefitsByRole, allBenefits }: EditAllMediaBenefitsDialogProps) => {
   const [benefits, setBenefits] = useState<Partial<MediaBenefit>>({});
+  const guestIdRef = useRef<string | null>(null);
 
   const benefitsForGuest = useMemo(() => {
     if (!guest) return [];
@@ -130,7 +131,10 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, 
   }, [guest, benefitsByRole, allBenefits]);
 
   useEffect(() => {
-    if (guest) {
+    // Only reset the state when the dialog opens for a new guest.
+    // This prevents state from being reset on re-renders caused by tab-switching.
+    if (open && guest && guest.id !== guestIdRef.current) {
+      guestIdRef.current = guest.id;
       const initialBenefits: Partial<MediaBenefit> = guest.media_benefit || {};
       const migratedBenefits: Partial<MediaBenefit> = { ...initialBenefits };
       let customData = { ...(initialBenefits.custom_data || {}) };
@@ -149,8 +153,11 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, 
       }
       
       setBenefits(migratedBenefits);
+    } else if (!open) {
+      // Reset when the dialog closes.
+      guestIdRef.current = null;
     }
-  }, [guest, open]);
+  }, [open, guest]);
 
   const handleSave = () => {
     if (!guest) return;
