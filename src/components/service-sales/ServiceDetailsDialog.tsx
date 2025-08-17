@@ -15,7 +15,7 @@ import { Service, GuestService, GuestServiceSummary } from "@/types/service-sale
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { RefreshCw, History, Trash2 } from "lucide-react";
+import { RefreshCw, History, Trash2, Edit } from "lucide-react";
 import { PayServiceDialog } from "@/components/service-sales/PayServiceDialog";
 import { Badge } from "@/components/ui/badge";
 import GuestHistoryDialog from "../Revenue/GuestHistoryDialog";
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { showSuccess, showError } from "@/utils/toast";
 import { EditServiceNotesDialog } from "./EditServiceNotesDialog";
+import { EditGuestServiceDialog } from "./EditGuestServiceDialog";
 
 interface ServiceDetailsDialogProps {
   open: boolean;
@@ -55,6 +56,7 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
   const [deletingService, setDeletingService] = useState<GuestService | null>(null);
   const [editingNotesService, setEditingNotesService] = useState<GuestService | null>(null);
+  const [editingService, setEditingService] = useState<GuestService | null>(null);
 
   const deleteMutation = useMutation({
     mutationFn: async (serviceId: string) => {
@@ -103,17 +105,27 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
                     {service.is_free_trial && <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-200">Free</Badge>}
                   </CardDescription>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-red-500"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeletingService(service);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setEditingService(service)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-red-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeletingService(service);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="text-sm space-y-3">
                 <InfoRow label="Đã trả" value={formatCurrency(service.paid_amount)} valueClass="text-green-600" />
@@ -205,6 +217,11 @@ export const ServiceDetailsDialog = ({ open, onOpenChange, guestSummary, allServ
           guestName: guest_name,
           guestId: guestSummary.guest_id,
         } : null}
+      />
+      <EditGuestServiceDialog
+        open={!!editingService}
+        onOpenChange={() => setEditingService(null)}
+        service={editingService}
       />
     </>
   );
