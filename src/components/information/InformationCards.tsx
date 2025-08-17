@@ -14,8 +14,8 @@ interface InformationCardsProps {
   roleConfigs: RoleConfiguration[];
 }
 
-const InfoItem = ({ icon: Icon, label, value, isLink = false, isTel = false, isCopyable = false, truncate = false }: { icon: React.ElementType, label: string, value?: string, isLink?: boolean, isTel?: boolean, isCopyable?: boolean, truncate?: boolean }) => {
-  if (!value) return null;
+const InfoItem = ({ icon: Icon, label, value, isLink = false, isTel = false, isCopyable = false, truncate = false }: { icon: React.ElementType, label: string, value?: string | null, isLink?: boolean, isTel?: boolean, isCopyable?: boolean, truncate?: boolean }) => {
+  if (value === undefined) return null;
 
   const handleCopy = (textToCopy: string) => {
     navigator.clipboard.writeText(textToCopy);
@@ -30,21 +30,25 @@ const InfoItem = ({ icon: Icon, label, value, isLink = false, isTel = false, isC
           <div className="flex items-center justify-between">
             <p>
               <span className="text-[rgb(185,179,176)] font-normal">{label}: </span>
-              <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-normal hover:underline">
-                Link
-              </a>
+              {value ? (
+                <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-normal hover:underline">
+                  Link
+                </a>
+              ) : null}
             </p>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleCopy(value); }}>
-              <Copy className="h-4 w-4" />
-            </Button>
+            {value && (
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleCopy(value); }}>
+                <Copy className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         ) : isTel ? (
           <div className="flex items-center justify-between">
             <p className={cn(truncate ? "truncate" : "")}>
               <span className="text-[rgb(185,179,176)] font-normal">{label}: </span>
-              <a href={`tel:${value}`} className="text-black font-normal hover:underline">{value}</a>
+              {value ? <a href={`tel:${value}`} className="text-black font-normal hover:underline">{value}</a> : null}
             </p>
-            {isCopyable && (
+            {isCopyable && value && (
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleCopy(value); }}>
                 <Copy className="h-4 w-4" />
               </Button>
@@ -62,7 +66,7 @@ const InfoItem = ({ icon: Icon, label, value, isLink = false, isTel = false, isC
 
   if (isCopyable && !isLink && !isTel) {
     return (
-      <button onClick={() => handleCopy(value)} className="w-full text-left">
+      <button onClick={() => value && handleCopy(value)} className="w-full text-left" disabled={!value}>
         {content}
       </button>
     );

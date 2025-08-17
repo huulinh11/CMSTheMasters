@@ -47,7 +47,7 @@ import GuestHistoryDialog from "../Revenue/GuestHistoryDialog";
 import { ServiceDetailsDialog } from "./ServiceDetailsDialog";
 
 const InfoRow = ({ icon: Icon, label, value, children, valueClass, isTel = false }: { icon: React.ElementType, label: string, value?: string | null, children?: React.ReactNode, valueClass?: string, isTel?: boolean }) => {
-  if (!value && !children) return null;
+  if (value === undefined && !children) return null;
   return (
     <div className="flex items-center justify-between py-2.5 border-b last:border-b-0 gap-4">
       <div className="flex items-center flex-shrink-0">
@@ -175,11 +175,11 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         const originalSponsorship = revenueData.sponsorship || 0;
         let effectiveSponsorship = originalSponsorship;
         if (revenueData.is_upsaled) {
-            const firstUpsale = (upsaleHistoryData || []).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+            const firstUpsale = (upsaleHistoryData || []).sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
             if (firstUpsale && firstUpsale.from_payment_source === 'Chỉ tiêu') {
                 effectiveSponsorship = originalSponsorship - firstUpsale.from_sponsorship;
             }
-        } else if (revenueData.payment_source === 'Chỉ tiêu') {
+        } else if (revenueData.payment_source === 'Chỉ tiêu' && guestData.referrer) {
             effectiveSponsorship = 0;
         }
         finalRevenue.original_sponsorship = originalSponsorship;
@@ -210,6 +210,11 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guest_details', guestType, guestId] });
+      queryClient.invalidateQueries({ queryKey: ['media_benefits'] });
+      if (data?.guest.phone) {
+        queryClient.invalidateQueries({ queryKey: ['public_checklist', data.guest.phone] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['public_checklist', guestId] });
       showSuccess("Cập nhật quyền lợi thành công!");
       setIsMediaDialogOpen(false);
     },
@@ -330,7 +335,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       const originalSponsorship = revenue.sponsorship || 0;
       if (revenue.is_upsaled) {
           if (upsaleHistory && upsaleHistory.length > 0) {
-              const firstUpsale = upsaleHistory.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+              const firstUpsale = (upsaleHistory as any[]).sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
               if (firstUpsale.from_payment_source === 'Chỉ tiêu') {
                   effectiveSponsorship = originalSponsorship - firstUpsale.from_sponsorship;
               } else {
@@ -388,20 +393,22 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                 <CardContent className="p-3 md:p-4 pt-0">
                   <InfoRow icon={Phone} label="SĐT" value={guest.phone} isTel />
                   <InfoRow icon={User} label="Người giới thiệu" value={guest.referrer} valueClass={!guest.isReferrerValid ? 'text-red-500' : ''} />
-                  {guest.secondaryInfo && <InfoRow icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} />}
-                  {guestType === 'vip' && guest.facebook_link && (
-                    <InfoRow icon={LinkIcon} label="Facebook">
-                      <div className="flex items-center gap-1">
-                        <a href={guest.facebook_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                          Link
-                        </a>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                          navigator.clipboard.writeText(guest.facebook_link);
-                          showSuccess("Đã sao chép link Facebook!");
-                        }}>
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
+                  <InfoRow icon={Info} label="Thông tin phụ" value={guest.secondaryInfo} />
+                  {guestType === 'vip' && (
+                    <InfoRow icon={LinkIcon} label="Facebook" value={guest.facebook_link}>
+                      {guest.facebook_link && (
+                        <div className="flex items-center gap-1">
+                          <a href={guest.facebook_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                            Link
+                          </a>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                            navigator.clipboard.writeText(guest.facebook_link!);
+                            showSuccess("Đã sao chép link Facebook!");
+                          }}>
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
                     </InfoRow>
                   )}
                   <InfoRow icon={FileText} label="Ghi chú" value={guest.notes} />
@@ -562,7 +569,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       <MaterialsViewerDialog 
         open={isMaterialsOpen} 
         onOpenChange={setIsMaterialsOpen} 
-        content={guest.materials} 
+        content={guest.materials || ""} 
         guestName={guest.name}
         onEdit={handleEditClick}
       />

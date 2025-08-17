@@ -168,8 +168,20 @@ export default function VipMediaBenefitsTab() {
       );
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      const { guestId } = variables;
+      const guest = guests.find(g => g.id === guestId);
+
       queryClient.invalidateQueries({ queryKey: ['media_benefits'] });
+      
+      if (guest) {
+        queryClient.invalidateQueries({ queryKey: ['guest_details', 'vip', guestId] });
+        if (guest.phone) {
+          queryClient.invalidateQueries({ queryKey: ['public_checklist', guest.phone] });
+        }
+        queryClient.invalidateQueries({ queryKey: ['public_checklist', guestId] });
+      }
+      
       showSuccess("Cập nhật thành công!");
       setEditingGuest(null);
     },

@@ -18,7 +18,7 @@ interface InformationTableProps {
   onView: (guest: VipGuest) => void;
 }
 
-const handleCopy = (textToCopy: string | undefined, label: string) => {
+const handleCopy = (textToCopy: string | undefined | null, label: string) => {
   if (!textToCopy) return;
   navigator.clipboard.writeText(textToCopy);
   showSuccess(`Đã sao chép ${label}!`);
@@ -58,20 +58,20 @@ export const InformationTable = ({ guests, onEdit, onView }: InformationTablePro
                       </Button>
                     </div>
                   ) : (
-                    "N/A"
+                    ""
                   )}
                 </TableCell>
                 <TableCell>
                   <button onClick={() => handleCopy(guest.secondaryInfo, 'Thông tin phụ')} className="text-left hover:underline w-full max-w-[150px]">
-                    <p className="truncate" title={guest.secondaryInfo}>
-                      {guest.secondaryInfo || "N/A"}
+                    <p className="truncate" title={guest.secondaryInfo || ''}>
+                      {guest.secondaryInfo || ""}
                     </p>
                   </button>
                 </TableCell>
                 <TableCell>
                   <button onClick={() => handleCopy(guest.materials, 'Tư liệu')} className="text-left hover:underline w-full max-w-[150px]">
-                    <p className="truncate" title={guest.materials}>
-                      {guest.materials || "N/A"}
+                    <p className="truncate" title={guest.materials || ''}>
+                      {guest.materials || ""}
                     </p>
                   </button>
                 </TableCell>
@@ -86,7 +86,7 @@ export const InformationTable = ({ guests, onEdit, onView }: InformationTablePro
                       </Button>
                     </div>
                   ) : (
-                    "N/A"
+                    ""
                   )}
                 </TableCell>
                 <TableCell>
