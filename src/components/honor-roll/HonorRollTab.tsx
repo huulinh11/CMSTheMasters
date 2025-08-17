@@ -14,6 +14,8 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { AddEditCategoryDialog } from "./AddEditCategoryDialog";
 import { SwapPresentersDialog } from "./SwapPresentersDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { HonorRollCards } from "./HonorRollCards";
 
 interface SortableTableRowProps {
   category: HonorCategory;
@@ -95,6 +97,7 @@ interface HonorRollTabProps {
 
 export const HonorRollTab = ({ categories: initialCategories, allGuests, vipGuests, roleConfigs }: HonorRollTabProps) => {
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [categories, setCategories] = useState(initialCategories);
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [isSwapDialogOpen, setIsSwapDialogOpen] = useState(false);
@@ -200,24 +203,32 @@ export const HonorRollTab = ({ categories: initialCategories, allGuests, vipGues
         <Button variant="outline" onClick={() => setIsSwapDialogOpen(true)}><ArrowRightLeft className="mr-2 h-4 w-4" /> Hoán đổi</Button>
         <Button onClick={() => { setEditingCategory(null); setIsAddEditDialogOpen(true); }}><PlusCircle className="mr-2 h-4 w-4" /> Thêm hạng mục</Button>
       </div>
-      <div className="rounded-lg border bg-white">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <Table>
-            <TableHeader><TableRow><TableHead className="w-12"></TableHead><TableHead>Hạng mục</TableHead><TableHead>Danh sách vinh danh</TableHead><TableHead>Số lượng</TableHead><TableHead>Người lên trao</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
-            <SortableContext items={categories.map(c => c.id)} strategy={verticalListSortingStrategy}>
-              <TableBody>
-                {categories.length > 0 ? (
-                  categories.map((category) => (
-                    <SortableTableRow key={category.id} category={category} onEdit={setEditingCategory} onDelete={deleteMutation.mutate} />
-                  ))
-                ) : (
-                  <TableRow><TableCell colSpan={6} className="h-24 text-center">Chưa có hạng mục nào.</TableCell></TableRow>
-                )}
-              </TableBody>
-            </SortableContext>
-          </Table>
-        </DndContext>
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={categories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+          {isMobile ? (
+            <HonorRollCards
+              categories={categories}
+              onEdit={(category) => { setEditingCategory(category); setIsAddEditDialogOpen(true); }}
+              onDelete={deleteMutation.mutate}
+            />
+          ) : (
+            <div className="rounded-lg border bg-white">
+              <Table>
+                <TableHeader><TableRow><TableHead className="w-12"></TableHead><TableHead>Hạng mục</TableHead><TableHead>Danh sách vinh danh</TableHead><TableHead>Số lượng</TableHead><TableHead>Người lên trao</TableHead><TableHead className="text-right">Tác vụ</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {categories.length > 0 ? (
+                    categories.map((category) => (
+                      <SortableTableRow key={category.id} category={category} onEdit={(category) => { setEditingCategory(category); setIsAddEditDialogOpen(true); }} onDelete={deleteMutation.mutate} />
+                    ))
+                  ) : (
+                    <TableRow><TableCell colSpan={6} className="h-24 text-center">Chưa có hạng mục nào.</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </SortableContext>
+      </DndContext>
       <AddEditCategoryDialog
         open={isAddEditDialogOpen || !!editingCategory}
         onOpenChange={(open) => { if (!open) { setIsAddEditDialogOpen(false); setEditingCategory(null); } else { setIsAddEditDialogOpen(true); } }}
