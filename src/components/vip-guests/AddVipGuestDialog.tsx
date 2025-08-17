@@ -70,25 +70,11 @@ const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfi
     resolver: zodResolver(vipGuestFormSchema),
   });
 
-  const { watch, setValue, formState } = form;
-  const selectedRole = watch("role");
+  const { watch, setValue } = form;
   const sponsorshipAmount = watch("sponsorship_amount");
 
   const [formattedSponsorship, setFormattedSponsorship] = useState("0");
   const [formattedPaid, setFormattedPaid] = useState("0");
-
-  useEffect(() => {
-    if (selectedRole) {
-      const roleConfig = roleConfigs.find(rc => rc.name === selectedRole);
-      if (roleConfig) {
-        if (!defaultValues || formState.isDirty) {
-          const newAmount = roleConfig.sponsorship_amount;
-          setValue("sponsorship_amount", newAmount);
-          setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newAmount));
-        }
-      }
-    }
-  }, [selectedRole, roleConfigs, setValue, defaultValues, formState.isDirty]);
 
   useEffect(() => {
     if (defaultValues) {
@@ -123,7 +109,39 @@ const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfi
         <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-4">
           <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Tên</FormLabel><FormControl><Input placeholder="Nhập tên khách mời" {...field} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Số điện thoại</FormLabel><FormControl><Input placeholder="Nhập số điện thoại" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Vai trò</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Chọn vai trò" /></SelectTrigger></FormControl><SelectContent>{roleConfigs.map((role) => (<SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Vai trò</FormLabel>
+                <Select
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    const roleConfig = roleConfigs.find(rc => rc.name === value);
+                    if (roleConfig) {
+                      const newAmount = roleConfig.sponsorship_amount;
+                      setValue("sponsorship_amount", newAmount, { shouldDirty: true });
+                      setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newAmount));
+                    }
+                  }}
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn vai trò" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {roleConfigs.map((role) => (
+                      <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField control={form.control} name="secondaryInfo" render={({ field }) => (<FormItem><FormLabel>Thông tin phụ</FormLabel><FormControl><Input placeholder="Nhập thông tin phụ" {...field} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="sponsorship_amount" render={() => (<FormItem><FormLabel>Số tiền tài trợ (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedSponsorship} onChange={(e) => handleAmountChange(e, "sponsorship_amount", setFormattedSponsorship)} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="paid_amount" render={() => (<FormItem><FormLabel>Số tiền đã thanh toán (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedPaid} onChange={(e) => handleAmountChange(e, "paid_amount", setFormattedPaid)} /></FormControl><Button type="button" size="sm" variant="link" className="p-0 h-auto mt-1" onClick={() => { const amount = sponsorshipAmount || 0; setValue("paid_amount", amount); setFormattedPaid(new Intl.NumberFormat('vi-VN').format(amount)); }}>Thanh toán đủ</Button><FormMessage /></FormItem>)} />
