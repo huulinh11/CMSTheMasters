@@ -1,10 +1,11 @@
-import { MediaBenefit } from "@/types/media-benefit";
+import { MediaBenefit, NewsItem, NewsVideo } from "@/types/media-benefit";
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { showSuccess } from "@/utils/toast";
+import { benefitNameToFieldMap } from "@/config/benefits";
 
 const LinkWithCopy = ({ link }: { link: string }) => {
   const handleCopy = (e: React.MouseEvent) => {
@@ -27,27 +28,35 @@ const LinkWithCopy = ({ link }: { link: string }) => {
 const getBenefitStatusAndData = (benefitName: string, mediaBenefit: MediaBenefit | null): { status: 'filled' | 'empty', content: React.ReactNode } => {
   if (!mediaBenefit) return { status: 'empty', content: 'Trống' };
 
+  const fieldName = benefitNameToFieldMap[benefitName];
+  let value: any = null;
+
+  if (fieldName && mediaBenefit[fieldName as keyof MediaBenefit]) {
+    value = mediaBenefit[fieldName as keyof MediaBenefit];
+  } else if (mediaBenefit.custom_data?.[benefitName]) {
+    value = mediaBenefit.custom_data[benefitName];
+  }
+
+  if (!value) return { status: 'empty', content: 'Trống' };
+
   switch (benefitName) {
     case "Thư mời":
-      const status = mediaBenefit.invitation_status;
-      if (status === 'Đã gửi') {
-        return {
-          status: 'filled',
-          content: 'Đã gửi',
-        };
+      if (value === 'Đã gửi') {
+        return { status: 'filled', content: 'Đã gửi' };
       }
-      return {
-        status: 'empty',
-        content: 'Trống',
-      };
+      return { status: 'empty', content: 'Trống' };
+
     case "Post bài page":
-      return {
-        status: !!mediaBenefit.page_post_link ? 'filled' : 'empty',
-        content: mediaBenefit.page_post_link ? <LinkWithCopy link={mediaBenefit.page_post_link} /> : 'Trống',
-      };
+    case "Video thảm đỏ":
+    case "Bộ ảnh Beauty AI":
+      if (typeof value === 'string' && value) {
+        return { status: 'filled', content: <LinkWithCopy link={value} /> };
+      }
+      return { status: 'empty', content: 'Trống' };
+
     case "Báo trước sự kiện":
     case "Báo sau sự kiện":
-      const newsItems = benefitName === "Báo trước sự kiện" ? mediaBenefit.pre_event_news : mediaBenefit.post_event_news;
+      const newsItems = value as NewsItem[];
       const finalLinks = (newsItems || []).map(item => item.post_link).filter(Boolean) as string[];
       if (finalLinks.length > 0) {
         return {
@@ -56,13 +65,9 @@ const getBenefitStatusAndData = (benefitName: string, mediaBenefit: MediaBenefit
         };
       }
       return { status: 'empty', content: 'Trống' };
-    case "Video thảm đỏ":
-       return {
-        status: !!mediaBenefit.red_carpet_video_link ? 'filled' : 'empty',
-        content: mediaBenefit.red_carpet_video_link ? <LinkWithCopy link={mediaBenefit.red_carpet_video_link} /> : 'Trống',
-      };
+
     case "Video đưa tin":
-      const finalVideoLink = mediaBenefit.news_video?.video_link;
+      const finalVideoLink = (value as NewsVideo)?.video_link;
       if (finalVideoLink) {
         return {
           status: 'filled',
@@ -70,15 +75,10 @@ const getBenefitStatusAndData = (benefitName: string, mediaBenefit: MediaBenefit
         };
       }
       return { status: 'empty', content: 'Trống' };
-    case "Bộ ảnh Beauty AI":
-      return {
-        status: !!mediaBenefit.beauty_ai_photos_link ? 'filled' : 'empty',
-        content: mediaBenefit.beauty_ai_photos_link ? <LinkWithCopy link={mediaBenefit.beauty_ai_photos_link} /> : 'Trống',
-      };
+
     default:
-      const customValue = mediaBenefit.custom_data?.[benefitName];
-      if (typeof customValue === 'string' && customValue) {
-        return { status: 'filled', content: <LinkWithCopy link={customValue} /> };
+      if (typeof value === 'string' && value) {
+        return { status: 'filled', content: <LinkWithCopy link={value} /> };
       }
       return { status: 'empty', content: 'Trống' };
   }
