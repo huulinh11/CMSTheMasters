@@ -76,7 +76,11 @@ const getBenefitStatusAndData = (benefitName: string, mediaBenefit: MediaBenefit
         content: mediaBenefit.beauty_ai_photos_link ? <LinkWithCopy link={mediaBenefit.beauty_ai_photos_link} /> : 'Trống',
       };
     default:
-      return { status: 'empty', content: 'N/A' };
+      const customValue = mediaBenefit.custom_data?.[benefitName];
+      if (typeof customValue === 'string' && customValue) {
+        return { status: 'filled', content: <LinkWithCopy link={customValue} /> };
+      }
+      return { status: 'empty', content: 'Trống' };
   }
 };
 

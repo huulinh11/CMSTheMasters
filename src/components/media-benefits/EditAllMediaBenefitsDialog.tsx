@@ -16,6 +16,19 @@ import { showSuccess } from "@/utils/toast";
 import { StatusSelect } from "./StatusSelect";
 import { BenefitItem } from "@/types/benefit-configuration";
 
+const benefitNameToFieldMap: Record<string, keyof Omit<MediaBenefit, 'guest_id' | 'custom_data'>> = {
+  "Thư mời": "invitation_status",
+  "Post bài page": "page_post_link",
+  "Post bài BTC": "btc_post_link",
+  "Báo trước sự kiện": "pre_event_news",
+  "Báo sau sự kiện": "post_event_news",
+  "Video thảm đỏ": "red_carpet_video_link",
+  "Video đưa tin": "news_video",
+  "Bộ ảnh Beauty AI": "beauty_ai_photos_link",
+};
+
+const standardFields = Object.values(benefitNameToFieldMap);
+
 interface EditAllMediaBenefitsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -24,8 +37,6 @@ interface EditAllMediaBenefitsDialogProps {
   benefitsByRole: Record<string, string[]>;
   allBenefits: BenefitItem[];
 }
-
-// ... (Các component con InputWithCopy, NewsEditor, VideoEditor không thay đổi)
 
 const InputWithCopy = ({ value, onChange, placeholder, label }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, placeholder: string, label: string }) => {
   return (
@@ -170,6 +181,9 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, 
         </DialogHeader>
         <div className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
           {benefitsForGuest.map(benefit => {
+            const fieldName = benefitNameToFieldMap[benefit.name] || benefit.name;
+            const isStandardField = standardFields.includes(fieldName as any);
+
             switch (benefit.field_type) {
               case 'status_select':
                 return (
@@ -187,13 +201,12 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, 
                     key={benefit.id}
                     label={benefit.name} 
                     placeholder="Link" 
-                    value={benefits.custom_data?.[benefit.name] || benefits[benefit.name as keyof MediaBenefit] || ''} 
+                    value={isStandardField ? (benefits[fieldName as keyof MediaBenefit] || '') : (benefits.custom_data?.[fieldName] || '')} 
                     onChange={(e) => {
-                      const standardFields = ['page_post_link', 'btc_post_link', 'red_carpet_video_link', 'beauty_ai_photos_link'];
-                      if (standardFields.includes(benefit.name)) {
-                        updateField(benefit.name as keyof MediaBenefit, e.target.value);
+                      if (isStandardField) {
+                        updateField(fieldName as keyof MediaBenefit, e.target.value);
                       } else {
-                        updateCustomField(benefit.name, e.target.value);
+                        updateCustomField(fieldName, e.target.value);
                       }
                     }} 
                   />
@@ -203,13 +216,12 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, 
                   <NewsEditor
                     key={benefit.id}
                     title={benefit.name}
-                    items={benefits.custom_data?.[benefit.name] || benefits[benefit.name as keyof MediaBenefit] || []}
+                    items={isStandardField ? (benefits[fieldName as keyof MediaBenefit] || []) : (benefits.custom_data?.[fieldName] || [])}
                     setItems={(items) => {
-                      const standardFields = ['pre_event_news', 'post_event_news'];
-                      if (standardFields.includes(benefit.name)) {
-                        updateField(benefit.name as keyof MediaBenefit, items);
+                      if (isStandardField) {
+                        updateField(fieldName as keyof MediaBenefit, items);
                       } else {
-                        updateCustomField(benefit.name, items);
+                        updateCustomField(fieldName, items);
                       }
                     }}
                   />
@@ -219,12 +231,12 @@ export const EditAllMediaBenefitsDialog = ({ open, onOpenChange, onSave, guest, 
                   <VideoEditor
                     key={benefit.id}
                     title={benefit.name}
-                    video={benefits.custom_data?.[benefit.name] || benefits[benefit.name as keyof MediaBenefit] || { script_link: '', video_link: '' }}
+                    video={isStandardField ? (benefits[fieldName as keyof MediaBenefit] || { script_link: '', video_link: '' }) : (benefits.custom_data?.[fieldName] || { script_link: '', video_link: '' })}
                     setVideo={(video) => {
-                      if (benefit.name === 'news_video') {
-                        updateField('news_video', video);
+                      if (isStandardField) {
+                        updateField(fieldName as keyof MediaBenefit, video);
                       } else {
-                        updateCustomField(benefit.name, video);
+                        updateCustomField(fieldName, video);
                       }
                     }}
                   />
