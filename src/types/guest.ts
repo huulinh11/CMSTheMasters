@@ -11,6 +11,7 @@ export const guestFormSchema = z.object({
   phone: z.string().optional(),
   referrer: z.string().nullish(),
   notes: z.string().nullish(),
+  materials: z.string().nullish(),
   sponsorship_amount: z.number().min(0, "Số tiền không được âm.").optional(),
   paid_amount: z.number().min(0, "Số tiền không được âm.").optional(),
   payment_source: z.enum(PAYMENT_SOURCES).nullish(),

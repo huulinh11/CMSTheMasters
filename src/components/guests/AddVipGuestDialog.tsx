@@ -4,7 +4,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -33,10 +32,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Guest, GuestFormValues, guestFormSchema } from "@/types/guest";
-import { useEffect, useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -50,26 +45,28 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { VipGuest, VipGuestFormValues, vipGuestFormSchema } from "@/types/vip-guest";
+import { useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { VipGuest } from "@/types/vip-guest";
 import { RoleConfiguration } from "@/types/role-configuration";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PAYMENT_SOURCES, PaymentSource } from "@/types/guest-revenue";
 
-interface AddGuestDialogProps {
+interface AddVipGuestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: GuestFormValues) => void;
-  defaultValues?: (Guest & { sponsorship_amount?: number, paid_amount?: number, payment_source?: PaymentSource, paid?: number }) | null;
-  allVipGuests: Pick<VipGuest, 'id' | 'name'>[];
+  onSubmit: (values: VipGuestFormValues) => void;
+  defaultValues?: (VipGuest & { sponsorship_amount?: number, paid_amount?: number, paid?: number }) | null;
+  allGuests: VipGuest[];
   roleConfigs: RoleConfiguration[];
 }
 
-const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, className }: Omit<AddGuestDialogProps, 'open' | 'onOpenChange'> & { className?: string }) => {
-  const form = useForm<GuestFormValues>({
-    resolver: zodResolver(guestFormSchema),
+const VipGuestForm = ({ className, onSubmit, defaultValues, allGuests, roleConfigs }: { className?: string, onSubmit: (values: VipGuestFormValues) => void, defaultValues?: (VipGuest & { sponsorship_amount?: number, paid_amount?: number, paid?: number }) | null, allGuests: VipGuest[], roleConfigs: RoleConfiguration[] }) => {
+  const form = useForm<VipGuestFormValues>({
+    resolver: zodResolver(vipGuestFormSchema),
   });
 
   const { watch, setValue, formState } = form;
@@ -104,8 +101,8 @@ const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, classNa
       setFormattedPaid(new Intl.NumberFormat('vi-VN').format(valuesForForm.paid_amount));
     } else {
       form.reset({
-        name: "", role: undefined, phone: "", referrer: "", notes: "",
-        sponsorship_amount: 0, paid_amount: 0, payment_source: 'Trống'
+        name: "", role: undefined, secondaryInfo: "", phone: "", referrer: "", notes: "",
+        sponsorship_amount: 0, paid_amount: 0,
       });
       setFormattedSponsorship("0");
       setFormattedPaid("0");
@@ -121,20 +118,20 @@ const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, classNa
 
   return (
     <Form {...form}>
-      <form id="guest-form" onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-4", className)}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-4", className)}>
         <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-4">
           <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Tên</FormLabel><FormControl><Input placeholder="Nhập tên khách mời" {...field} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Số điện thoại</FormLabel><FormControl><Input placeholder="Nhập số điện thoại" {...field} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Vai trò</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Chọn vai trò" /></SelectTrigger></FormControl><SelectContent>{roleConfigs.map((role) => (<SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="payment_source" render={({ field }) => (<FormItem><FormLabel>Nguồn thanh toán</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Chọn nguồn" /></SelectTrigger></FormControl><SelectContent>{PAYMENT_SOURCES.map(source => (<SelectItem key={source} value={source}>{source}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="sponsorship_amount" render={() => (<FormItem><FormLabel>Số tiền tài trợ (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedSponsorship} onChange={(e) => { const v = parseInt(e.target.value.replace(/[^0-9]/g, ''), 10) || 0; setValue("sponsorship_amount", v); setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(v)); }} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="paid_amount" render={() => (<FormItem><FormLabel>Số tiền đã thanh toán (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedPaid} onChange={(e) => { const v = parseInt(e.target.value.replace(/[^0-9]/g, ''), 10) || 0; setValue("paid_amount", v); setFormattedPaid(new Intl.NumberFormat('vi-VN').format(v)); }} /></FormControl><Button type="button" size="sm" variant="link" className="p-0 h-auto mt-1" onClick={() => { const amount = sponsorshipAmount || 0; setValue("paid_amount", amount); setFormattedPaid(new Intl.NumberFormat('vi-VN').format(amount)); }}>Thanh toán đủ</Button><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="secondaryInfo" render={({ field }) => (<FormItem><FormLabel>Thông tin phụ</FormLabel><FormControl><Input placeholder="Nhập thông tin phụ" {...field} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="sponsorship_amount" render={() => (<FormItem><FormLabel>Số tiền tài trợ (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedSponsorship} onChange={(e) => handleAmountChange(e, "sponsorship_amount", setFormattedSponsorship)} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="paid_amount" render={() => (<FormItem><FormLabel>Số tiền đã thanh toán (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedPaid} onChange={(e) => handleAmountChange(e, "paid_amount", setFormattedPaid)} /></FormControl><Button type="button" size="sm" variant="link" className="p-0 h-auto mt-1" onClick={() => { const amount = sponsorshipAmount || 0; setValue("paid_amount", amount); setFormattedPaid(new Intl.NumberFormat('vi-VN').format(amount)); }}>Thanh toán đủ</Button><FormMessage /></FormItem>)} />
           <FormField
             control={form.control}
             name="referrer"
             render={({ field }) => {
               const displayValue = field.value
-                ? (field.value === 'ads' ? 'Ads' : allVipGuests.find((guest) => guest.id === field.value)?.name)
+                ? (field.value === 'ads' ? 'Ads' : allGuests.find((guest) => guest.id === field.value)?.name)
                 : "Chọn người giới thiệu";
 
               return (
@@ -176,7 +173,7 @@ const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, classNa
                               <Check className={cn("mr-2 h-4 w-4", field.value === 'ads' ? "opacity-100" : "opacity-0")} />
                               Ads
                             </CommandItem>
-                            {allVipGuests.map((guest) => (
+                            {allGuests.filter(g => g.id !== defaultValues?.id).map((guest) => (
                               <CommandItem
                                 value={guest.name}
                                 key={guest.id}
@@ -199,29 +196,29 @@ const GuestForm = ({ onSubmit, defaultValues, allVipGuests, roleConfigs, classNa
         </div>
         <FormField control={form.control} name="materials" render={({ field }) => (<FormItem><FormLabel>Tư liệu</FormLabel><FormControl><Textarea placeholder="Nhập tư liệu" {...field} /></FormControl><FormMessage /></FormItem>)} />
         <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Ghi chú</FormLabel><FormControl><Textarea placeholder="Nhập ghi chú" {...field} /></FormControl><FormMessage /></FormItem>)} />
-        <Button type="submit" className="w-full md:hidden">Lưu</Button>
+        <Button type="submit" className="w-full">Lưu</Button>
       </form>
     </Form>
   );
 }
 
-export const AddGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, allVipGuests, roleConfigs }: AddGuestDialogProps) => {
+export const AddVipGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, allGuests, roleConfigs }: AddVipGuestDialogProps) => {
   const isMobile = useIsMobile();
-
-  const handleFormSubmit = (values: GuestFormValues) => {
+  
+  const handleFormSubmit = (values: VipGuestFormValues) => {
     onSubmit(values);
     onOpenChange(false);
   };
 
-  const title = defaultValues ? "Chỉnh sửa khách mời" : "Thêm khách mời mới";
-  const description = defaultValues ? "Cập nhật thông tin chi tiết." : "Điền thông tin để thêm khách mời mới.";
+  const title = defaultValues ? "Chỉnh sửa khách" : "Thêm khách mới";
+  const description = defaultValues ? "Cập nhật thông tin chi tiết." : "Điền thông tin để thêm khách chức vụ mới.";
 
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[90vh] flex flex-col">
           <DrawerHeader className="text-left flex-shrink-0"><DrawerTitle>{title}</DrawerTitle><DrawerDescription>{description}</DrawerDescription></DrawerHeader>
-          <ScrollArea className="overflow-y-auto flex-grow"><GuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} className="px-4 pb-4" /></ScrollArea>
+          <ScrollArea className="overflow-y-auto flex-grow"><VipGuestForm className="px-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} /></ScrollArea>
           <DrawerFooter className="pt-2 flex-shrink-0"><DrawerClose asChild><Button variant="outline">Hủy</Button></DrawerClose></DrawerFooter>
         </DrawerContent>
       </Drawer>
@@ -230,7 +227,7 @@ export const AddGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues, al
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader><GuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allVipGuests={allVipGuests} roleConfigs={roleConfigs} /><DialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button><Button type="submit" form="guest-form">Lưu</Button></DialogFooter></DialogContent>
+      <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader><VipGuestForm onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} /></DialogContent>
     </Dialog>
   );
 };

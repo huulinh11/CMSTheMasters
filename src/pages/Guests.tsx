@@ -431,7 +431,15 @@ const GuestsPage = () => {
         </div>
       )}
       <AddCombinedGuestDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} onVipSubmit={(values) => addVipMutation.mutate(values)} onRegularSubmit={(values) => addRegularMutation.mutate(values)} allVipGuests={vipGuests} roleConfigs={roleConfigs} />
-      <GuestDetailsDialog guestId={viewingGuestId} guestType={combinedGuests.find(g => g.id === viewingGuestId)?.type === 'Chức vụ' ? 'vip' : 'regular'} open={!!viewingGuestId} onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)} onEdit={(guest) => { setViewingGuestId(null); setEditingGuest(guest); }} onDelete={handleDelete} roleConfigs={roleConfigs} />
+      <GuestDetailsDialog
+        guestId={viewingGuestId}
+        guestType={combinedGuests.find(g => g.id === viewingGuestId)?.type === 'Chức vụ' ? 'vip' : 'regular'}
+        open={!!viewingGuestId}
+        onOpenChange={(isOpen) => !isOpen && setViewingGuestId(null)}
+        onEdit={(guest) => { setEditingGuest(guest); }}
+        onDelete={handleDelete}
+        roleConfigs={roleConfigs}
+      />
       {editingGuest?.type === 'Chức vụ' && <AddVipGuestDialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)} onSubmit={(values) => editVipMutation.mutate({ ...values, id: editingGuest!.id })} defaultValues={editingGuest as any} allGuests={vipGuests} roleConfigs={roleConfigs.filter(r => r.type === 'Chức vụ')} />}
       {editingGuest?.type === 'Khách mời' && <AddGuestDialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)} onSubmit={(values) => editRegularMutation.mutate({ ...values, id: editingGuest!.id })} defaultValues={editingGuest as any} allVipGuests={vipGuests} roleConfigs={roleConfigs.filter(r => r.type === 'Khách mời')} />}
       {payingGuest?.type === 'Chức vụ' && <PaymentDialog guest={payingGuest} open={!!payingGuest} onOpenChange={(open) => !open && setPayingGuest(null)} />}
