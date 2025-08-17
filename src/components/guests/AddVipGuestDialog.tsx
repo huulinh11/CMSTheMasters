@@ -73,11 +73,9 @@ const VipGuestForm = ({ open, className, onSubmit, defaultValues, allGuests, rol
   const { watch, setValue, getValues, formState, reset } = form;
   const selectedRole = watch("role");
   const sponsorshipAmount = watch("sponsorship_amount");
+  const paidAmount = watch("paid_amount");
   const prevRoleRef = useRef<string | undefined>();
   const wasOpen = useRef(false);
-
-  const [formattedSponsorship, setFormattedSponsorship] = useState("0");
-  const [formattedPaid, setFormattedPaid] = useState("0");
 
   useEffect(() => {
     if (open && !wasOpen.current) {
@@ -88,15 +86,11 @@ const VipGuestForm = ({ open, className, onSubmit, defaultValues, allGuests, rol
           paid_amount: (defaultValues as any).paid ?? 0,
         };
         reset(valuesForForm);
-        setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(valuesForForm.sponsorship_amount));
-        setFormattedPaid(new Intl.NumberFormat('vi-VN').format(valuesForForm.paid_amount));
       } else {
         reset({
           name: "", role: undefined, secondaryInfo: "", phone: "", referrer: "", notes: "",
           sponsorship_amount: 0, paid_amount: 0,
         });
-        setFormattedSponsorship("0");
-        setFormattedPaid("0");
       }
     }
     wasOpen.current = open;
@@ -109,31 +103,23 @@ const VipGuestForm = ({ open, className, onSubmit, defaultValues, allGuests, rol
         if (!formState.isDirty || !defaultValues) {
           const newAmount = roleConfig.sponsorship_amount;
           setValue("sponsorship_amount", newAmount, { shouldDirty: true });
-          setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newAmount));
         }
       }
     }
     prevRoleRef.current = selectedRole;
   }, [selectedRole, roleConfigs, setValue, defaultValues, formState.isDirty]);
 
-  const handleSponsorshipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, field: "sponsorship_amount" | "paid_amount") => {
     const rawValue = e.target.value;
     const numericValue = parseInt(rawValue.replace(/[^0-9]/g, ''), 10) || 0;
-    setValue("sponsorship_amount", numericValue);
-    setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(numericValue));
+    setValue(field, numericValue);
 
-    const currentPaid = getValues("paid_amount") || 0;
-    if (currentPaid > numericValue) {
-        setValue("paid_amount", numericValue);
-        setFormattedPaid(new Intl.NumberFormat('vi-VN').format(numericValue));
+    if (field === 'sponsorship_amount') {
+        const currentPaid = getValues("paid_amount") || 0;
+        if (currentPaid > numericValue) {
+            setValue("paid_amount", numericValue);
+        }
     }
-  };
-
-  const handlePaidChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value;
-    const numericValue = parseInt(rawValue.replace(/[^0-9]/g, ''), 10) || 0;
-    setValue("paid_amount", numericValue);
-    setFormattedPaid(new Intl.NumberFormat('vi-VN').format(numericValue));
   };
 
   return (
@@ -170,8 +156,8 @@ const VipGuestForm = ({ open, className, onSubmit, defaultValues, allGuests, rol
             )}
           />
           <FormField control={form.control} name="secondaryInfo" render={({ field }) => (<FormItem><FormLabel>Thông tin phụ</FormLabel><FormControl><Input placeholder="Nhập thông tin phụ" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="sponsorship_amount" render={() => (<FormItem><FormLabel>Số tiền tài trợ (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedSponsorship} onChange={handleSponsorshipChange} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="paid_amount" render={() => (<FormItem><FormLabel>Số tiền đã thanh toán (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedPaid} onChange={handlePaidChange} /></FormControl><Button type="button" size="sm" variant="link" className="p-0 h-auto mt-1" onClick={() => { const amount = sponsorshipAmount || 0; setValue("paid_amount", amount); setFormattedPaid(new Intl.NumberFormat('vi-VN').format(amount)); }}>Thanh toán đủ</Button><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="sponsorship_amount" render={() => (<FormItem><FormLabel>Số tiền tài trợ (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={new Intl.NumberFormat('vi-VN').format(sponsorshipAmount || 0)} onChange={(e) => handleAmountChange(e, "sponsorship_amount")} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="paid_amount" render={() => (<FormItem><FormLabel>Số tiền đã thanh toán (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={new Intl.NumberFormat('vi-VN').format(paidAmount || 0)} onChange={(e) => handleAmountChange(e, "paid_amount")} /></FormControl><Button type="button" size="sm" variant="link" className="p-0 h-auto mt-1" onClick={() => { const amount = sponsorshipAmount || 0; setValue("paid_amount", amount); }}>Thanh toán đủ</Button><FormMessage /></FormItem>)} />
           <FormField
             control={form.control}
             name="referrer"

@@ -75,11 +75,9 @@ const GuestForm = ({ open, onSubmit, defaultValues, allVipGuests, roleConfigs, c
   const { watch, setValue, getValues, formState, reset } = form;
   const selectedRole = watch("role");
   const sponsorshipAmount = watch("sponsorship_amount");
+  const paidAmount = watch("paid_amount");
   const prevRoleRef = useRef<string | undefined>();
   const wasOpen = useRef(false);
-
-  const [formattedSponsorship, setFormattedSponsorship] = useState("0");
-  const [formattedPaid, setFormattedPaid] = useState("0");
 
   useEffect(() => {
     if (open && !wasOpen.current) {
@@ -90,15 +88,11 @@ const GuestForm = ({ open, onSubmit, defaultValues, allVipGuests, roleConfigs, c
           paid_amount: (defaultValues as any).paid ?? 0,
         };
         reset(valuesForForm);
-        setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(valuesForForm.sponsorship_amount));
-        setFormattedPaid(new Intl.NumberFormat('vi-VN').format(valuesForForm.paid_amount));
       } else {
         reset({
           name: "", role: undefined, phone: "", referrer: "", notes: "",
           sponsorship_amount: 0, paid_amount: 0, payment_source: 'Trống'
         });
-        setFormattedSponsorship("0");
-        setFormattedPaid("0");
       }
     }
     wasOpen.current = open;
@@ -111,7 +105,6 @@ const GuestForm = ({ open, onSubmit, defaultValues, allVipGuests, roleConfigs, c
         if (!formState.isDirty || !defaultValues) {
           const newAmount = roleConfig.sponsorship_amount;
           setValue("sponsorship_amount", newAmount, { shouldDirty: true });
-          setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(newAmount));
         }
       }
     }
@@ -122,12 +115,10 @@ const GuestForm = ({ open, onSubmit, defaultValues, allVipGuests, roleConfigs, c
     const rawValue = e.target.value;
     const numericValue = parseInt(rawValue.replace(/[^0-9]/g, ''), 10) || 0;
     setValue("sponsorship_amount", numericValue);
-    setFormattedSponsorship(new Intl.NumberFormat('vi-VN').format(numericValue));
 
     const currentPaid = getValues("paid_amount") || 0;
     if (currentPaid > numericValue) {
         setValue("paid_amount", numericValue);
-        setFormattedPaid(new Intl.NumberFormat('vi-VN').format(numericValue));
     }
   };
 
@@ -135,7 +126,6 @@ const GuestForm = ({ open, onSubmit, defaultValues, allVipGuests, roleConfigs, c
     const rawValue = e.target.value;
     const numericValue = parseInt(rawValue.replace(/[^0-9]/g, ''), 10) || 0;
     setValue("paid_amount", numericValue);
-    setFormattedPaid(new Intl.NumberFormat('vi-VN').format(numericValue));
   };
 
   return (
@@ -172,8 +162,8 @@ const GuestForm = ({ open, onSubmit, defaultValues, allVipGuests, roleConfigs, c
             )}
           />
           <FormField control={form.control} name="payment_source" render={({ field }) => (<FormItem><FormLabel>Nguồn thanh toán</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Chọn nguồn" /></SelectTrigger></FormControl><SelectContent>{PAYMENT_SOURCES.map(source => (<SelectItem key={source} value={source}>{source}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="sponsorship_amount" render={() => (<FormItem><FormLabel>Số tiền tài trợ (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedSponsorship} onChange={handleSponsorshipChange} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="paid_amount" render={() => (<FormItem><FormLabel>Số tiền đã thanh toán (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={formattedPaid} onChange={handlePaidChange} /></FormControl><Button type="button" size="sm" variant="link" className="p-0 h-auto mt-1" onClick={() => { const amount = sponsorshipAmount || 0; setValue("paid_amount", amount); setFormattedPaid(new Intl.NumberFormat('vi-VN').format(amount)); }}>Thanh toán đủ</Button><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="sponsorship_amount" render={() => (<FormItem><FormLabel>Số tiền tài trợ (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={new Intl.NumberFormat('vi-VN').format(sponsorshipAmount || 0)} onChange={handleSponsorshipChange} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="paid_amount" render={() => (<FormItem><FormLabel>Số tiền đã thanh toán (đ)</FormLabel><FormControl><Input placeholder="Nhập số tiền" value={new Intl.NumberFormat('vi-VN').format(paidAmount || 0)} onChange={handlePaidChange} /></FormControl><Button type="button" size="sm" variant="link" className="p-0 h-auto mt-1" onClick={() => { const amount = sponsorshipAmount || 0; setValue("paid_amount", amount); }}>Thanh toán đủ</Button><FormMessage /></FormItem>)} />
           <FormField
             control={form.control}
             name="referrer"
