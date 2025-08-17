@@ -145,9 +145,10 @@ const VipGuestForm = ({ open, className, onSubmit, defaultValues, allGuests, rol
                   onValueChange={(value) => {
                     field.onChange(value);
                     const roleConfig = roleConfigs.find(rc => rc.name === value);
-                    if (roleConfig && !isDirty) {
+                    if (roleConfig) {
                       const newAmount = roleConfig.sponsorship_amount;
                       setValue("sponsorship_amount", newAmount, { shouldDirty: true });
+                      setValue("paid_amount", 0, { shouldDirty: true });
                     }
                   }}
                   value={field.value}
