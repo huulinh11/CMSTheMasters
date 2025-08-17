@@ -177,9 +177,10 @@ const GuestsPage = () => {
             }
         }
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
         queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
         queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+        queryClient.invalidateQueries({ queryKey: ['guest_details', 'vip', variables.id] });
         showSuccess("Cập nhật khách thành công!");
     },
     onError: (error: any) => showError(error.message),
@@ -206,9 +207,10 @@ const GuestsPage = () => {
               }
           }
       },
-      onSuccess: () => {
+      onSuccess: (data, variables) => {
           queryClient.invalidateQueries({ queryKey: ['guests'] });
           queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+          queryClient.invalidateQueries({ queryKey: ['guest_details', 'regular', variables.id] });
           showSuccess("Cập nhật khách mời thành công!");
       },
       onError: (error: any) => showError(error.message),
