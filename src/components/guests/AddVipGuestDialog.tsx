@@ -134,7 +134,7 @@ const VipGuestForm = ({ open, className, onSubmit, defaultValues, allGuests, rol
       <form id="vip-guest-form" onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-4", className)}>
         <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-4">
           <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Tên</FormLabel><FormControl><Input placeholder="Nhập tên khách mời" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Số điện thoại</FormLabel><FormControl><Input placeholder="Nhập số điện thoại" {...field} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Số điện thoại</FormLabel><FormControl><Input type="tel" placeholder="Nhập số điện thoại" {...field} onChange={(e) => { const { value } = e.target; if (/^\d*$/.test(value)) { field.onChange(e); } }} /></FormControl><FormMessage /></FormItem>)} />
           <FormField
             control={form.control}
             name="role"
@@ -145,9 +145,10 @@ const VipGuestForm = ({ open, className, onSubmit, defaultValues, allGuests, rol
                   onValueChange={(value) => {
                     field.onChange(value);
                     const roleConfig = roleConfigs.find(rc => rc.name === value);
-                    if (roleConfig && !isDirty) {
+                    if (roleConfig) {
                       const newAmount = roleConfig.sponsorship_amount;
                       setValue("sponsorship_amount", newAmount, { shouldDirty: true });
+                      setValue("paid_amount", 0, { shouldDirty: true });
                     }
                   }}
                   value={field.value}
@@ -263,7 +264,7 @@ export const AddVipGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues,
         <DrawerContent className="max-h-[90vh] flex flex-col">
           <DrawerHeader className="text-left flex-shrink-0"><DrawerTitle>{title}</DrawerTitle><DrawerDescription>{description}</DrawerDescription></DrawerHeader>
           <ScrollArea className="overflow-y-auto flex-grow">
-            <VipGuestForm open={open} key={defaultValues?.id || 'new-vip'} className="px-4 pb-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
+            <VipGuestForm open={open} className="px-4 pb-4" onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
           </ScrollArea>
           <DrawerFooter className="pt-2 flex-shrink-0"><DrawerClose asChild><Button variant="outline">Hủy</Button></DrawerClose></DrawerFooter>
         </DrawerContent>
@@ -280,7 +281,7 @@ export const AddVipGuestDialog = ({ open, onOpenChange, onSubmit, defaultValues,
         </DialogHeader>
         <ScrollArea className="flex-grow min-h-0">
           <div className="px-6">
-            <VipGuestForm open={open} key={defaultValues?.id || 'new-vip'} onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
+            <VipGuestForm open={open} onSubmit={handleFormSubmit} defaultValues={defaultValues} allGuests={allGuests} roleConfigs={roleConfigs} />
           </div>
         </ScrollArea>
         <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">

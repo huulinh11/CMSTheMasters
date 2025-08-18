@@ -136,7 +136,7 @@ const GuestForm = ({ open, onSubmit, defaultValues, allVipGuests, roleConfigs, c
       <form id="guest-form" onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-4", className)}>
         <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-4">
           <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Tên</FormLabel><FormControl><Input placeholder="Nhập tên khách mời" {...field} /></FormControl><FormMessage /></FormItem>)} />
-          <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Số điện thoại</FormLabel><FormControl><Input placeholder="Nhập số điện thoại" {...field} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Số điện thoại</FormLabel><FormControl><Input type="tel" placeholder="Nhập số điện thoại" {...field} onChange={(e) => { const { value } = e.target; if (/^\d*$/.test(value)) { field.onChange(e); } }} /></FormControl><FormMessage /></FormItem>)} />
           <FormField
             control={form.control}
             name="role"
