@@ -139,6 +139,9 @@ const DashboardGuestsTab = () => {
     const superVip = countByRole("Super Vip");
     const totalRegularGuests = khachPhoThong + vip + vVip + superVip;
 
+    const veTraiNghiem = countByRole("Vé trải nghiệm");
+    const totalRegularGuestsAndTrial = totalRegularGuests + veTraiNghiem;
+
     return {
         totalPeople: allGuests.length,
         
@@ -152,6 +155,8 @@ const DashboardGuestsTab = () => {
         vip,
         vVip,
         superVip,
+        veTraiNghiem,
+        totalRegularGuestsAndTrial,
 
         coVan: countByRole("Cố vấn"),
         daiSu: countByRole("Đại sứ"),
@@ -210,12 +215,14 @@ const DashboardGuestsTab = () => {
 
       <div>
         <h2 className="text-lg text-slate-700 font-bold mb-2">Khách mời</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <StatDisplay title="Tổng khách mời" value={stats.totalRegularGuests} />
           <StatDisplay title="Khách phổ thông" value={stats.khachPhoThong} />
           <StatDisplay title="VIP" value={stats.vip} />
           <StatDisplay title="V-Vip" value={stats.vVip} />
           <StatDisplay title="Super Vip" value={stats.superVip} />
+          <StatDisplay title="Vé trải nghiệm" value={stats.veTraiNghiem} />
+          <StatDisplay title="Tổng KM & VTN" value={stats.totalRegularGuestsAndTrial} />
         </div>
       </div>
 
