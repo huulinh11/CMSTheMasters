@@ -49,7 +49,7 @@ const PublicEventInfoTab = () => {
       <div ref={dresscodeRef} className="pt-4">
         <DresscodeDisplay 
           title={settings?.dresscode_title} 
-          imageUrl={settings?.dresscode_image_config?.imageUrl} 
+          images={settings?.dresscode_image_config?.images} 
         />
       </div>
     </div>

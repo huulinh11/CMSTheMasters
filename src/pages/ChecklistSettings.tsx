@@ -11,6 +11,8 @@ import { showSuccess, showError } from "@/utils/toast";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageSourceSelector } from "../components/image-library/ImageSourceSelector";
+import { PlusCircle, Trash2 } from "lucide-react";
+import { v4 as uuidv4 } from 'uuid';
 
 type LogoConfig = {
   imageUrl: string;
@@ -22,7 +24,7 @@ type LogoConfig = {
 };
 
 type DresscodeImageConfig = {
-  imageUrl: string;
+  images?: { id: string; imageUrl: string }[];
 };
 
 type ChecklistSettings = {
@@ -70,7 +72,7 @@ const ChecklistSettings = () => {
         ...data,
         logo_config: data.logo_config || {},
         title_config: data.title_config || {},
-        dresscode_image_config: data.dresscode_image_config || {},
+        dresscode_image_config: data.dresscode_image_config || { images: [] },
       });
     }
   }, [data]);
@@ -94,7 +96,7 @@ const ChecklistSettings = () => {
     mutation.mutate(settings);
   };
 
-  const handleConfigChange = (configType: 'logo_config' | 'title_config' | 'dresscode_image_config', field: string, value: any) => {
+  const handleConfigChange = (configType: 'logo_config' | 'title_config', field: string, value: any) => {
     setSettings(prev => ({
       ...prev,
       [configType]: {
@@ -102,6 +104,45 @@ const ChecklistSettings = () => {
         [field]: value,
       },
     }));
+  };
+
+  const handleDresscodeImageChange = (id: string, url: string) => {
+    setSettings(prev => {
+      const images = prev.dresscode_image_config?.images || [];
+      return {
+        ...prev,
+        dresscode_image_config: {
+          ...prev.dresscode_image_config,
+          images: images.map(img => img.id === id ? { ...img, imageUrl: url } : img),
+        }
+      }
+    });
+  };
+
+  const addDresscodeImage = () => {
+    setSettings(prev => {
+      const images = prev.dresscode_image_config?.images || [];
+      return {
+        ...prev,
+        dresscode_image_config: {
+          ...prev.dresscode_image_config,
+          images: [...images, { id: uuidv4(), imageUrl: '' }],
+        }
+      }
+    });
+  };
+
+  const removeDresscodeImage = (id: string) => {
+    setSettings(prev => {
+      const images = prev.dresscode_image_config?.images || [];
+      return {
+        ...prev,
+        dresscode_image_config: {
+          ...prev.dresscode_image_config,
+          images: images.filter(img => img.id !== id),
+        }
+      }
+    });
   };
 
   if (isLoading) {
@@ -160,11 +201,28 @@ const ChecklistSettings = () => {
               onChange={(e) => setSettings(prev => ({ ...prev, dresscode_title: e.target.value }))} 
             />
           </div>
-          <ImageSourceSelector
-            value={settings.dresscode_image_config?.imageUrl || ''}
-            onValueChange={url => handleConfigChange('dresscode_image_config', 'imageUrl', url)}
-            onUploadingChange={setIsUploading}
-          />
+          <div className="space-y-2">
+            <Label>Hình ảnh</Label>
+            <div className="space-y-4">
+              {settings.dresscode_image_config?.images?.map((image) => (
+                <div key={image.id} className="flex items-end gap-2">
+                  <div className="flex-grow">
+                    <ImageSourceSelector
+                      value={image.imageUrl}
+                      onValueChange={url => handleDresscodeImageChange(image.id, url)}
+                      onUploadingChange={setIsUploading}
+                    />
+                  </div>
+                  <Button variant="destructive" size="icon" onClick={() => removeDresscodeImage(image.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" size="sm" onClick={addDresscodeImage} className="mt-2">
+              <PlusCircle className="mr-2 h-4 w-4" /> Thêm ảnh
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
