@@ -135,12 +135,12 @@ const DashboardGuestsTab = () => {
 
     const khachPhoThong = countByRole("Khách phổ thông");
     const vip = countByRole("VIP");
-    const vVip = countByRole("V-Vip");
+    const vVip = countByRole("V-VIP");
     const superVip = countByRole("Super Vip");
     const totalRegularGuests = khachPhoThong + vip + vVip + superVip;
 
     const veTraiNghiem = countByRole("Vé trải nghiệm");
-    const totalRegularGuestsAndTrial = totalRegularGuests + veTraiNghiem;
+    const totalRegularGuestsAndTrial = khachPhoThong + vip + vVip + veTraiNghiem;
 
     return {
         totalPeople: allGuests.length,
@@ -219,7 +219,7 @@ const DashboardGuestsTab = () => {
           <StatDisplay title="Tổng khách mời" value={stats.totalRegularGuests} />
           <StatDisplay title="Khách phổ thông" value={stats.khachPhoThong} />
           <StatDisplay title="VIP" value={stats.vip} />
-          <StatDisplay title="V-Vip" value={stats.vVip} />
+          <StatDisplay title="V-VIP" value={stats.vVip} />
           <StatDisplay title="Super Vip" value={stats.superVip} />
           <StatDisplay title="Vé trải nghiệm" value={stats.veTraiNghiem} />
           <StatDisplay title="Tổng KM & VTN" value={stats.totalRegularGuestsAndTrial} />
