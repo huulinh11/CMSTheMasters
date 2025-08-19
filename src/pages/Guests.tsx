@@ -84,10 +84,10 @@ const GuestsPage = () => {
     }
   });
 
-  const { data: allVipGuests = [] } = useQuery<Pick<VipGuest, 'id' | 'name'>[]>({
+  const { data: allVipGuests = [] } = useQuery<VipGuest[]>({
     queryKey: ['all_vip_guests_for_referral'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('vip_guests').select('id, name');
+      const { data, error } = await supabase.from('vip_guests').select('*');
       if (error) throw new Error(error.message);
       return data || [];
     }
