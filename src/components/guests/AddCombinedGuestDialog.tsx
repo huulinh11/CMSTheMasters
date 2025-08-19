@@ -37,7 +37,7 @@ import { useForm, FormProvider, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GuestFormValues, guestFormSchema } from "@/types/guest";
 import { VipGuestFormValues, vipGuestFormSchema } from "@/types/vip-guest";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Popover,
   PopoverContent,
@@ -61,7 +61,7 @@ import { PAYMENT_SOURCES } from "@/types/guest-revenue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // --- VIP Guest Form ---
-const VipGuestForm = ({ form, onSubmit, allGuests, roleConfigs }: { form: UseFormReturn<VipGuestFormValues>, onSubmit: (values: VipGuestFormValues) => void, allGuests: VipGuest[], roleConfigs: RoleConfiguration[] }) => {
+const VipGuestForm = ({ form, onSubmit, allGuests, roleConfigs }: { form: UseFormReturn<VipGuestFormValues>, onSubmit: (values: VipGuestFormValues) => void, allGuests: Pick<VipGuest, 'id' | 'name'>[], roleConfigs: RoleConfiguration[] }) => {
   const { watch, setValue, getValues } = form;
   const sponsorshipAmount = watch("sponsorship_amount");
   const paidAmount = watch("paid_amount");
@@ -181,7 +181,7 @@ interface AddCombinedGuestDialogProps {
   onOpenChange: (open: boolean) => void;
   onVipSubmit: (values: VipGuestFormValues) => void;
   onRegularSubmit: (values: GuestFormValues) => void;
-  allVipGuests: VipGuest[];
+  allVipGuests: Pick<VipGuest, 'id' | 'name'>[];
   roleConfigs: RoleConfiguration[];
 }
 
@@ -200,7 +200,7 @@ const FormContent = ({
   onTabChange: (value: string) => void;
   vipForm: UseFormReturn<VipGuestFormValues>;
   onVipSubmit: (values: VipGuestFormValues) => void;
-  allVipGuests: VipGuest[];
+  allVipGuests: Pick<VipGuest, 'id' | 'name'>[];
   vipRoleConfigs: RoleConfiguration[];
   regularForm: UseFormReturn<GuestFormValues>;
   onRegularSubmit: (values: GuestFormValues) => void;

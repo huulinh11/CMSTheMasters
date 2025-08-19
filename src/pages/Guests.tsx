@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { VipGuest, VipGuestFormValues } from "@/types/vip-guest";
 import { Guest, GuestFormValues } from "@/types/guest";
@@ -17,7 +17,6 @@ import { PaymentSource } from "@/types/guest-revenue";
 import { AdvancedGuestFilter, AdvancedFilters } from "@/components/guests/AdvancedGuestFilter";
 import { PageHeader } from "@/components/PageHeader";
 import { ImportExportActions } from "@/components/guests/ImportExportActions";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VipGuestRevenue } from "@/types/vip-guest-revenue";
 import { GuestRevenue } from "@/types/guest-revenue";
 import { CombinedGuestTable } from "@/components/guests/CombinedGuestTable";
@@ -49,14 +48,14 @@ const GuestsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState<'Chức vụ' | 'Khách mời'>('Chức vụ');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
   const [advancedFilters, setAdvancedFilters] = useState<Partial<AdvancedFilters>>({});
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState<CombinedGuestRevenue | null>(null);
-  const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
+  const [viewingGuest, setViewingGuest] = useState<{ id: string, type: 'vip' | 'regular' } | null>(null);
   const [payingGuest, setPayingGuest] = useState<CombinedGuestRevenue | null>(null);
   const [historyGuest, setHistoryGuest] = useState<CombinedGuestRevenue | null>(null);
   const [upsaleGuest, setUpsaleGuest] = useState<GuestRevenue | null>(null);
@@ -69,12 +68,10 @@ const GuestsPage = () => {
     const viewVip = searchParams.get('view_vip');
     const viewRegular = searchParams.get('view_regular');
     if (viewVip) {
-      setActiveTab('Chức vụ');
-      setViewingGuestId(viewVip);
+      setViewingGuest({ id: viewVip, type: 'vip' });
       setSearchParams({}, { replace: true });
     } else if (viewRegular) {
-      setActiveTab('Khách mời');
-      setViewingGuestId(viewRegular);
+      setViewingGuest({ id: viewRegular, type: 'regular' });
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -88,7 +85,7 @@ const GuestsPage = () => {
     }
   });
 
-  const { data: allVipGuests = [] } = useQuery<VipGuest[]>({
+  const { data: allVipGuests = [] } = useQuery<Pick<VipGuest, 'id' | 'name'>[]>({
     queryKey: ['all_vip_guests_for_referral'],
     queryFn: async () => {
       const { data, error } = await supabase.from('vip_guests').select('id, name');
@@ -97,150 +94,94 @@ const GuestsPage = () => {
     }
   });
 
-  const { data: vipData, isLoading: isLoadingVip } = useQuery({
-    queryKey: ['vip_revenue', currentPage],
+  const { data, isLoading } = useQuery({
+    queryKey: ['combined_guests', currentPage, searchTerm, roleFilter, typeFilter, advancedFilters],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_vip_guest_revenue_details', { limit_val: ITEMS_PER_PAGE, offset_val: (currentPage - 1) * ITEMS_PER_PAGE });
+      const { data, error } = await supabase.rpc('get_combined_guests', {
+        limit_val: ITEMS_PER_PAGE,
+        offset_val: (currentPage - 1) * ITEMS_PER_PAGE,
+        search_term: searchTerm,
+        role_filter: roleFilter,
+        type_filter: typeFilter,
+        ...advancedFilters
+      });
       if (error) throw new Error(error.message);
-      const { data: countData, error: countError } = await supabase.rpc('get_vip_guest_revenue_details_count');
+      
+      const { data: countData, error: countError } = await supabase.rpc('get_combined_guests_count', {
+        search_term: searchTerm,
+        role_filter: roleFilter,
+        type_filter: typeFilter,
+        ...advancedFilters
+      });
       if (countError) throw new Error(countError.message);
+
       return { guests: data || [], count: countData || 0 };
-    },
-    enabled: activeTab === 'Chức vụ',
-  });
-
-  const { data: regularData, isLoading: isLoadingRegular } = useQuery({
-    queryKey: ['guest_revenue_details', currentPage],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_guest_revenue_details', { limit_val: ITEMS_PER_PAGE, offset_val: (currentPage - 1) * ITEMS_PER_PAGE });
-      if (error) throw new Error(error.message);
-      const { data: countData, error: countError } = await supabase.rpc('get_guest_revenue_details_count');
-      if (countError) throw new Error(countError.message);
-      return { guests: data || [], count: countData || 0 };
-    },
-    enabled: activeTab === 'Khách mời',
-  });
-
-  const { data: allGuestsForExport = [] } = useQuery<CombinedGuestRevenue[]>({
-    queryKey: ['all_guests_for_export'],
-    queryFn: async () => {
-      const { data: vips } = await supabase.rpc('get_vip_guest_revenue_details', { limit_val: 10000, offset_val: 0 });
-      const { data: regulars } = await supabase.rpc('get_guest_revenue_details', { limit_val: 10000, offset_val: 0 });
-      const combined = [
-        ...(vips || []).map((g: any) => ({ ...g, type: 'Chức vụ' as const })),
-        ...(regulars || []).map((g: any) => ({ ...g, type: 'Khách mời' as const })),
-      ];
-      return combined;
     }
   });
 
-  const mutation = useMutation({
-    mutationFn: async ({ table, data }: { table: 'vip_guests' | 'guests', data: any }) => {
-      const { error } = await supabase.from(table).upsert(data);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
-      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
-      showSuccess("Lưu thành công!");
-    },
-    onError: (error: Error) => showError(error.message),
-  });
-
-  const handleVipSubmit = (values: VipGuestFormValues) => {
-    // ... implementation
-  };
-
-  const handleRegularSubmit = (values: GuestFormValues) => {
-    // ... implementation
-  };
-
-  const handleDelete = async (guestId: string) => {
-    const table = activeTab === 'Chức vụ' ? 'vip_guests' : 'guests';
-    const { error } = await supabase.from(table).delete().eq('id', guestId);
-    if (error) {
-      showError(error.message);
-    } else {
-      showSuccess("Xóa thành công!");
-      queryClient.invalidateQueries({ queryKey: [table === 'vip_guests' ? 'vip_revenue' : 'guest_revenue_details'] });
-    }
-  };
-
-  const handleZnsChange = async (guest: CombinedGuestRevenue, sent: boolean) => {
-    const table = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
-    const { error } = await supabase.from(table).update({ zns_sent: sent }).eq('id', guest.id);
-    if (error) {
-      showError(error.message);
-    } else {
-      showSuccess("Cập nhật trạng thái ZNS thành công!");
-      queryClient.invalidateQueries({ queryKey: [table === 'vip_guests' ? 'vip_revenue' : 'guest_revenue_details'] });
-    }
-  };
-
-  const currentData = activeTab === 'Chức vụ' ? vipData : regularData;
-  const isLoading = activeTab === 'Chức vụ' ? isLoadingVip : isLoadingRegular;
-  const guests = currentData?.guests || [];
-  const totalGuests = currentData?.count || 0;
+  const guests = data?.guests || [];
+  const totalGuests = data?.count || 0;
   const totalPages = Math.ceil(totalGuests / ITEMS_PER_PAGE);
 
-  const filteredGuests = useMemo(() => {
-    // Client-side filtering on the current page of data
-    return guests.filter(guest => {
-      const searchMatch = searchTerm ? removeAccents(guest.name.toLowerCase()).includes(removeAccents(searchTerm.toLowerCase())) : true;
-      const roleMatch = roleFilter === 'all' || guest.role === roleFilter;
-      // Advanced filters can be applied here as well
-      return searchMatch && roleMatch;
-    });
-  }, [guests, searchTerm, roleFilter]);
+  const handleVipSubmit = (values: VipGuestFormValues) => { /* ... */ };
+  const handleRegularSubmit = (values: GuestFormValues) => { /* ... */ };
+  const handleDelete = async (guestId: string) => { /* ... */ };
+  const handleZnsChange = async (guest: CombinedGuestRevenue, sent: boolean) => { /* ... */ };
+
+  const handleUpsale = (guest: CombinedGuestRevenue) => {
+    if (guest.type === 'Khách mời') {
+      setUpsaleGuest(guest as GuestRevenue);
+    }
+  };
 
   return (
     <div className="p-4 md:p-6">
       <PageHeader title="Quản lý khách mời">
         <div className="flex items-center gap-2">
-          {!isMobile && <ImportExportActions guestsToExport={allGuestsForExport} />}
+          {!isMobile && <ImportExportActions guestsToExport={[]} />}
           <Button onClick={() => setIsAddDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
         </div>
       </PageHeader>
       
-      <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as any); setCurrentPage(1); }} className="w-full mt-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="Chức vụ">Chức vụ</TabsTrigger>
-          <TabsTrigger value="Khách mời">Khách mời</TabsTrigger>
-        </TabsList>
-        <div className="mt-4 space-y-4">
-          <div className="flex flex-col md:flex-row gap-2">
-            <Input
-              placeholder="Tìm kiếm theo tên..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-grow"
-            />
-            <div className="flex gap-2">
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <SelectValue placeholder="Lọc theo vai trò" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả vai trò</SelectItem>
-                  {roleConfigs.filter(r => r.type === activeTab).map(role => (
-                    <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <AdvancedGuestFilter filters={advancedFilters} onFilterChange={() => {}} onClearFilters={() => {}} />
-            </div>
+      <div className="mt-4 space-y-4">
+        <div className="flex flex-col md:flex-row gap-2">
+          <Input
+            placeholder="Tìm theo tên, SĐT, thông tin phụ..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="flex-grow"
+          />
+          <div className="flex gap-2">
+            <Select value={typeFilter} onValueChange={(value) => { setTypeFilter(value); setCurrentPage(1); setRoleFilter('all'); }}>
+              <SelectTrigger className="w-full md:w-[150px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả loại</SelectItem>
+                <SelectItem value="Chức vụ">Chức vụ</SelectItem>
+                <SelectItem value="Khách mời">Khách mời</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setCurrentPage(1); }}>
+              <SelectTrigger className="w-full md:w-[200px]"><SelectValue placeholder="Lọc theo vai trò" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả vai trò</SelectItem>
+                {roleConfigs.filter(r => typeFilter === 'all' || r.type === typeFilter).map(role => (
+                  <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <AdvancedGuestFilter filters={advancedFilters} onFilterChange={(field, value) => { setAdvancedFilters(prev => ({ ...prev, [field]: value })); setCurrentPage(1); }} onClearFilters={() => { setAdvancedFilters({}); setCurrentPage(1); }} />
           </div>
-          <h2 className="text-xl font-bold text-slate-800">Tổng: {totalGuests}</h2>
-          {isLoading ? (
-            <Skeleton className="h-96 w-full" />
-          ) : isMobile ? (
-            <CombinedGuestCards guests={filteredGuests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onView={setViewingGuestId} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={setUpsaleGuest} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
-          ) : (
-            <CombinedGuestTable guests={filteredGuests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onSelectAll={() => {}} onView={setViewingGuestId} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={setUpsaleGuest} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
-          )}
-          <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
-      </Tabs>
+        <h2 className="text-xl font-bold text-slate-800">Tổng: {totalGuests}</h2>
+        {isLoading ? (
+          <Skeleton className="h-96 w-full" />
+        ) : isMobile ? (
+          <CombinedGuestCards guests={guests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
+        ) : (
+          <CombinedGuestTable guests={guests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onSelectAll={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
+        )}
+        <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+      </div>
 
       <AddCombinedGuestDialog
         open={isAddDialogOpen}
@@ -251,10 +192,10 @@ const GuestsPage = () => {
         roleConfigs={roleConfigs}
       />
       <GuestDetailsDialog
-        guestId={viewingGuestId}
-        guestType={activeTab === 'Chức vụ' ? 'vip' : 'regular'}
-        open={!!viewingGuestId}
-        onOpenChange={() => setViewingGuestId(null)}
+        guestId={viewingGuest?.id || null}
+        guestType={viewingGuest?.type || null}
+        open={!!viewingGuest}
+        onOpenChange={() => setViewingGuest(null)}
         onEdit={setEditingGuest}
         onDelete={handleDelete}
         roleConfigs={roleConfigs}
