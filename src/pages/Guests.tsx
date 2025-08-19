@@ -13,7 +13,6 @@ import { RoleConfiguration } from "@/types/role-configuration";
 import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
-import { PaymentSource } from "@/types/guest-revenue";
 import { AdvancedGuestFilter, AdvancedFilters } from "@/components/guests/AdvancedGuestFilter";
 import { PageHeader } from "@/components/PageHeader";
 import { ImportExportActions } from "@/components/guests/ImportExportActions";
@@ -30,8 +29,8 @@ import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog";
 import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { removeAccents } from "@/lib/utils";
 import { PaginationControls } from "@/components/PaginationControls";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
   has_history: boolean;
@@ -97,22 +96,25 @@ const GuestsPage = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['combined_guests', currentPage, searchTerm, roleFilter, typeFilter, advancedFilters],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_combined_guests', {
+      const rpcParams = {
         limit_val: ITEMS_PER_PAGE,
         offset_val: (currentPage - 1) * ITEMS_PER_PAGE,
         search_term: searchTerm,
         role_filter: roleFilter,
         type_filter: typeFilter,
-        ...advancedFilters
-      });
+        phone_filter: advancedFilters.phone || 'all',
+        sponsorship_filter: advancedFilters.sponsorship || 'all',
+        secondary_info_filter: advancedFilters.secondaryInfo || 'all',
+        materials_filter: advancedFilters.materials || 'all',
+        payment_status_filter: advancedFilters.paymentStatus || 'all',
+        payment_source_filter: advancedFilters.paymentSource || 'all',
+        zns_filter: advancedFilters.zns || 'all',
+      };
+
+      const { data, error } = await supabase.rpc('get_combined_guests', rpcParams);
       if (error) throw new Error(error.message);
       
-      const { data: countData, error: countError } = await supabase.rpc('get_combined_guests_count', {
-        search_term: searchTerm,
-        role_filter: roleFilter,
-        type_filter: typeFilter,
-        ...advancedFilters
-      });
+      const { data: countData, error: countError } = await supabase.rpc('get_combined_guests_count', rpcParams);
       if (countError) throw new Error(countError.message);
 
       return { guests: data || [], count: countData || 0 };
@@ -152,14 +154,6 @@ const GuestsPage = () => {
             className="flex-grow"
           />
           <div className="flex gap-2">
-            <Select value={typeFilter} onValueChange={(value) => { setTypeFilter(value); setCurrentPage(1); setRoleFilter('all'); }}>
-              <SelectTrigger className="w-full md:w-[150px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả loại</SelectItem>
-                <SelectItem value="Chức vụ">Chức vụ</SelectItem>
-                <SelectItem value="Khách mời">Khách mời</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setCurrentPage(1); }}>
               <SelectTrigger className="w-full md:w-[200px]"><SelectValue placeholder="Lọc theo vai trò" /></SelectTrigger>
               <SelectContent>
@@ -172,6 +166,20 @@ const GuestsPage = () => {
             <AdvancedGuestFilter filters={advancedFilters} onFilterChange={(field, value) => { setAdvancedFilters(prev => ({ ...prev, [field]: value })); setCurrentPage(1); }} onClearFilters={() => { setAdvancedFilters({}); setCurrentPage(1); }} />
           </div>
         </div>
+        <Tabs
+          value={typeFilter}
+          onValueChange={(value) => {
+            setTypeFilter(value);
+            setCurrentPage(1);
+            setRoleFilter('all');
+          }}
+        >
+          <TabsList className="grid w-full grid-cols-3 bg-primary/10 p-1 h-12 rounded-xl">
+            <TabsTrigger value="all" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Tất cả</TabsTrigger>
+            <TabsTrigger value="Chức vụ" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Chức vụ</TabsTrigger>
+            <TabsTrigger value="Khách mời" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Khách mời</TabsTrigger>
+          </TabsList>
+        </Tabs>
         <h2 className="text-xl font-bold text-slate-800">Tổng: {totalGuests}</h2>
         {isLoading ? (
           <Skeleton className="h-96 w-full" />
