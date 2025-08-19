@@ -116,7 +116,12 @@ const GuestsPage = () => {
   const combinedGuests = useMemo(() => {
     const vips = (vipData || []).map((g: any) => ({ ...g, type: 'Chức vụ' as const }));
     const regulars = (regularData || []).map((g: any) => ({ ...g, type: 'Khách mời' as const }));
-    return [...vips, ...regulars];
+    const allGuests = [...vips, ...regulars];
+    allGuests.sort((a, b) => {
+      if (!a.created_at || !b.created_at) return 0;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    return allGuests;
   }, [vipData, regularData]);
 
   const filteredGuests = useMemo(() => {
@@ -178,6 +183,9 @@ const GuestsPage = () => {
       showSuccess("Thêm khách chức vụ thành công!");
     },
     onError: (error: Error) => showError(`Lỗi: ${error.message}`),
+    onSettled: () => {
+      setIsAddDialogOpen(false);
+    },
   });
 
   const addRegularGuestMutation = useMutation({
@@ -216,6 +224,9 @@ const GuestsPage = () => {
       showSuccess("Thêm khách mời thành công!");
     },
     onError: (error: Error) => showError(`Lỗi: ${error.message}`),
+    onSettled: () => {
+      setIsAddDialogOpen(false);
+    },
   });
 
   const deleteMutation = useMutation({
