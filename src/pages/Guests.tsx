@@ -142,10 +142,125 @@ const GuestsPage = () => {
     setCurrentPage(1);
   }, [searchTerm, typeFilter, roleFilter, advancedFilters]);
 
-  const handleVipSubmit = (values: VipGuestFormValues) => { /* ... */ };
-  const handleRegularSubmit = (values: GuestFormValues) => { /* ... */ };
-  const handleDelete = async (guestId: string) => { /* ... */ };
-  const handleZnsChange = async (guest: CombinedGuestRevenue, sent: boolean) => { /* ... */ };
+  const addVipGuestMutation = useMutation({
+    mutationFn: async (values: VipGuestFormValues) => {
+      const { data: existingRoleGuests } = await supabase.from('vip_guests').select('id').eq('role', values.role);
+      const prefixMap: Record<string, string> = { "Prime Speaker": "PS", "Guest Speaker": "GS", "Mentor kiến tạo": "ME", "Phó BTC": "PB", "Đại sứ": "DS", "Cố vấn": "CV", "Giám đốc": "GD", "Nhà tài trợ": "NT" };
+      const prefix = prefixMap[values.role] || values.role.substring(0, 2).toUpperCase();
+      const existingIds = (existingRoleGuests || []).map(g => g.id).filter(id => id.startsWith(prefix));
+      let maxNum = 0;
+      existingIds.forEach(id => {
+        const numPart = parseInt(id.substring(prefix.length), 10);
+        if (!isNaN(numPart) && numPart > maxNum) {
+          maxNum = numPart;
+        }
+      });
+      const newId = `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
+
+      const { sponsorship_amount, paid_amount, ...guestData } = values;
+      const newGuest = { ...guestData, id: newId, slug: generateGuestSlug(values.name) };
+
+      const { error: guestError } = await supabase.from('vip_guests').insert(newGuest);
+      if (guestError) throw guestError;
+
+      if (sponsorship_amount !== undefined && sponsorship_amount >= 0) {
+        const { error: revenueError } = await supabase.from('vip_guest_revenue').insert({ guest_id: newId, sponsorship: sponsorship_amount });
+        if (revenueError) throw revenueError;
+      }
+
+      if (paid_amount !== undefined && paid_amount > 0) {
+        const { error: paymentError } = await supabase.from('vip_payments').insert({ guest_id: newId, amount: paid_amount });
+        if (paymentError) throw paymentError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+      showSuccess("Thêm khách chức vụ thành công!");
+    },
+    onError: (error: Error) => showError(`Lỗi: ${error.message}`),
+  });
+
+  const addRegularGuestMutation = useMutation({
+    mutationFn: async (values: GuestFormValues) => {
+      const { data: existingRoleGuests } = await supabase.from('guests').select('id').eq('role', values.role);
+      const prefixMap: Record<string, string> = { "Khách phổ thông": "KPT", "VIP": "VIP", "V-Vip": "VVP", "Super Vip": "SVP", "Vé trải nghiệm": "VTN" };
+      const prefix = prefixMap[values.role] || values.role.substring(0, 2).toUpperCase();
+      const existingIds = (existingRoleGuests || []).map(g => g.id).filter(id => id.startsWith(prefix));
+      let maxNum = 0;
+      existingIds.forEach(id => {
+        const numPart = parseInt(id.substring(prefix.length), 10);
+        if (!isNaN(numPart) && numPart > maxNum) {
+          maxNum = numPart;
+        }
+      });
+      const newId = `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
+
+      const { sponsorship_amount, paid_amount, payment_source, ...guestData } = values;
+      const newGuest = { ...guestData, id: newId, slug: generateGuestSlug(values.name) };
+
+      const { error: guestError } = await supabase.from('guests').insert(newGuest);
+      if (guestError) throw guestError;
+
+      if (sponsorship_amount !== undefined || payment_source) {
+        const { error: revenueError } = await supabase.from('guest_revenue').insert({ guest_id: newId, sponsorship: sponsorship_amount || 0, payment_source: payment_source || 'Trống' });
+        if (revenueError) throw revenueError;
+      }
+
+      if (paid_amount !== undefined && paid_amount > 0) {
+        const { error: paymentError } = await supabase.from('guest_payments').insert({ guest_id: newId, amount: paid_amount });
+        if (paymentError) throw paymentError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+      showSuccess("Thêm khách mời thành công!");
+    },
+    onError: (error: Error) => showError(`Lỗi: ${error.message}`),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (guest: CombinedGuestRevenue) => {
+      const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
+      const { error } = await supabase.from(tableName).delete().eq('id', guest.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+      showSuccess("Xóa khách mời thành công!");
+    },
+    onError: (error: Error) => showError(`Lỗi: ${error.message}`),
+  });
+
+  const znsMutation = useMutation({
+    mutationFn: async ({ guest, sent }: { guest: CombinedGuestRevenue, sent: boolean }) => {
+      const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
+      const { error } = await supabase.from(tableName).update({ zns_sent: sent }).eq('id', guest.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+      showSuccess("Cập nhật trạng thái ZNS thành công!");
+    },
+    onError: (error: Error) => showError(`Lỗi: ${error.message}`),
+  });
+
+  const handleVipSubmit = (values: VipGuestFormValues) => {
+    addVipGuestMutation.mutate(values);
+  };
+  const handleRegularSubmit = (values: GuestFormValues) => {
+    addRegularGuestMutation.mutate(values);
+  };
+  const handleDelete = (guestId: string) => {
+    const guest = combinedGuests.find(g => g.id === guestId);
+    if (guest) {
+      deleteMutation.mutate(guest);
+    }
+  };
+  const handleZnsChange = (guest: CombinedGuestRevenue, sent: boolean) => {
+    znsMutation.mutate({ guest, sent });
+  };
 
   const handleUpsale = (guest: CombinedGuestRevenue) => {
     if (guest.type === 'Khách mời') {
