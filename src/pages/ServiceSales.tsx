@@ -25,7 +25,6 @@ import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import { GuestRevenue } from "@/types/guest-revenue";
 import { VipGuest } from "@/types/vip-guest";
 import { PageHeader } from "@/components/PageHeader";
-import { PaginationControls } from "@/components/PaginationControls";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -53,7 +52,6 @@ const ServiceSalesPage = () => {
   
   const guestServices = data?.services || [];
   const totalServices = data?.count || 0;
-  const totalPages = Math.ceil(totalServices / ITEMS_PER_PAGE);
 
   const { data: services = [] } = useQuery<Service[]>({
     queryKey: ['services'],
@@ -220,8 +218,6 @@ const ServiceSalesPage = () => {
           onConvertTrial={handleConvertTrial}
         />
       )}
-
-      <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       <ServiceSettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       <AddGuestServiceDialog open={isAddOpen} onOpenChange={setIsAddOpen} />

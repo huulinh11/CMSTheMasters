@@ -14,7 +14,6 @@ import { ReferralDetailsDialog } from "@/components/referrals/ReferralDetailsDia
 import { cn } from "@/lib/utils";
 import { ReferralFilterSheet } from "@/components/referrals/ReferralFilterSheet";
 import ReferralStats from "@/components/referrals/ReferralStats";
-import { PaginationControls } from "@/components/PaginationControls";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -42,7 +41,6 @@ const ReferralsPage = () => {
 
   const summaryData = data?.summaries || [];
   const totalReferrers = data?.count || 0;
-  const totalPages = Math.ceil(totalReferrers / ITEMS_PER_PAGE);
 
   const { data: allSummaryDataForRoles = [] } = useQuery<ReferrerSummary[]>({
     queryKey: ['all_referrer_summary_for_roles'],
@@ -190,7 +188,6 @@ const ReferralsPage = () => {
           </Table>
         </div>
       )}
-      <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       <ReferralDetailsDialog referrer={selectedReferrer} open={!!selectedReferrer} onOpenChange={() => setSelectedReferrer(null)} />
     </div>
   );

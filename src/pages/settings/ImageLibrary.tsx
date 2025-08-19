@@ -18,7 +18,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { SimplePagination } from "@/components/SimplePagination";
 
 const BUCKET_NAME = 'avatars';
 const FOLDER_NAME = 'image-library';
@@ -191,8 +190,6 @@ const ImageLibrary = () => {
           ))}
         </div>
       )}
-
-      <SimplePagination currentPage={currentPage} onPageChange={setCurrentPage} hasNextPage={hasNextPage} />
 
       <AlertDialog open={!!deletingFile} onOpenChange={(open) => !open && setDeletingFile(null)}>
         <AlertDialogContent>

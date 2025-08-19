@@ -13,6 +13,7 @@ import { RoleConfiguration } from "@/types/role-configuration";
 import { generateGuestSlug } from "@/lib/slug";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
+import { PaymentSource } from "@/types/guest-revenue";
 import { AdvancedGuestFilter, AdvancedFilters } from "@/components/guests/AdvancedGuestFilter";
 import { PageHeader } from "@/components/PageHeader";
 import { ImportExportActions } from "@/components/guests/ImportExportActions";
@@ -29,7 +30,7 @@ import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import EditGuestRevenueDialog from "@/components/Revenue/EditGuestRevenueDialog";
 import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PaginationControls } from "@/components/PaginationControls";
+import { removeAccents } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
@@ -37,8 +38,6 @@ export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | 
   image_url?: string | null;
   zns_sent?: boolean;
 };
-
-const ITEMS_PER_PAGE = 20;
 
 const GuestsPage = () => {
   const queryClient = useQueryClient();
@@ -58,7 +57,6 @@ const GuestsPage = () => {
   const [payingGuest, setPayingGuest] = useState<CombinedGuestRevenue | null>(null);
   const [historyGuest, setHistoryGuest] = useState<CombinedGuestRevenue | null>(null);
   const [upsaleGuest, setUpsaleGuest] = useState<GuestRevenue | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
 
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
   const canDelete = useMemo(() => !!(userRole && ['Admin', 'Quản lý'].includes(userRole)), [userRole]);
@@ -93,37 +91,43 @@ const GuestsPage = () => {
     }
   });
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['combined_guests', currentPage, searchTerm, roleFilter, typeFilter, advancedFilters],
+  const { data: vipData, isLoading: isLoadingVip } = useQuery({
+    queryKey: ['vip_revenue'],
     queryFn: async () => {
-      const rpcParams = {
-        limit_val: ITEMS_PER_PAGE,
-        offset_val: (currentPage - 1) * ITEMS_PER_PAGE,
-        search_term: searchTerm,
-        role_filter: roleFilter,
-        type_filter: typeFilter,
-        phone_filter: advancedFilters.phone || 'all',
-        sponsorship_filter: advancedFilters.sponsorship || 'all',
-        secondary_info_filter: advancedFilters.secondaryInfo || 'all',
-        materials_filter: advancedFilters.materials || 'all',
-        payment_status_filter: advancedFilters.paymentStatus || 'all',
-        payment_source_filter: advancedFilters.paymentSource || 'all',
-        zns_filter: advancedFilters.zns || 'all',
-      };
-
-      const { data, error } = await supabase.rpc('get_combined_guests', rpcParams);
+      const { data, error } = await supabase.rpc('get_vip_guest_revenue_details');
       if (error) throw new Error(error.message);
-      
-      const { data: countData, error: countError } = await supabase.rpc('get_combined_guests_count', rpcParams);
-      if (countError) throw new Error(countError.message);
-
-      return { guests: data || [], count: countData || 0 };
+      return data || [];
     }
   });
 
-  const guests = data?.guests || [];
-  const totalGuests = data?.count || 0;
-  const totalPages = Math.ceil(totalGuests / ITEMS_PER_PAGE);
+  const { data: regularData, isLoading: isLoadingRegular } = useQuery({
+    queryKey: ['guest_revenue_details'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_guest_revenue_details');
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+
+  const combinedGuests = useMemo(() => {
+    const vips = (vipData || []).map((g: any) => ({ ...g, type: 'Chức vụ' as const }));
+    const regulars = (regularData || []).map((g: any) => ({ ...g, type: 'Khách mời' as const }));
+    return [...vips, ...regulars];
+  }, [vipData, regularData]);
+
+  const filteredGuests = useMemo(() => {
+    return combinedGuests.filter(guest => {
+      const searchMatch = searchTerm === '' ||
+        removeAccents(guest.name.toLowerCase()).includes(removeAccents(searchTerm.toLowerCase())) ||
+        (guest.phone && guest.phone.includes(searchTerm)) ||
+        (guest.type === 'Chức vụ' && guest.secondaryInfo && removeAccents(guest.secondaryInfo.toLowerCase()).includes(removeAccents(searchTerm.toLowerCase())));
+      
+      const typeMatch = typeFilter === 'all' || guest.type === typeFilter;
+      const roleMatch = roleFilter === 'all' || guest.role === roleFilter;
+
+      return searchMatch && typeMatch && roleMatch;
+    });
+  }, [combinedGuests, searchTerm, typeFilter, roleFilter]);
 
   const handleVipSubmit = (values: VipGuestFormValues) => { /* ... */ };
   const handleRegularSubmit = (values: GuestFormValues) => { /* ... */ };
@@ -135,6 +139,8 @@ const GuestsPage = () => {
       setUpsaleGuest(guest as GuestRevenue);
     }
   };
+
+  const isLoading = isLoadingVip || isLoadingRegular;
 
   return (
     <div className="p-4 md:p-6">
@@ -150,11 +156,11 @@ const GuestsPage = () => {
           <Input
             placeholder="Tìm theo tên, SĐT, thông tin phụ..."
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-grow"
           />
           <div className="flex gap-2">
-            <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setCurrentPage(1); }}>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-full md:w-[200px]"><SelectValue placeholder="Lọc theo vai trò" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả vai trò</SelectItem>
@@ -163,14 +169,13 @@ const GuestsPage = () => {
                 ))}
               </SelectContent>
             </Select>
-            <AdvancedGuestFilter filters={advancedFilters} onFilterChange={(field, value) => { setAdvancedFilters(prev => ({ ...prev, [field]: value })); setCurrentPage(1); }} onClearFilters={() => { setAdvancedFilters({}); setCurrentPage(1); }} />
+            <AdvancedGuestFilter filters={advancedFilters} onFilterChange={(field, value) => setAdvancedFilters(prev => ({ ...prev, [field]: value }))} onClearFilters={() => setAdvancedFilters({})} />
           </div>
         </div>
         <Tabs
           value={typeFilter}
           onValueChange={(value) => {
             setTypeFilter(value);
-            setCurrentPage(1);
             setRoleFilter('all');
           }}
         >
@@ -180,15 +185,14 @@ const GuestsPage = () => {
             <TabsTrigger value="Khách mời" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Khách mời</TabsTrigger>
           </TabsList>
         </Tabs>
-        <h2 className="text-xl font-bold text-slate-800">Tổng: {totalGuests}</h2>
+        <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
         {isLoading ? (
           <Skeleton className="h-96 w-full" />
         ) : isMobile ? (
-          <CombinedGuestCards guests={guests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
+          <CombinedGuestCards guests={filteredGuests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
         ) : (
-          <CombinedGuestTable guests={guests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onSelectAll={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
+          <CombinedGuestTable guests={filteredGuests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onSelectAll={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
         )}
-        <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
 
       <AddCombinedGuestDialog
