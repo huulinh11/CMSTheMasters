@@ -17,6 +17,7 @@ interface TaskChecklistDialogProps {
   onOpenChange: (open: boolean) => void;
   onTaskChange: (payload: { guestId: string; taskName: string; isCompleted: boolean }) => void;
   tasksByRole: Record<string, string[]>;
+  onViewDetails: (guest: TaskGuest) => void;
 }
 
 const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState, tasksByRole }: { guest: TaskGuest, onTaskChange: TaskChecklistDialogProps['onTaskChange'], setHistoryModalState: (state: { guestId: string; taskName: string; } | null) => void, tasksByRole: Record<string, string[]> }) => {
@@ -89,11 +90,15 @@ const ChecklistContent = ({ guest, onTaskChange, setHistoryModalState, tasksByRo
   );
 };
 
-export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange, tasksByRole }: TaskChecklistDialogProps) => {
+export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange, tasksByRole, onViewDetails }: TaskChecklistDialogProps) => {
   const [historyModalState, setHistoryModalState] = useState<{ guestId: string; taskName: string } | null>(null);
   const isMobile = useIsMobile();
 
   if (!guest) return null;
+
+  const handleViewDetailsClick = () => {
+    onViewDetails(guest);
+  };
 
   if (isMobile) {
     return (
@@ -102,7 +107,11 @@ export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange, t
           <DrawerContent className="flex flex-col max-h-[90vh]">
             <DrawerHeader className="flex justify-between items-center p-4 border-b flex-shrink-0">
               <div className="flex-1 min-w-0 flex justify-between items-baseline">
-                <DrawerTitle className="truncate">{guest.name}</DrawerTitle>
+                <DrawerTitle className="truncate">
+                  <button onClick={handleViewDetailsClick} className="hover:underline text-left">
+                    {guest.name}
+                  </button>
+                </DrawerTitle>
                 <span className="text-sm font-medium text-slate-500 ml-4">{guest.id}</span>
               </div>
               <DrawerClose asChild>
@@ -132,7 +141,9 @@ export const TaskChecklistDialog = ({ guest, open, onOpenChange, onTaskChange, t
         <DialogContent className="max-w-md flex flex-col max-h-[80vh]">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex justify-between items-baseline">
-              <span>{guest.name}</span>
+              <button onClick={handleViewDetailsClick} className="hover:underline text-left">
+                {guest.name}
+              </button>
               <span className="text-sm font-medium text-slate-500">{guest.id}</span>
             </DialogTitle>
           </DialogHeader>

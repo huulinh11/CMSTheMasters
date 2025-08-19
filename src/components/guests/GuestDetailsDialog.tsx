@@ -315,6 +315,11 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
     onEdit(guestToEdit);
   };
 
+  const handleViewDetailsFromTaskDialog = () => {
+    // We are already viewing details, so just close the task dialog.
+    setIsTasksDialogOpen(false);
+  };
+
   if (isLoading || isLoadingPermissions) {
     return <div className="p-4 md:p-6 space-y-4"><Skeleton className="h-[80vh] w-full" /></div>;
   }
@@ -336,7 +341,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
       if (revenue.is_upsaled) {
           if (upsaleHistory && upsaleHistory.length > 0) {
               const firstUpsale = (upsaleHistory as any[]).sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
-              if (firstUpsale.from_payment_source === 'Chỉ tiêu') {
+              if (firstUpsale && firstUpsale.from_payment_source === 'Chỉ tiêu') {
                   effectiveSponsorship = originalSponsorship - firstUpsale.from_sponsorship;
               }
           }
@@ -593,6 +598,7 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
         guest={{ ...guest, tasks }}
         onTaskChange={handleTaskChange}
         tasksByRole={tasksByRole}
+        onViewDetails={handleViewDetailsFromTaskDialog}
       />
       <EditProfileDialog
         open={isProfileDialogOpen}

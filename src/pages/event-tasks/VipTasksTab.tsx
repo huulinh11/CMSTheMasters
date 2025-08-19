@@ -185,6 +185,11 @@ export const VipTasksTab = () => {
     setViewingGuestId(guest.id);
   };
 
+  const handleViewDetailsFromChecklist = (guest: TaskGuest) => {
+    setDialogGuest(null);
+    setViewingGuestId(guest.id);
+  };
+
   const handleEditFromDetails = (guestToEdit: any) => {
     setViewingGuestId(null);
     navigate(`/guests?view_vip=${guestToEdit.id}`);
@@ -266,6 +271,7 @@ export const VipTasksTab = () => {
         onOpenChange={(isOpen) => !isOpen && setDialogGuest(null)}
         onTaskChange={handleTaskChange}
         tasksByRole={tasksByRole}
+        onViewDetails={handleViewDetailsFromChecklist}
       />
       <GuestDetailsDialog
         guestId={viewingGuestId}
