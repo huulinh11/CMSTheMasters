@@ -451,13 +451,11 @@ const GuestDetailsContent = ({ guestId, guestType, onEdit, onDelete, roleConfigs
                       <Button size="icon" variant="outline" onClick={() => handleCopyLink(`/checklist/${guest.id}`)}><Copy className="h-4 w-4" /></Button>
                     </div>
                   </div>
-                  {guest.role !== 'Vé trải nghiệm' && (
-                    <div className="pt-4">
-                      <Button className="w-full" onClick={() => setIsQrCodeDialogOpen(true)}>
-                        <QrCode className="mr-2 h-4 w-4" /> Xem tất cả mã QR
-                      </Button>
-                    </div>
-                  )}
+                  <div className="pt-4">
+                    <Button className="w-full" onClick={() => setIsQrCodeDialogOpen(true)}>
+                      <QrCode className="mr-2 h-4 w-4" /> Xem tất cả mã QR
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
