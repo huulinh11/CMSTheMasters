@@ -47,9 +47,9 @@ const PublicProfile = () => {
     }
   });
 
-  const { contentBlocks } = useMemo(() => {
+  const contentBlocks = useMemo(() => {
     if (!guest) {
-      return { contentBlocks: [], activeTemplate: null };
+      return [];
     }
 
     // 1. Determine active template
@@ -110,11 +110,11 @@ const PublicProfile = () => {
         return templateBlock;
       });
 
-      return { contentBlocks: mergedContent, activeTemplate: template };
+      return mergedContent;
     }
 
     // 3. No template, use guest content directly
-    return { contentBlocks: guest.profile_content || [], activeTemplate: null };
+    return guest.profile_content || [];
   }, [guest, templates]);
 
   useEffect(() => {
