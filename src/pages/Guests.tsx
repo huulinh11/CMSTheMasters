@@ -114,7 +114,8 @@ const GuestsPage = () => {
       const { data, error } = await supabase.rpc('get_combined_guests', rpcParams);
       if (error) throw new Error(error.message);
       
-      const { data: countData, error: countError } = await supabase.rpc('get_combined_guests_count', rpcParams);
+      const { limit_val, offset_val, ...countRpcParams } = rpcParams;
+      const { data: countData, error: countError } = await supabase.rpc('get_combined_guests_count', countRpcParams);
       if (countError) throw new Error(countError.message);
 
       return { guests: data || [], count: countData || 0 };
