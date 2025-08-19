@@ -223,6 +223,7 @@ const PublicProfile = () => {
                                   fontStyle: item.fontStyle || 'normal',
                                   fontFamily: item.fontFamily || 'sans-serif',
                                   lineHeight: 1.2,
+                                  textTransform: item.isCaps ? 'uppercase' : 'none',
                                 }}
                               >
                                 {item.isGuestName ? guest.name : (item.isGuestRole ? guest.role : item.text)}

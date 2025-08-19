@@ -23,6 +23,7 @@ export const textItemSchema = z.object({
   text: z.string(),
   isGuestName: z.boolean().optional().default(false),
   isGuestRole: z.boolean().optional().default(false),
+  isCaps: z.boolean().optional().default(false),
   fontSize: z.coerce.number().optional().default(32),
   color: z.string().optional().default('#FFFFFF'),
   fontWeight: z.enum(['normal', 'bold']).optional().default('bold'),

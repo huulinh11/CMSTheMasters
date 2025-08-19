@@ -333,7 +333,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
                                 {block.items.map(item => (
                                   <div key={item.id} style={{ marginTop: `${item.marginTop}px`, marginRight: `${item.marginRight}px`, marginBottom: `${item.marginBottom}px`, marginLeft: `${item.marginLeft}px` }}>
                                     {item.type === 'text' ? (
-                                      <p className="text-sm text-center break-words" style={{ color: item.color, fontSize: `${item.fontSize}px`, fontWeight: item.fontWeight, fontStyle: item.fontStyle, fontFamily: item.fontFamily }}>
+                                      <p className="text-sm text-center break-words" style={{ color: item.color, fontSize: `${item.fontSize}px`, fontWeight: item.fontWeight, fontStyle: item.fontStyle, fontFamily: item.fontFamily, textTransform: item.isCaps ? 'uppercase' : 'none' }}>
                                         {item.isGuestName ? guest.name : (item.isGuestRole ? guest.role : item.text)}
                                       </p>
                                     ) : (
@@ -389,6 +389,10 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
                                       {item.type === 'text' ? (
                                         <div className="space-y-2">
                                           <RadioGroup value={item.isGuestName ? 'guestName' : item.isGuestRole ? 'guestRole' : 'manual'} onValueChange={(value) => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, isGuestName: value === 'guestName', isGuestRole: value === 'guestRole'} : i))} className="flex gap-4 flex-wrap" disabled={isTemplateMode}><Label htmlFor={`text-manual-${item.id}`} className="flex items-center space-x-2 cursor-pointer"><RadioGroupItem value="manual" id={`text-manual-${item.id}`} /><span>Text nhập</span></Label><Label htmlFor={`text-name-${item.id}`} className="flex items-center space-x-2 cursor-pointer"><RadioGroupItem value="guestName" id={`text-name-${item.id}`} /><span>Tên khách mời</span></Label><Label htmlFor={`text-role-${item.id}`} className="flex items-center space-x-2 cursor-pointer"><RadioGroupItem value="guestRole" id={`text-role-${item.id}`} /><span>Vai trò</span></Label></RadioGroup>
+                                          <div className="flex items-center space-x-2">
+                                            <Checkbox id={`caps-lock-profile-${item.id}`} checked={item.isCaps} onCheckedChange={(checked) => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, isCaps: !!checked} : i))} disabled={isTemplateMode} />
+                                            <Label htmlFor={`caps-lock-profile-${item.id}`} className="text-sm font-medium">Caps Lock</Label>
+                                          </div>
                                           {!item.isGuestName && !item.isGuestRole && <Textarea placeholder="Nội dung text" value={item.text} onChange={e => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, text: e.target.value} : i))} rows={2} />}
                                           <div className="grid grid-cols-2 gap-2">
                                             <div><Label className="text-xs">Font</Label><Select value={item.fontFamily || 'sans-serif'} onValueChange={value => handleUpdateBlock(block.id, 'items', block.items.map(i => i.id === item.id ? {...i, fontFamily: value} : i))} disabled={isTemplateMode}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fontFamilies.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent></Select></div>
@@ -426,7 +430,7 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
                                 </div>
                               </SortableContext>
                               <div className="flex gap-2 mt-2">
-                                <Button type="button" variant="outline" size="sm" onClick={() => handleUpdateBlock(block.id, 'items', [...block.items, { id: uuidv4(), type: 'text', text: 'Nội dung mới', isGuestName: false, fontSize: 32, color: '#FFFFFF', fontWeight: 'bold', fontStyle: 'normal', fontFamily: 'sans-serif', marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 }])} disabled={isTemplateMode}><PlusCircle className="mr-2 h-4 w-4" /> Thêm Text</Button>
+                                <Button type="button" variant="outline" size="sm" onClick={() => handleUpdateBlock(block.id, 'items', [...block.items, { id: uuidv4(), type: 'text', text: 'Nội dung mới', isGuestName: false, isGuestRole: false, isCaps: false, fontSize: 32, color: '#FFFFFF', fontWeight: 'bold', fontStyle: 'normal', fontFamily: 'sans-serif', marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 }])} disabled={isTemplateMode}><PlusCircle className="mr-2 h-4 w-4" /> Thêm Text</Button>
                                 <Button type="button" variant="outline" size="sm" onClick={() => handleUpdateBlock(block.id, 'items', [...block.items, { id: uuidv4(), type: 'image', imageUrl: '', imageSourceType: 'url', width: 100, marginTop: 10, marginRight: 0, marginBottom: 0, marginLeft: 0 }])} disabled={isTemplateMode}><ImageIcon className="mr-2 h-4 w-4" /> Thêm Ảnh</Button>
                               </div>
                             </>
