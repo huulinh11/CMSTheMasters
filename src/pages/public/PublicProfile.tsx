@@ -161,11 +161,22 @@ const PublicProfile = () => {
                 case 'video':
                   return <VideoBlockPlayer key={block.id} block={block} onVideoLoad={handleVideoLoad} />;
                 case 'text':
+                  const textBlockStyle: React.CSSProperties = {
+                    backgroundImage: `url(${block.backgroundImageUrl})`,
+                    width: block.fixedWidth ? `${block.fixedWidth}px` : '100%',
+                    maxWidth: '100%',
+                  };
+                  if (block.fixedHeight) {
+                    textBlockStyle.height = `${block.fixedHeight}px`;
+                  } else {
+                    textBlockStyle.minHeight = '16rem';
+                  }
+
                   return (
-                    <div key={block.id} className="w-full">
+                    <div key={block.id} className="w-full flex justify-center">
                       <div
-                        className="w-full min-h-[16rem] flex flex-col items-center justify-center p-4 bg-cover bg-center"
-                        style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}
+                        className="flex flex-col items-center justify-center p-4 bg-cover bg-center"
+                        style={textBlockStyle}
                       >
                         {(block as TextBlock).items.map(item => (
                           <div 

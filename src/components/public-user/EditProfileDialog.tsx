@@ -342,6 +342,16 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
                                 onValueChange={url => handleUpdateBlock(block.id, 'backgroundImageUrl', url)}
                                 onUploadingChange={isUp => handleUploadingState(`block-bg-${block.id}`, isUp)}
                               />
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 space-y-1">
+                                  <Label htmlFor={`fixedWidth-${block.id}`} className="text-xs">Rộng (px)</Label>
+                                  <Input id={`fixedWidth-${block.id}`} type="number" placeholder="Tự động" value={block.fixedWidth || ''} onChange={e => handleUpdateBlock(block.id, 'fixedWidth', e.target.value ? Number(e.target.value) : undefined)} disabled={isTemplateMode} />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <Label htmlFor={`fixedHeight-${block.id}`} className="text-xs">Cao (px)</Label>
+                                  <Input id={`fixedHeight-${block.id}`} type="number" placeholder="Tự động" value={block.fixedHeight || ''} onChange={e => handleUpdateBlock(block.id, 'fixedHeight', e.target.value ? Number(e.target.value) : undefined)} disabled={isTemplateMode} />
+                                </div>
+                              </div>
                               <Separator className="my-3" />
                               <Label className="font-medium text-sm">Nội dung</Label>
                               <SortableContext items={block.items.map(t => `item_${block.id}_${t.id}`)} strategy={verticalListSortingStrategy}>
