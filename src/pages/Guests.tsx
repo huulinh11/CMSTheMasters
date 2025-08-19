@@ -32,12 +32,15 @@ import EditSponsorshipDialog from "@/components/Revenue/EditSponsorshipDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { removeAccents } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTablePagination } from "@/components/DataTablePagination";
 
 export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
   has_history: boolean;
   image_url?: string | null;
   zns_sent?: boolean;
 };
+
+const ITEMS_PER_PAGE = 10;
 
 const GuestsPage = () => {
   const queryClient = useQueryClient();
@@ -57,6 +60,7 @@ const GuestsPage = () => {
   const [payingGuest, setPayingGuest] = useState<CombinedGuestRevenue | null>(null);
   const [historyGuest, setHistoryGuest] = useState<CombinedGuestRevenue | null>(null);
   const [upsaleGuest, setUpsaleGuest] = useState<GuestRevenue | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
   const canDelete = useMemo(() => !!(userRole && ['Admin', 'Quản lý'].includes(userRole)), [userRole]);
@@ -129,6 +133,15 @@ const GuestsPage = () => {
     });
   }, [combinedGuests, searchTerm, typeFilter, roleFilter]);
 
+  const totalPages = Math.ceil(filteredGuests.length / ITEMS_PER_PAGE);
+  const paginatedGuests = useMemo(() => {
+    return filteredGuests.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  }, [filteredGuests, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter, roleFilter, advancedFilters]);
+
   const handleVipSubmit = (values: VipGuestFormValues) => { /* ... */ };
   const handleRegularSubmit = (values: GuestFormValues) => { /* ... */ };
   const handleDelete = async (guestId: string) => { /* ... */ };
@@ -146,7 +159,7 @@ const GuestsPage = () => {
     <div className="p-4 md:p-6">
       <PageHeader title="Quản lý khách mời">
         <div className="flex items-center gap-2">
-          {!isMobile && <ImportExportActions guestsToExport={[]} />}
+          {!isMobile && <ImportExportActions guestsToExport={filteredGuests} />}
           <Button onClick={() => setIsAddDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
         </div>
       </PageHeader>
@@ -189,10 +202,11 @@ const GuestsPage = () => {
         {isLoading ? (
           <Skeleton className="h-96 w-full" />
         ) : isMobile ? (
-          <CombinedGuestCards guests={filteredGuests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
+          <CombinedGuestCards guests={paginatedGuests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
         ) : (
-          <CombinedGuestTable guests={filteredGuests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onSelectAll={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
+          <CombinedGuestTable guests={paginatedGuests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onSelectAll={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
         )}
+        <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
 
       <AddCombinedGuestDialog

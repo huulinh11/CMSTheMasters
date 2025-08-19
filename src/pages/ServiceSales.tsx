@@ -25,8 +25,9 @@ import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import { GuestRevenue } from "@/types/guest-revenue";
 import { VipGuest } from "@/types/vip-guest";
 import { PageHeader } from "@/components/PageHeader";
+import { DataTablePagination } from "@/components/DataTablePagination";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -39,20 +40,15 @@ const ServiceSalesPage = () => {
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data, isLoading: isLoadingGuestServices } = useQuery({
-    queryKey: ['guest_service_details', currentPage],
+  const { data: guestServices = [], isLoading: isLoadingGuestServices } = useQuery<GuestService[]>({
+    queryKey: ['guest_service_details'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_guest_service_details', { limit_val: ITEMS_PER_PAGE, offset_val: (currentPage - 1) * ITEMS_PER_PAGE });
+      const { data, error } = await supabase.rpc('get_guest_service_details');
       if (error) throw error;
-      const { data: countData, error: countError } = await supabase.rpc('get_guest_service_details_count');
-      if (countError) throw countError;
-      return { services: data || [], count: countData || 0 };
+      return data || [];
     }
   });
   
-  const guestServices = data?.services || [];
-  const totalServices = data?.count || 0;
-
   const { data: services = [] } = useQuery<Service[]>({
     queryKey: ['services'],
     queryFn: async () => {
@@ -148,6 +144,15 @@ const ServiceSalesPage = () => {
     });
   }, [guestServiceSummaries, searchTerm, serviceFilter]);
 
+  const totalPages = Math.ceil(filteredSummaries.length / ITEMS_PER_PAGE);
+  const paginatedSummaries = useMemo(() => {
+    return filteredSummaries.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  }, [filteredSummaries, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, serviceFilter]);
+
   const stats = useMemo(() => {
     return guestServices.reduce((acc, item) => {
       acc.totalRevenue += item.price;
@@ -177,7 +182,7 @@ const ServiceSalesPage = () => {
       <ServiceStats totalRevenue={stats.totalRevenue} totalPaid={stats.totalPaid} totalUnpaid={totalUnpaid} />
 
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-slate-800">Tổng: {totalServices}</h2>
+        <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredSummaries.length}</h2>
         <Button onClick={() => setIsAddOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
       </div>
 
@@ -205,19 +210,20 @@ const ServiceSalesPage = () => {
         <Skeleton className="h-96 w-full" />
       ) : isMobile ? (
         <GuestServiceSummaryCards
-          summaries={filteredSummaries}
+          summaries={paginatedSummaries}
           onViewDetails={setViewingGuestSummary}
           onHistory={handleHistory}
           onConvertTrial={handleConvertTrial}
         />
       ) : (
         <GuestServiceSummaryTable
-          summaries={filteredSummaries}
+          summaries={paginatedSummaries}
           onViewDetails={setViewingGuestSummary}
           onHistory={handleHistory}
           onConvertTrial={handleConvertTrial}
         />
       )}
+      <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       <ServiceSettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       <AddGuestServiceDialog open={isAddOpen} onOpenChange={setIsAddOpen} />

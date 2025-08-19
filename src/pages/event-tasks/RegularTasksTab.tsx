@@ -25,6 +25,9 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { TaskChecklistDialog } from "@/components/event-tasks/TaskChecklistDialog";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { GuestDetailsDialog } from "@/components/guests/GuestDetailsDialog";
+import { DataTablePagination } from "@/components/DataTablePagination";
+
+const ITEMS_PER_PAGE = 10;
 
 export const RegularTasksTab = () => {
   const queryClient = useQueryClient();
@@ -39,6 +42,7 @@ export const RegularTasksTab = () => {
   const [viewingGuestId, setViewingGuestId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { allTasks, tasksByRole, isLoading: isLoadingPermissions } = useRolePermissions();
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<Guest[]>({
     queryKey: ['guests'],
@@ -174,6 +178,15 @@ export const RegularTasksTab = () => {
     });
   }, [combinedGuests, searchTerm, roleFilters, advancedFilters]);
 
+  const totalPages = Math.ceil(filteredGuests.length / ITEMS_PER_PAGE);
+  const paginatedGuests = useMemo(() => {
+    return filteredGuests.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  }, [filteredGuests, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilters, advancedFilters]);
+
   const isLoading = isLoadingGuests || isLoadingTasks || isLoadingPermissions;
 
   const handleFilterChange = (field: string, value: string) => {
@@ -247,7 +260,7 @@ export const RegularTasksTab = () => {
         <Skeleton className="h-96 w-full" />
       ) : isMobile ? (
         <EventTasksCards
-          guests={filteredGuests}
+          guests={paginatedGuests}
           onViewDetails={handleViewDetails}
           onImageClick={setImagePreviewGuest}
           onOpenChecklist={setDialogGuest}
@@ -255,13 +268,14 @@ export const RegularTasksTab = () => {
         />
       ) : (
         <EventTasksTable
-          guests={filteredGuests}
+          guests={paginatedGuests}
           onViewDetails={handleViewDetails}
           onImageClick={setImagePreviewGuest}
           onOpenChecklist={setDialogGuest}
           tasksByRole={tasksByRole}
         />
       )}
+      <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       <ImagePreviewDialog
         guest={imagePreviewGuest}
         open={!!imagePreviewGuest}

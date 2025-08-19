@@ -20,8 +20,9 @@ import { EditInformationDialog } from "@/components/information/EditInformationD
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
+import { DataTablePagination } from "@/components/DataTablePagination";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 const Information = () => {
   const queryClient = useQueryClient();
@@ -94,6 +95,7 @@ const Information = () => {
   const isLoading = isLoadingGuests || isLoadingRoles;
   const guests = data?.guests || [];
   const totalGuests = data?.count || 0;
+  const totalPages = Math.ceil(totalGuests / ITEMS_PER_PAGE);
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -142,6 +144,8 @@ const Information = () => {
       ) : (
         <InformationTable guests={guests} onEdit={setEditingGuest} onView={handleViewDetails} />
       )}
+
+      <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       <EditInformationDialog
         guest={editingGuest}

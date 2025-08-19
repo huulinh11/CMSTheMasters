@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -22,6 +22,9 @@ import { ChevronDown } from "lucide-react";
 import { RoleConfiguration } from "@/types/role-configuration";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { BenefitItem } from "@/types/benefit-configuration";
+import { DataTablePagination } from "@/components/DataTablePagination";
+
+const ITEMS_PER_PAGE = 10;
 
 const regularBenefitFieldGroups = [
   [
@@ -45,6 +48,7 @@ export default function RegularMediaBenefitsTab() {
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, string>>({});
   const [editingGuest, setEditingGuest] = useState<MediaRegularGuest | null>(null);
   const { benefitsByRole, allBenefits, isLoading: isLoadingPermissions } = useRolePermissions();
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<Guest[]>({
     queryKey: ['guests'],
@@ -130,6 +134,15 @@ export default function RegularMediaBenefitsTab() {
       return searchMatch && roleMatch && advancedMatch;
     });
   }, [combinedGuests, searchTerm, roleFilters, advancedFilters]);
+
+  const totalPages = Math.ceil(filteredGuests.length / ITEMS_PER_PAGE);
+  const paginatedGuests = useMemo(() => {
+    return filteredGuests.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  }, [filteredGuests, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilters, advancedFilters]);
 
   const mutation = useMutation({
     mutationFn: async ({ guestId, benefits }: { guestId: string, benefits: Partial<MediaBenefit> }) => {
@@ -233,7 +246,7 @@ export default function RegularMediaBenefitsTab() {
         <Skeleton className="h-96 w-full" />
       ) : isMobile ? (
         <RegularMediaBenefitsCards
-          guests={filteredGuests}
+          guests={paginatedGuests}
           onUpdateBenefit={handleUpdateBenefit}
           onEdit={setEditingGuest}
           benefitsByRole={benefitsByRole}
@@ -241,12 +254,13 @@ export default function RegularMediaBenefitsTab() {
         />
       ) : (
         <RegularMediaBenefitsTable
-          guests={filteredGuests}
+          guests={paginatedGuests}
           onUpdateBenefit={handleUpdateBenefit}
           onEdit={setEditingGuest}
           benefitsToDisplay={benefitsToDisplay}
         />
       )}
+      <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       <EditAllMediaBenefitsDialog
         guest={editingGuest}
         open={!!editingGuest}

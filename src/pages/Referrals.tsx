@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ReferrerSummary } from "@/types/referrals";
@@ -14,8 +14,9 @@ import { ReferralDetailsDialog } from "@/components/referrals/ReferralDetailsDia
 import { cn } from "@/lib/utils";
 import { ReferralFilterSheet } from "@/components/referrals/ReferralFilterSheet";
 import ReferralStats from "@/components/referrals/ReferralStats";
+import { DataTablePagination } from "@/components/DataTablePagination";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 const ReferralsPage = () => {
   const isMobile = useIsMobile();
@@ -28,30 +29,16 @@ const ReferralsPage = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['referrer_summary', currentPage],
+  const { data: summaryData = [], isLoading } = useQuery<ReferrerSummary[]>({
+    queryKey: ['referrer_summary'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_referrer_summary', { limit_val: ITEMS_PER_PAGE, offset_val: (currentPage - 1) * ITEMS_PER_PAGE });
-      if (error) throw new Error(error.message);
-      const { data: countData, error: countError } = await supabase.rpc('get_referrer_summary_count');
-      if (countError) throw new Error(countError.message);
-      return { summaries: data || [], count: countData || 0 };
-    },
-  });
-
-  const summaryData = data?.summaries || [];
-  const totalReferrers = data?.count || 0;
-
-  const { data: allSummaryDataForRoles = [] } = useQuery<ReferrerSummary[]>({
-    queryKey: ['all_referrer_summary_for_roles'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_referrer_summary', { limit_val: 10000, offset_val: 0 });
+      const { data, error } = await supabase.rpc('get_referrer_summary');
       if (error) throw new Error(error.message);
       return data || [];
     },
   });
 
-  const referrerRoles = useMemo(() => [...new Set(allSummaryDataForRoles.map(item => item.referrer_role))], [allSummaryDataForRoles]);
+  const referrerRoles = useMemo(() => [...new Set(summaryData.map(item => item.referrer_role))], [summaryData]);
 
   const filteredAndSortedSummary = useMemo(() => {
     let result = summaryData
@@ -78,6 +65,15 @@ const ReferralsPage = () => {
 
     return result;
   }, [summaryData, searchTerm, filters]);
+
+  const totalPages = Math.ceil(filteredAndSortedSummary.length / ITEMS_PER_PAGE);
+  const paginatedSummary = useMemo(() => {
+    return filteredAndSortedSummary.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  }, [filteredAndSortedSummary, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filters]);
 
   const totalStats = useMemo(() => {
     return filteredAndSortedSummary.reduce((acc, item) => {
@@ -129,7 +125,7 @@ const ReferralsPage = () => {
       </div>
       {isMobile ? (
         <div className="space-y-4">
-          {filteredAndSortedSummary.map((item) => (
+          {paginatedSummary.map((item) => (
             <Card key={item.referrer_id}>
               <CardHeader>
                 <CardTitle>{item.referrer_name}</CardTitle>
@@ -163,7 +159,7 @@ const ReferralsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSortedSummary.map((item) => (
+              {paginatedSummary.map((item) => (
                 <TableRow key={item.referrer_id}>
                   <TableCell className="font-medium">{item.referrer_name}</TableCell>
                   <TableCell>
@@ -188,6 +184,7 @@ const ReferralsPage = () => {
           </Table>
         </div>
       )}
+      <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       <ReferralDetailsDialog referrer={selectedReferrer} open={!!selectedReferrer} onOpenChange={() => setSelectedReferrer(null)} />
     </div>
   );
