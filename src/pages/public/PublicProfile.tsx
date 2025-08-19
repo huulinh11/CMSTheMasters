@@ -47,7 +47,7 @@ const PublicProfile = () => {
     }
   });
 
-  const { contentBlocks, activeTemplate } = useMemo(() => {
+  const { contentBlocks } = useMemo(() => {
     if (!guest) {
       return { contentBlocks: [], activeTemplate: null };
     }
@@ -248,15 +248,10 @@ const PublicProfile = () => {
               }
             })}
           </div>
-          {activeTemplate && (
-            <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-              Template: {activeTemplate.name}
-            </div>
-          )}
         </div>
       </div>
     );
-  }, [guest, contentBlocks, activeTemplate, handleVideoLoad, imageDimensions]);
+  }, [guest, contentBlocks, handleVideoLoad, imageDimensions]);
 
   if (isDataLoading) {
     return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
