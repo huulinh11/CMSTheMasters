@@ -40,6 +40,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getVideoEmbedUrl } from "@/lib/video";
 import { ImageSourceSelector } from "../image-library/ImageSourceSelector";
 import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "../ui/checkbox";
 
 type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời' };
 
@@ -99,6 +100,30 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
   const [initialBlocks, setInitialBlocks] = useState<ContentBlock[]>([]);
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set());
+  const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
+
+  useEffect(() => {
+    const newDimensions: Record<string, { width: number; height: number }> = {};
+    const promises = blocks
+      .filter((block): block is TextBlock => block.type === 'text' && !!block.useImageDimensions && !!block.backgroundImageUrl && !imageDimensions[block.id])
+      .map(block => new Promise<void>(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          newDimensions[block.id] = { width: img.naturalWidth, height: img.naturalHeight };
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = block.backgroundImageUrl!;
+      }));
+
+    if (promises.length > 0) {
+      Promise.all(promises).then(() => {
+        if (Object.keys(newDimensions).length > 0) {
+          setImageDimensions(prev => ({ ...prev, ...newDimensions }));
+        }
+      });
+    }
+  }, [blocks]);
 
   useEffect(() => {
     onUploadingChange?.(uploadingIds.size > 0);
@@ -184,7 +209,8 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
         type: 'text', 
         items: [], 
         backgroundImageUrl: '', 
-        imageSourceType: 'url' 
+        imageSourceType: 'url',
+        useImageDimensions: false,
       };
     }
     setBlocks(prev => [...prev, newBlock]);
@@ -296,21 +322,28 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
                               {getVideoEmbedUrl(block.videoUrl) ? <div className="w-full h-full bg-black rounded-md"><iframe src={getVideoEmbedUrl(block.videoUrl)!} title="Video Preview" className="w-full h-full rounded-md border" allowFullScreen /></div> : <Video className="h-8 w-8 text-slate-400" />}
                             </div>
                           )}
-                          {block.type === 'text' && (
-                            <div className="w-full aspect-video rounded-md border bg-cover bg-center flex flex-col items-center justify-center p-1" style={{ backgroundImage: `url(${block.backgroundImageUrl})` }}>
-                              {block.items.map(item => (
-                                <div key={item.id} style={{ marginTop: `${item.marginTop}px`, marginRight: `${item.marginRight}px`, marginBottom: `${item.marginBottom}px`, marginLeft: `${item.marginLeft}px` }}>
-                                  {item.type === 'text' ? (
-                                    <p className="text-sm text-center break-words" style={{ color: item.color, fontSize: `${item.fontSize}px`, fontWeight: item.fontWeight, fontStyle: item.fontStyle, fontFamily: item.fontFamily }}>
-                                      {item.isGuestName ? guest.name : item.text}
-                                    </p>
-                                  ) : (
-                                    <img src={item.imageUrl} alt="item" style={{ width: `${item.width}%`, margin: '0 auto' }} />
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          {block.type === 'text' && (() => {
+                            const dimensions = imageDimensions[block.id];
+                            const style: React.CSSProperties = { backgroundImage: `url(${block.backgroundImageUrl})` };
+                            if (block.useImageDimensions && dimensions) {
+                              style.aspectRatio = `${dimensions.width} / ${dimensions.height}`;
+                            }
+                            return (
+                              <div className={`w-full rounded-md border bg-cover bg-center flex flex-col items-center justify-center p-1 ${!style.aspectRatio ? 'aspect-video bg-slate-100' : ''}`} style={style}>
+                                {block.items.map(item => (
+                                  <div key={item.id} style={{ marginTop: `${item.marginTop}px`, marginRight: `${item.marginRight}px`, marginBottom: `${item.marginBottom}px`, marginLeft: `${item.marginLeft}px` }}>
+                                    {item.type === 'text' ? (
+                                      <p className="text-sm text-center break-words" style={{ color: item.color, fontSize: `${item.fontSize}px`, fontWeight: item.fontWeight, fontStyle: item.fontStyle, fontFamily: item.fontFamily }}>
+                                        {item.isGuestName ? guest.name : item.text}
+                                      </p>
+                                    ) : (
+                                      <img src={item.imageUrl} alt="item" style={{ width: `${item.width}%`, margin: '0 auto' }} />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </div>
                         {/* Controls */}
                         <div className="w-2/3 flex-grow space-y-2">
@@ -342,15 +375,9 @@ export const EditProfileDialog = ({ open, onOpenChange, guest, onSave, onContent
                                 onValueChange={url => handleUpdateBlock(block.id, 'backgroundImageUrl', url)}
                                 onUploadingChange={isUp => handleUploadingState(`block-bg-${block.id}`, isUp)}
                               />
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1 space-y-1">
-                                  <Label htmlFor={`fixedWidth-${block.id}`} className="text-xs">Rộng (px)</Label>
-                                  <Input id={`fixedWidth-${block.id}`} type="number" placeholder="Tự động" value={block.fixedWidth || ''} onChange={e => handleUpdateBlock(block.id, 'fixedWidth', e.target.value ? Number(e.target.value) : undefined)} disabled={isTemplateMode} />
-                                </div>
-                                <div className="flex-1 space-y-1">
-                                  <Label htmlFor={`fixedHeight-${block.id}`} className="text-xs">Cao (px)</Label>
-                                  <Input id={`fixedHeight-${block.id}`} type="number" placeholder="Tự động" value={block.fixedHeight || ''} onChange={e => handleUpdateBlock(block.id, 'fixedHeight', e.target.value ? Number(e.target.value) : undefined)} disabled={isTemplateMode} />
-                                </div>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox id={`useImageDimensions-${block.id}`} checked={block.useImageDimensions} onCheckedChange={(checked) => handleUpdateBlock(block.id, 'useImageDimensions', !!checked)} disabled={isTemplateMode} />
+                                <Label htmlFor={`useImageDimensions-${block.id}`} className="text-sm font-medium">Lấy kích thước của ảnh</Label>
                               </div>
                               <Separator className="my-3" />
                               <Label className="font-medium text-sm">Nội dung</Label>

@@ -53,8 +53,7 @@ export const textBlockSchema = z.object({
   items: z.array(textBlockItemSchema),
   backgroundImageUrl: z.string().url({ message: "Link ảnh nền không hợp lệ." }).optional().or(z.literal('')),
   imageSourceType: z.enum(['url', 'upload']).optional().default('url'),
-  fixedWidth: z.coerce.number().optional(),
-  fixedHeight: z.coerce.number().optional(),
+  useImageDimensions: z.boolean().optional().default(false),
 });
 
 export const contentBlockSchema = z.union([

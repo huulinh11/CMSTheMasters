@@ -14,6 +14,7 @@ type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?
 const PublicProfile = () => {
   const { slug } = useParams();
   const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
+  const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
 
   const { data: guest, isLoading: isLoadingGuest } = useQuery<CombinedGuest | null>({
     queryKey: ['public_profile_guest', slug],
@@ -116,6 +117,29 @@ const PublicProfile = () => {
     return { contentBlocks: guest.profile_content || [], activeTemplate: null };
   }, [guest, templates]);
 
+  useEffect(() => {
+    const newDimensions: Record<string, { width: number; height: number }> = {};
+    const promises = contentBlocks
+      .filter((block): block is TextBlock => block.type === 'text' && !!block.useImageDimensions && !!block.backgroundImageUrl && !imageDimensions[block.id])
+      .map(block => new Promise<void>(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          newDimensions[block.id] = { width: img.naturalWidth, height: img.naturalHeight };
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = block.backgroundImageUrl!;
+      }));
+
+    if (promises.length > 0) {
+      Promise.all(promises).then(() => {
+        if (Object.keys(newDimensions).length > 0) {
+          setImageDimensions(prev => ({ ...prev, ...newDimensions }));
+        }
+      });
+    }
+  }, [contentBlocks]);
+
   const videoBlocks = useMemo(() => contentBlocks.filter(b => b.type === 'video'), [contentBlocks]);
 
   const handleVideoLoad = useCallback((videoId: string) => {
@@ -161,13 +185,14 @@ const PublicProfile = () => {
                 case 'video':
                   return <VideoBlockPlayer key={block.id} block={block} onVideoLoad={handleVideoLoad} />;
                 case 'text':
+                  const dimensions = imageDimensions[block.id];
                   const textBlockStyle: React.CSSProperties = {
                     backgroundImage: `url(${block.backgroundImageUrl})`,
-                    width: block.fixedWidth ? `${block.fixedWidth}px` : '100%',
+                    width: '100%',
                     maxWidth: '100%',
                   };
-                  if (block.fixedHeight) {
-                    textBlockStyle.height = `${block.fixedHeight}px`;
+                  if (block.useImageDimensions && dimensions) {
+                    textBlockStyle.aspectRatio = `${dimensions.width} / ${dimensions.height}`;
                   } else {
                     textBlockStyle.minHeight = '16rem';
                   }
@@ -230,7 +255,7 @@ const PublicProfile = () => {
         </div>
       </div>
     );
-  }, [guest, contentBlocks, activeTemplate, handleVideoLoad]);
+  }, [guest, contentBlocks, activeTemplate, handleVideoLoad, imageDimensions]);
 
   if (isDataLoading) {
     return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
