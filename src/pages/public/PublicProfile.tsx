@@ -200,7 +200,7 @@ const PublicProfile = () => {
                   return (
                     <div key={block.id} className="w-full flex justify-center">
                       <div
-                        className="flex flex-col items-center justify-center p-4 bg-cover bg-center"
+                        className="flex flex-col items-center justify-start p-4 bg-cover bg-center"
                         style={textBlockStyle}
                       >
                         {(block as TextBlock).items.map(item => (

@@ -211,7 +211,7 @@ export const EditTemplateDialog = ({ open, onOpenChange, onSave, isSaving, templ
                               style.aspectRatio = `${dimensions.width} / ${dimensions.height}`;
                             }
                             return (
-                              <div className={`w-full rounded-md border bg-cover bg-center flex flex-col items-center justify-center p-1 ${!style.aspectRatio ? 'aspect-video bg-slate-100' : ''}`} style={style}>
+                              <div className={`w-full rounded-md border bg-cover bg-center flex flex-col items-center justify-start p-1 ${!style.aspectRatio ? 'aspect-video bg-slate-100' : ''}`} style={style}>
                                 {block.items.map(item => (<div key={item.id} style={{ marginTop: `${item.marginTop}px`, marginRight: `${item.marginRight}px`, marginBottom: `${item.marginBottom}px`, marginLeft: `${item.marginLeft}px` }}>{item.type === 'text' ? (<p className="text-sm text-center break-words" style={{ color: item.color, fontSize: `${item.fontSize}px`, fontWeight: item.fontWeight, fontStyle: item.fontStyle, fontFamily: item.fontFamily }}>{item.isGuestName ? "Tên khách mời" : item.text}</p>) : (<img src={item.imageUrl} alt="item" style={{ width: `${item.width}%`, margin: '0 auto' }} />)}</div>))}
                               </div>
                             );
