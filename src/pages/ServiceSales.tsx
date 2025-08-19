@@ -25,6 +25,9 @@ import GuestHistoryDialog from "@/components/Revenue/GuestHistoryDialog";
 import { GuestRevenue } from "@/types/guest-revenue";
 import { VipGuest } from "@/types/vip-guest";
 import { PageHeader } from "@/components/PageHeader";
+import { PaginationControls } from "@/components/PaginationControls";
+
+const ITEMS_PER_PAGE = 20;
 
 const ServiceSalesPage = () => {
   const queryClient = useQueryClient();
@@ -35,15 +38,22 @@ const ServiceSalesPage = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [viewingGuestSummary, setViewingGuestSummary] = useState<GuestServiceSummary | null>(null);
   const [historyGuest, setHistoryGuest] = useState<GuestRevenue | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: guestServices = [], isLoading: isLoadingGuestServices } = useQuery<GuestService[]>({
-    queryKey: ['guest_service_details'],
+  const { data, isLoading: isLoadingGuestServices } = useQuery({
+    queryKey: ['guest_service_details', currentPage],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_guest_service_details');
+      const { data, error } = await supabase.rpc('get_guest_service_details', { limit_val: ITEMS_PER_PAGE, offset_val: (currentPage - 1) * ITEMS_PER_PAGE });
       if (error) throw error;
-      return data || [];
+      const { data: countData, error: countError } = await supabase.rpc('get_guest_service_details_count');
+      if (countError) throw countError;
+      return { services: data || [], count: countData || 0 };
     }
   });
+  
+  const guestServices = data?.services || [];
+  const totalServices = data?.count || 0;
+  const totalPages = Math.ceil(totalServices / ITEMS_PER_PAGE);
 
   const { data: services = [] } = useQuery<Service[]>({
     queryKey: ['services'],
@@ -169,7 +179,7 @@ const ServiceSalesPage = () => {
       <ServiceStats totalRevenue={stats.totalRevenue} totalPaid={stats.totalPaid} totalUnpaid={totalUnpaid} />
 
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredSummaries.length}</h2>
+        <h2 className="text-xl font-bold text-slate-800">Tổng: {totalServices}</h2>
         <Button onClick={() => setIsAddOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
       </div>
 
@@ -210,6 +220,8 @@ const ServiceSalesPage = () => {
           onConvertTrial={handleConvertTrial}
         />
       )}
+
+      <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       <ServiceSettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       <AddGuestServiceDialog open={isAddOpen} onOpenChange={setIsAddOpen} />

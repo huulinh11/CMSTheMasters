@@ -18,9 +18,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { SimplePagination } from "@/components/SimplePagination";
 
 const BUCKET_NAME = 'avatars';
 const FOLDER_NAME = 'image-library';
+const ITEMS_PER_PAGE = 18;
 
 const ImageLibrary = () => {
   const queryClient = useQueryClient();
@@ -28,23 +30,32 @@ const ImageLibrary = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const { session } = useAuth();
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: files = [], isLoading } = useQuery({
-    queryKey: ['image-library-files'],
+  const { data, isLoading } = useQuery({
+    queryKey: ['image-library-files', currentPage],
     queryFn: async () => {
       const { data, error } = await supabase.storage
         .from(BUCKET_NAME)
         .list(FOLDER_NAME, {
-          limit: 1000,
+          limit: ITEMS_PER_PAGE + 1, // Fetch one extra to check for next page
+          offset: (currentPage - 1) * ITEMS_PER_PAGE,
           sortBy: { column: 'created_at', order: 'desc' },
         });
       if (error) throw error;
-      return data.map(file => ({
+      
+      const hasNextPage = data.length > ITEMS_PER_PAGE;
+      const files = data.slice(0, ITEMS_PER_PAGE).map(file => ({
         ...file,
         publicURL: supabase.storage.from(BUCKET_NAME).getPublicUrl(`${FOLDER_NAME}/${file.name}`).data.publicUrl
       }));
+
+      return { files, hasNextPage };
     }
   });
+
+  const files = data?.files || [];
+  const hasNextPage = data?.hasNextPage || false;
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -180,6 +191,8 @@ const ImageLibrary = () => {
           ))}
         </div>
       )}
+
+      <SimplePagination currentPage={currentPage} onPageChange={setCurrentPage} hasNextPage={hasNextPage} />
 
       <AlertDialog open={!!deletingFile} onOpenChange={(open) => !open && setDeletingFile(null)}>
         <AlertDialogContent>

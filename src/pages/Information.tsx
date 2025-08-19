@@ -20,6 +20,9 @@ import { EditInformationDialog } from "@/components/information/EditInformationD
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
+import { PaginationControls } from "@/components/PaginationControls";
+
+const ITEMS_PER_PAGE = 20;
 
 const Information = () => {
   const queryClient = useQueryClient();
@@ -28,16 +31,33 @@ const Information = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [editingGuest, setEditingGuest] = useState<VipGuest | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: guests = [], isLoading: isLoadingGuests } = useQuery<VipGuest[]>({
-    queryKey: ['vip_guests_information'],
+  const { data, isLoading: isLoadingGuests } = useQuery({
+    queryKey: ['vip_guests_information', currentPage, searchTerm, roleFilters],
     queryFn: async () => {
-      const { data, error } = await supabase.from('vip_guests').select('*').order('created_at', { ascending: false });
+      const from = (currentPage - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      let query = supabase.from('vip_guests').select('*', { count: 'exact' });
+
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%,role.ilike.%${searchTerm}%`);
+      }
+      if (roleFilters.length > 0) {
+        query = query.in('role', roleFilters);
+      }
+
+      const { data, error, count } = await query.order('created_at', { ascending: false }).range(from, to);
+
       if (error) throw new Error(error.message);
-      return (data || []).map((item: any) => ({
+      
+      const guests = (data || []).map((item: any) => ({
         ...item,
         secondaryInfo: item.secondary_info,
       }));
+
+      return { guests, count: count || 0 };
     }
   });
 
@@ -62,39 +82,34 @@ const Information = () => {
       queryClient.invalidateQueries({ queryKey: ['vip_guests_information'] });
       showSuccess("Cập nhật thông tin thành công!");
     },
-    onError: (error) => showError(error.message),
+    onError: (error) => showError((error as Error).message),
     onSettled: () => {
       setEditingGuest(null);
     },
   });
-
-  const filteredGuests = useMemo(() => {
-    return guests.filter((guest) => {
-      const searchMatch =
-        guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        guest.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (guest.role && guest.role.toLowerCase().includes(searchTerm.toLowerCase()));
-      const roleMatch = roleFilters.length === 0 || (guest.role && roleFilters.includes(guest.role));
-      return searchMatch && roleMatch;
-    });
-  }, [guests, searchTerm, roleFilters]);
 
   const handleViewDetails = (guest: VipGuest) => {
     navigate(`/guests?view_vip=${guest.id}`);
   };
 
   const isLoading = isLoadingGuests || isLoadingRoles;
+  const guests = data?.guests || [];
+  const totalGuests = data?.count || 0;
+  const totalPages = Math.ceil(totalGuests / ITEMS_PER_PAGE);
 
   return (
     <div className="p-4 md:p-6 space-y-4">
       <PageHeader title="Thông tin">
-        <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
+        <h2 className="text-xl font-bold text-slate-800">Tổng: {totalGuests}</h2>
       </PageHeader>
       <div className="flex items-center gap-2">
         <Input
           placeholder="Tìm kiếm theo tên, ID, vai trò..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
           className="flex-grow bg-white/80"
         />
         <DropdownMenu>
@@ -109,6 +124,7 @@ const Information = () => {
                 key={role.id}
                 checked={roleFilters.includes(role.name)}
                 onCheckedChange={(checked) => {
+                  setCurrentPage(1);
                   setRoleFilters(
                     checked ? [...roleFilters, role.name] : roleFilters.filter((r) => r !== role.name)
                   );
@@ -124,10 +140,16 @@ const Information = () => {
       {isLoading ? (
         <Skeleton className="h-96 w-full rounded-lg" />
       ) : isMobile ? (
-        <InformationCards guests={filteredGuests} onEdit={setEditingGuest} onView={handleViewDetails} roleConfigs={roleConfigs} />
+        <InformationCards guests={guests} onEdit={setEditingGuest} onView={handleViewDetails} roleConfigs={roleConfigs} />
       ) : (
-        <InformationTable guests={filteredGuests} onEdit={setEditingGuest} onView={handleViewDetails} />
+        <InformationTable guests={guests} onEdit={setEditingGuest} onView={handleViewDetails} />
       )}
+
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
 
       <EditInformationDialog
         guest={editingGuest}

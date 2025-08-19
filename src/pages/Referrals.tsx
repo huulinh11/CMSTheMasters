@@ -14,6 +14,9 @@ import { ReferralDetailsDialog } from "@/components/referrals/ReferralDetailsDia
 import { cn } from "@/lib/utils";
 import { ReferralFilterSheet } from "@/components/referrals/ReferralFilterSheet";
 import ReferralStats from "@/components/referrals/ReferralStats";
+import { PaginationControls } from "@/components/PaginationControls";
+
+const ITEMS_PER_PAGE = 20;
 
 const ReferralsPage = () => {
   const isMobile = useIsMobile();
@@ -24,17 +27,33 @@ const ReferralsPage = () => {
     status: "all",
     sort: "default",
   });
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: summaryData = [], isLoading } = useQuery<ReferrerSummary[]>({
-    queryKey: ['referrer_summary'],
+  const { data, isLoading } = useQuery({
+    queryKey: ['referrer_summary', currentPage],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_referrer_summary');
+      const { data, error } = await supabase.rpc('get_referrer_summary', { limit_val: ITEMS_PER_PAGE, offset_val: (currentPage - 1) * ITEMS_PER_PAGE });
+      if (error) throw new Error(error.message);
+      const { data: countData, error: countError } = await supabase.rpc('get_referrer_summary_count');
+      if (countError) throw new Error(countError.message);
+      return { summaries: data || [], count: countData || 0 };
+    },
+  });
+
+  const summaryData = data?.summaries || [];
+  const totalReferrers = data?.count || 0;
+  const totalPages = Math.ceil(totalReferrers / ITEMS_PER_PAGE);
+
+  const { data: allSummaryDataForRoles = [] } = useQuery<ReferrerSummary[]>({
+    queryKey: ['all_referrer_summary_for_roles'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_referrer_summary', { limit_val: 10000, offset_val: 0 });
       if (error) throw new Error(error.message);
       return data || [];
     },
   });
 
-  const referrerRoles = useMemo(() => [...new Set(summaryData.map(item => item.referrer_role))], [summaryData]);
+  const referrerRoles = useMemo(() => [...new Set(allSummaryDataForRoles.map(item => item.referrer_role))], [allSummaryDataForRoles]);
 
   const filteredAndSortedSummary = useMemo(() => {
     let result = summaryData
@@ -45,7 +64,7 @@ const ReferralsPage = () => {
 
     if (filters.status !== 'all') {
       result = result.filter(item => {
-        if (item.referrer_id === 'ads') return true; // Always show Ads regardless of status filter
+        if (item.referrer_id === 'ads') return true;
         if (filters.status === 'not-achieved') return item.referral_count < item.referral_quota;
         if (filters.status === 'achieved') return item.referral_count === item.referral_quota;
         if (filters.status === 'exceeded') return item.referral_count > item.referral_quota;
@@ -171,6 +190,7 @@ const ReferralsPage = () => {
           </Table>
         </div>
       )}
+      <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       <ReferralDetailsDialog referrer={selectedReferrer} open={!!selectedReferrer} onOpenChange={() => setSelectedReferrer(null)} />
     </div>
   );
