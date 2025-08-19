@@ -225,7 +225,7 @@ const PublicProfile = () => {
                                   lineHeight: 1.2,
                                 }}
                               >
-                                {item.isGuestName ? guest.name : item.text}
+                                {item.isGuestName ? guest.name : (item.isGuestRole ? guest.role : item.text)}
                               </p>
                             ) : (
                               <img 
