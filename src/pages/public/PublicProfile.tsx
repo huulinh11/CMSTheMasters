@@ -52,69 +52,65 @@ const PublicProfile = () => {
       return [];
     }
 
-    // 1. Determine active template
-    let template: ProfileTemplate | null = null;
-    if (guest.template_id) {
-      template = templates.find(t => t.id === guest.template_id) || null;
-    } 
-    if (!template) { // Fallback to role-based template if no specific one is assigned
-      template = templates.find(t => t.assigned_roles?.includes(guest.role)) || null;
-    }
+    const getUnmigratedBlocks = (): ContentBlock[] => {
+      let template: ProfileTemplate | null = null;
+      if (guest.template_id) {
+        template = templates.find(t => t.id === guest.template_id) || null;
+      }
+      if (!template) {
+        template = templates.find(t => t.assigned_roles?.includes(guest.role)) || null;
+      }
 
-    // 2. If there is a template, merge content
-    if (template) {
-      const templateContent = template.content || [];
-      const userContent = guest.profile_content || [];
-      const userContentMap = new Map(userContent.map((b) => [b.id, b]));
+      if (template) {
+        const templateContent = template.content || [];
+        const userContent = guest.profile_content || [];
+        const userContentMap = new Map(userContent.map((b) => [b.id, b]));
 
-      const mergedContent = templateContent.map((templateBlock): ContentBlock => {
-        const userBlock = userContentMap.get(templateBlock.id);
-
-        // If user has no override for this block, or types mismatch, use template block as is.
-        if (!userBlock || userBlock.type !== templateBlock.type) {
-          return templateBlock;
-        }
-
-        // Merge data from userBlock into templateBlock structure
-        switch (templateBlock.type) {
-          case 'image':
-            if (userBlock.type === 'image') {
-              return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
-            }
-            break;
-          case 'video':
-            if (userBlock.type === 'video') {
-              return { ...templateBlock, videoUrl: userBlock.videoUrl };
-            }
-            break;
-          case 'text':
-            if (userBlock.type === 'text') {
-              const userItemsMap = new Map((userBlock.items || []).map(item => [item.id, item]));
-              const mergedItems = templateBlock.items.map(templateItem => {
-                const userItem = userItemsMap.get(templateItem.id);
-                if (!userItem || userItem.type !== templateItem.type) {
+        return templateContent.map((templateBlock): ContentBlock => {
+          const userBlock = userContentMap.get(templateBlock.id);
+          if (!userBlock || userBlock.type !== templateBlock.type) {
+            return templateBlock;
+          }
+          switch (templateBlock.type) {
+            case 'image':
+              if (userBlock.type === 'image') return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
+              break;
+            case 'video':
+              if (userBlock.type === 'video') return { ...templateBlock, videoUrl: userBlock.videoUrl };
+              break;
+            case 'text':
+              if (userBlock.type === 'text') {
+                const userItemsMap = new Map((userBlock.items || []).map(item => [item.id, item]));
+                const mergedItems = templateBlock.items.map(templateItem => {
+                  const userItem = userItemsMap.get(templateItem.id);
+                  if (!userItem || userItem.type !== templateItem.type) return templateItem;
+                  if (templateItem.type === 'text' && userItem.type === 'text') return { ...templateItem, text: userItem.text };
+                  if (templateItem.type === 'image' && userItem.type === 'image') return { ...templateItem, imageUrl: userItem.imageUrl };
                   return templateItem;
-                }
-                if (templateItem.type === 'text' && userItem.type === 'text') {
-                  return { ...templateItem, text: userItem.text };
-                }
-                if (templateItem.type === 'image' && userItem.type === 'image') {
-                  return { ...templateItem, imageUrl: userItem.imageUrl };
-                }
-                return templateItem;
-              });
-              return { ...templateBlock, items: mergedItems };
-            }
-            break;
+                });
+                return { ...templateBlock, items: mergedItems };
+              }
+              break;
+          }
+          return templateBlock;
+        });
+      }
+      return guest.profile_content || [];
+    };
+
+    const unmigratedBlocks = getUnmigratedBlocks();
+
+    return unmigratedBlocks.map(block => {
+      if (block.type === 'text') {
+        const textBlock = block as any;
+        if (textBlock.texts && !textBlock.items) {
+          const migratedItems = textBlock.texts.map((t: any) => ({ ...t, type: 'text' }));
+          const { texts, ...restOfBlock } = textBlock;
+          return { ...restOfBlock, items: migratedItems };
         }
-        return templateBlock;
-      });
-
-      return mergedContent;
-    }
-
-    // 3. No template, use guest content directly
-    return guest.profile_content || [];
+      }
+      return block;
+    });
   }, [guest, templates]);
 
   useEffect(() => {
