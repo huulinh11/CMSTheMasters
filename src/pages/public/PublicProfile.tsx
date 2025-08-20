@@ -218,7 +218,7 @@ const PublicProfile = () => {
                                 className="text-center"
                                 style={{
                                   fontSize: `${item.fontSize || 32}px`,
-                                  color: item.color || '#FFFFFF',
+                                  color: item.color || '#000000',
                                   fontWeight: item.fontWeight || 'bold',
                                   fontStyle: item.fontStyle || 'normal',
                                   fontFamily: item.fontFamily || 'sans-serif',
