@@ -16,7 +16,7 @@ const PublicProfile = () => {
   const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
   const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
 
-  const { data: guest, isLoading: isLoadingGuest } = useQuery<CombinedGuest | null>({
+  const { data: guest, isLoading: isLoadingGuest, isError: isErrorGuest } = useQuery<CombinedGuest | null>({
     queryKey: ['public_profile_guest', slug],
     queryFn: async () => {
         if (!slug) return null;
@@ -29,7 +29,7 @@ const PublicProfile = () => {
     enabled: !!slug,
   });
 
-  const { data: templates = [], isLoading: isLoadingTemplates } = useQuery<ProfileTemplate[]>({
+  const { data: templates, isLoading: isLoadingTemplates } = useQuery<ProfileTemplate[]>({
     queryKey: ['profile_templates'],
     queryFn: async () => {
       const { data, error } = await supabase.from('profile_templates').select('*');
@@ -47,22 +47,20 @@ const PublicProfile = () => {
     }
   });
 
-  const activeTemplate = useMemo(() => {
-    if (!guest || !templates || templates.length === 0) {
-      return null;
-    }
-    if (guest.template_id) {
-      return templates.find(t => t.id === guest.template_id) || null;
-    }
-    return templates.find(t => t.assigned_roles?.includes(guest.role)) || null;
-  }, [guest, templates]);
+  const isDataReady = !isLoadingGuest && !isLoadingTemplates && !isLoadingSettings && guest;
 
   const contentBlocks = useMemo(() => {
-    if (!guest) {
-      return [];
-    }
+    if (!isDataReady) return [];
 
     const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
+    
+    let activeTemplate: ProfileTemplate | null = null;
+    if (guest.template_id) {
+      activeTemplate = templates.find(t => t.id === guest.template_id) || null;
+    }
+    if (!activeTemplate) {
+      activeTemplate = templates.find(t => t.assigned_roles?.includes(guest.role)) || null;
+    }
 
     if (activeTemplate) {
       const templateContent = Array.isArray(activeTemplate.content) ? activeTemplate.content : [];
@@ -70,9 +68,8 @@ const PublicProfile = () => {
 
       return templateContent.map((templateBlock): ContentBlock => {
         const userBlock = userContentMap.get(templateBlock.id);
-        if (!userBlock || userBlock.type !== templateBlock.type) {
-          return templateBlock;
-        }
+        if (!userBlock || userBlock.type !== templateBlock.type) return templateBlock;
+        
         switch (templateBlock.type) {
           case 'image':
             if (userBlock.type === 'image') return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
@@ -100,7 +97,7 @@ const PublicProfile = () => {
       });
     }
     return userContent;
-  }, [guest, activeTemplate]);
+  }, [isDataReady, guest, templates]);
 
   useEffect(() => {
     const newDimensions: Record<string, { width: number; height: number }> = {};
@@ -129,9 +126,7 @@ const PublicProfile = () => {
 
   const handleVideoLoad = useCallback((videoId: string) => {
     setLoadedVideoIds(prev => {
-      if (prev.has(videoId)) {
-        return prev;
-      }
+      if (prev.has(videoId)) return prev;
       const newSet = new Set(prev);
       newSet.add(videoId);
       return newSet;
@@ -142,9 +137,8 @@ const PublicProfile = () => {
     setLoadedVideoIds(new Set());
   }, [guest]);
 
-  const isDataLoading = isLoadingGuest || isLoadingTemplates || isLoadingSettings;
   const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
-  const showLoader = isDataLoading || (videoBlocks.length > 0 && !areAllVideosLoaded);
+  const showContentLoader = !isDataReady || (videoBlocks.length > 0 && !areAllVideosLoaded);
 
   const PageContent = useMemo(() => {
     if (!guest) return null;
@@ -153,6 +147,7 @@ const PublicProfile = () => {
         <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
           <div className="flex flex-col">
             {contentBlocks.map((block) => {
+              if (!block) return null;
               switch (block.type) {
                 case 'image':
                   const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover" style={{ width: `${block.width || 100}%` }} />;
@@ -188,43 +183,46 @@ const PublicProfile = () => {
                         className="flex flex-col items-center justify-start p-4 bg-cover bg-center"
                         style={textBlockStyle}
                       >
-                        {Array.isArray((block as TextBlock).items) && (block as TextBlock).items.map(item => (
-                          <div 
-                            key={item.id} 
-                            style={{ 
-                              marginTop: `${item.marginTop || 0}px`,
-                              marginRight: `${item.marginRight || 0}px`,
-                              marginBottom: `${item.marginBottom || 0}px`,
-                              marginLeft: `${item.marginLeft || 0}px`,
-                            }}
-                          >
-                            {item.type === 'text' ? (
-                              <p
-                                className="text-center"
-                                style={{
-                                  fontSize: `${item.fontSize || 32}px`,
-                                  color: item.color || '#000000',
-                                  fontWeight: item.fontWeight || 'bold',
-                                  fontStyle: item.fontStyle || 'normal',
-                                  fontFamily: item.fontFamily || 'sans-serif',
-                                  lineHeight: 1.2,
-                                  textTransform: item.isCaps ? 'uppercase' : 'none',
-                                }}
-                              >
-                                {item.isGuestName ? guest.name : (item.isGuestRole ? guest.role : item.text)}
-                              </p>
-                            ) : (
-                              <img 
-                                src={item.imageUrl} 
-                                alt="Profile item" 
-                                style={{ 
-                                  width: `${item.width}%`, 
-                                  margin: '0 auto' 
-                                }} 
-                              />
-                            )}
-                          </div>
-                        ))}
+                        {Array.isArray(block.items) && block.items.map(item => {
+                          if (!item) return null;
+                          return (
+                            <div 
+                              key={item.id} 
+                              style={{ 
+                                marginTop: `${item.marginTop || 0}px`,
+                                marginRight: `${item.marginRight || 0}px`,
+                                marginBottom: `${item.marginBottom || 0}px`,
+                                marginLeft: `${item.marginLeft || 0}px`,
+                              }}
+                            >
+                              {item.type === 'text' ? (
+                                <p
+                                  className="text-center"
+                                  style={{
+                                    fontSize: `${item.fontSize || 32}px`,
+                                    color: item.color || '#000000',
+                                    fontWeight: item.fontWeight || 'bold',
+                                    fontStyle: item.fontStyle || 'normal',
+                                    fontFamily: item.fontFamily || 'sans-serif',
+                                    lineHeight: 1.2,
+                                    textTransform: item.isCaps ? 'uppercase' : 'none',
+                                  }}
+                                >
+                                  {item.isGuestName ? guest.name : (item.isGuestRole ? guest.role : item.text)}
+                                </p>
+                              ) : (
+                                <img 
+                                  src={item.imageUrl} 
+                                  alt="Profile item" 
+                                  style={{ 
+                                    width: `${item.width}%`, 
+                                    margin: '0 auto' 
+                                  }} 
+                                />
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   );
@@ -238,29 +236,31 @@ const PublicProfile = () => {
     );
   }, [guest, contentBlocks, handleVideoLoad, imageDimensions]);
 
-  if (isDataLoading) {
-    return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
-  }
-
-  if (!guest) {
-    return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center p-4">
-        <div className="text-center p-8 bg-white/70 rounded-xl shadow-lg max-w-sm w-full">
-          <h1 className="text-2xl font-bold text-red-600">Không tìm thấy Profile</h1>
-          <p className="text-slate-600 mt-2">Liên kết có thể đã sai hoặc profile đã bị xóa.</p>
+  if (!isDataReady) {
+    if (isLoadingGuest || isLoadingTemplates || isLoadingSettings) {
+      return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
+    }
+    
+    if (isErrorGuest || !guest) {
+      return (
+        <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center p-4">
+          <div className="text-center p-8 bg-white/70 rounded-xl shadow-lg max-w-sm w-full">
+            <h1 className="text-2xl font-bold text-red-600">Không tìm thấy Profile</h1>
+            <p className="text-slate-600 mt-2">Liên kết có thể đã sai hoặc profile đã bị xóa.</p>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   return (
     <>
-      {showLoader && (
+      {showContentLoader && (
         <div className="fixed inset-0 w-full h-screen z-50">
           <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />
         </div>
       )}
-      <div style={{ visibility: showLoader ? 'hidden' : 'visible' }}>
+      <div style={{ visibility: showContentLoader ? 'hidden' : 'visible' }}>
         {PageContent}
       </div>
     </>
