@@ -62,8 +62,8 @@ const PublicProfile = () => {
       }
 
       if (template) {
-        const templateContent = template.content || [];
-        const userContent = guest.profile_content || [];
+        const templateContent = Array.isArray(template.content) ? template.content : [];
+        const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
         const userContentMap = new Map(userContent.map((b) => [b.id, b]));
 
         return templateContent.map((templateBlock): ContentBlock => {
@@ -80,8 +80,10 @@ const PublicProfile = () => {
               break;
             case 'text':
               if (userBlock.type === 'text') {
-                const userItemsMap = new Map((userBlock.items || []).map(item => [item.id, item]));
-                const mergedItems = templateBlock.items.map(templateItem => {
+                const userItems = Array.isArray(userBlock.items) ? userBlock.items : [];
+                const templateItems = Array.isArray(templateBlock.items) ? templateBlock.items : [];
+                const userItemsMap = new Map(userItems.map(item => [item.id, item]));
+                const mergedItems = templateItems.map(templateItem => {
                   const userItem = userItemsMap.get(templateItem.id);
                   if (!userItem || userItem.type !== templateItem.type) return templateItem;
                   if (templateItem.type === 'text' && userItem.type === 'text') return { ...templateItem, text: userItem.text };
@@ -95,7 +97,7 @@ const PublicProfile = () => {
           return templateBlock;
         });
       }
-      return guest.profile_content || [];
+      return Array.isArray(guest.profile_content) ? guest.profile_content : [];
     };
 
     const unmigratedBlocks = getUnmigratedBlocks();
@@ -199,7 +201,7 @@ const PublicProfile = () => {
                         className="flex flex-col items-center justify-start p-4 bg-cover bg-center"
                         style={textBlockStyle}
                       >
-                        {(block as TextBlock).items?.map(item => (
+                        {Array.isArray((block as TextBlock).items) && (block as TextBlock).items.map(item => (
                           <div 
                             key={item.id} 
                             style={{ 
