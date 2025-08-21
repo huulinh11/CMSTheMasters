@@ -103,17 +103,16 @@ const ProfileManagementTab = () => {
   });
 
   const profileUpdateMutation = useMutation({
-    mutationFn: async ({ guest, content, shouldUnlinkTemplate }: { guest: CombinedGuest, content: ContentBlock[], shouldUnlinkTemplate: boolean }) => {
+    mutationFn: async ({ guest, content }: { guest: CombinedGuest, content: ContentBlock[] }) => {
       const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
       const updatePayload: { profile_content: ContentBlock[], profile_status?: ProfileStatus, template_id?: string | null } = {
         profile_content: content,
+        template_id: null, // Unlink from template on manual edit
       };
       if (guest.profile_status === 'Trống' || !guest.profile_status) {
         updatePayload.profile_status = 'Đang chỉnh sửa';
       }
-      if (shouldUnlinkTemplate) {
-        updatePayload.template_id = null;
-      }
+      
       const { error } = await supabase
         .from(tableName)
         .update(updatePayload)
@@ -156,9 +155,22 @@ const ProfileManagementTab = () => {
     mutationFn: async (template: Partial<ProfileTemplate>) => {
       const { error } = await supabase.from('profile_templates').upsert(template);
       if (error) throw error;
+      
+      // If assigned_roles changed, apply to guests
+      if (template.assigned_roles && template.id) {
+        for (const role of template.assigned_roles) {
+          const { error: rpcError } = await supabase.rpc('apply_template_to_role', {
+            target_role: role,
+            target_template_id: template.id,
+          });
+          if (rpcError) throw rpcError;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile_templates'] });
+      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
       showSuccess("Lưu template thành công!");
       setIsEditTemplateOpen(false);
       setEditingTemplate(null);
@@ -182,16 +194,12 @@ const ProfileManagementTab = () => {
 
   const assignTemplateMutation = useMutation({
     mutationFn: async ({ templateId, guestIds }: { templateId: string, guestIds: string[] }) => {
-      const vipIds = guestIds.filter(id => vipGuests.some(g => g.id === id));
-      const regularIds = guestIds.filter(id => regularGuests.some(g => g.id === id));
-      
-      const promises = [];
-      if (vipIds.length > 0) {
-        promises.push(supabase.from('vip_guests').update({ template_id: templateId }).in('id', vipIds));
-      }
-      if (regularIds.length > 0) {
-        promises.push(supabase.from('guests').update({ template_id: templateId }).in('id', regularIds));
-      }
+      const promises = guestIds.map(guestId => 
+        supabase.rpc('apply_template_to_guest', {
+          target_guest_id: guestId,
+          target_template_id: templateId,
+        })
+      );
       const results = await Promise.all(promises);
       const firstError = results.find(res => res.error);
       if (firstError) throw firstError.error;
@@ -240,31 +248,9 @@ const ProfileManagementTab = () => {
   };
 
   const guestsWithTemplateInfo = useMemo(() => {
-    const defaultTemplatesByRole = new Map<string, ProfileTemplate>();
-    templates.forEach(t => {
-      if (t.assigned_roles) {
-        t.assigned_roles.forEach(role => {
-          defaultTemplatesByRole.set(role, t);
-        });
-      }
-    });
-
     return allGuests.map(guest => {
-      let templateName: string | undefined = undefined;
-      const assignedTemplate = templates.find(t => t.id === guest.template_id);
-      
-      if (assignedTemplate) {
-        templateName = assignedTemplate.name;
-      } else {
-        const hasCustomContent = guest.profile_content && guest.profile_content.length > 0;
-        if (!hasCustomContent) {
-          const defaultTemplate = defaultTemplatesByRole.get(guest.role);
-          if (defaultTemplate) {
-            templateName = defaultTemplate.name;
-          }
-        }
-      }
-      return { ...guest, templateName };
+      const template = templates.find(t => t.id === guest.template_id);
+      return { ...guest, templateName: template?.name };
     });
   }, [allGuests, templates]);
 
@@ -290,16 +276,7 @@ const ProfileManagementTab = () => {
   };
 
   const handleEditProfile = (guest: CombinedGuest) => {
-    let guestContent = guest.profile_content;
-    const activeTemplateId = guest.template_id || templates.find(t => t.assigned_roles?.includes(guest.role))?.id;
-    
-    if (activeTemplateId && (!guest.profile_content || guest.profile_content.length === 0)) {
-      const template = templates.find(t => t.id === activeTemplateId);
-      if (template) {
-        guestContent = template.content;
-      }
-    }
-    setEditingGuest({ ...guest, profile_content: guestContent });
+    setEditingGuest(guest);
   };
 
   const handleViewDetails = (guest: CombinedGuest) => {
@@ -310,32 +287,9 @@ const ProfileManagementTab = () => {
     }
   };
 
-  const handleSaveProfile = ({ content, shouldUnlinkTemplate }: { content: ContentBlock[], shouldUnlinkTemplate: boolean }) => {
+  const handleSaveProfile = ({ content }: { content: ContentBlock[] }) => {
     if (!editingGuest) return;
-    let contentToSave = content;
-    const isCurrentlyLinkedToTemplate = !!editingGuest.template_id;
-
-    if (isCurrentlyLinkedToTemplate && !shouldUnlinkTemplate) {
-      contentToSave = content.map(block => {
-        const dataOnlyBlock: any = { id: block.id, type: block.type };
-        if (block.type === 'image') {
-          dataOnlyBlock.imageUrl = block.imageUrl;
-          dataOnlyBlock.linkUrl = block.linkUrl;
-        } else if (block.type === 'video') {
-          dataOnlyBlock.videoUrl = block.videoUrl;
-        } else if (block.type === 'text') {
-          dataOnlyBlock.items = block.items.map(item => {
-            const itemData: any = { id: item.id, type: item.type };
-            if (item.type === 'text') itemData.text = item.text;
-            if (item.type === 'image') itemData.imageUrl = item.imageUrl;
-            return itemData;
-          });
-        }
-        return dataOnlyBlock;
-      });
-    }
-    
-    profileUpdateMutation.mutate({ guest: editingGuest, content: contentToSave, shouldUnlinkTemplate });
+    profileUpdateMutation.mutate({ guest: editingGuest, content });
   };
 
   const handleStatusChange = (guest: CombinedGuest, isCompleted: boolean) => {
@@ -411,7 +365,6 @@ const ProfileManagementTab = () => {
         guest={editingGuest}
         onSave={handleSaveProfile}
         isSaving={profileUpdateMutation.isPending}
-        isTemplateMode={!!editingGuest?.template_id}
       />
       <TemplateManagementDialog
         open={isTemplateManagerOpen}
