@@ -16,6 +16,7 @@ const PublicProfile = () => {
   const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
   const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
 
+  // --- Data Fetching Hooks (All at the top) ---
   const { data: guest, isLoading: isLoadingGuest, isError: isErrorGuest } = useQuery<CombinedGuest | null>({
     queryKey: ['public_profile_guest', slug],
     queryFn: async () => {
@@ -47,11 +48,11 @@ const PublicProfile = () => {
     }
   });
 
+  // --- Memoization and Effect Hooks (All at the top) ---
   const contentBlocks = useMemo(() => {
     if (!guest || !templates) {
       return [];
     }
-
     const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
     
     let activeTemplate: ProfileTemplate | null = null;
@@ -137,106 +138,8 @@ const PublicProfile = () => {
     setLoadedVideoIds(new Set());
   }, [guest]);
 
-  const PageContent = useMemo(() => {
-    if (!guest) return null;
-    return (
-      <div className="w-full min-h-screen bg-black flex justify-center">
-        <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
-          <div className="flex flex-col">
-            {contentBlocks.map((block) => {
-              if (!block) return null;
-              switch (block.type) {
-                case 'image':
-                  const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover" style={{ width: `${block.width || 100}%` }} />;
-                  return (
-                    <div key={block.id} className="w-full flex justify-center">
-                      {block.linkUrl ? (
-                        <a href={block.linkUrl} target="_blank" rel="noopener noreferrer" style={{ width: `${block.width || 100}%` }}>
-                          {imageElement}
-                        </a>
-                      ) : (
-                        imageElement
-                      )}
-                    </div>
-                  );
-                case 'video':
-                  return <VideoBlockPlayer key={block.id} block={block} onVideoLoad={handleVideoLoad} />;
-                case 'text':
-                  const dimensions = imageDimensions[block.id];
-                  const textBlockStyle: React.CSSProperties = {
-                    backgroundImage: `url(${block.backgroundImageUrl})`,
-                    width: '100%',
-                    maxWidth: '100%',
-                  };
-                  if (block.useImageDimensions && dimensions) {
-                    textBlockStyle.aspectRatio = `${dimensions.width} / ${dimensions.height}`;
-                  } else {
-                    textBlockStyle.minHeight = '16rem';
-                  }
-
-                  return (
-                    <div key={block.id} className="w-full flex justify-center">
-                      <div
-                        className="flex flex-col items-center justify-start p-4 bg-cover bg-center"
-                        style={textBlockStyle}
-                      >
-                        {Array.isArray(block.items) && block.items.map(item => {
-                          if (!item) return null;
-                          return (
-                            <div 
-                              key={item.id} 
-                              style={{ 
-                                marginTop: `${item.marginTop || 0}px`,
-                                marginRight: `${item.marginRight || 0}px`,
-                                marginBottom: `${item.marginBottom || 0}px`,
-                                marginLeft: `${item.marginLeft || 0}px`,
-                              }}
-                            >
-                              {item.type === 'text' ? (
-                                <p
-                                  className="text-center"
-                                  style={{
-                                    fontSize: `${item.fontSize || 32}px`,
-                                    color: item.color || '#000000',
-                                    fontWeight: item.fontWeight || 'bold',
-                                    fontStyle: item.fontStyle || 'normal',
-                                    fontFamily: item.fontFamily || 'sans-serif',
-                                    lineHeight: 1.2,
-                                    textTransform: item.isCaps ? 'uppercase' : 'none',
-                                  }}
-                                >
-                                  {item.isGuestName ? guest.name : (item.isGuestRole ? guest.role : item.text)}
-                                </p>
-                              ) : (
-                                <img 
-                                  src={item.imageUrl} 
-                                  alt="Profile item" 
-                                  style={{ 
-                                    width: `${item.width}%`, 
-                                    margin: '0 auto' 
-                                  }} 
-                                />
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  );
-                default:
-                  return null;
-              }
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  }, [guest, contentBlocks, handleVideoLoad, imageDimensions]);
-
+  // --- Conditional Returns (After all hooks) ---
   const isLoading = isLoadingGuest || isLoadingTemplates || isLoadingSettings;
-  const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
-  const showContentLoader = isLoading || (videoBlocks.length > 0 && !areAllVideosLoaded);
-
   if (isLoading) {
     return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
   }
@@ -252,6 +155,10 @@ const PublicProfile = () => {
     );
   }
 
+  // --- Main Render Logic ---
+  const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
+  const showContentLoader = videoBlocks.length > 0 && !areAllVideosLoaded;
+
   return (
     <>
       {showContentLoader && (
@@ -260,7 +167,96 @@ const PublicProfile = () => {
         </div>
       )}
       <div style={{ visibility: showContentLoader ? 'hidden' : 'visible' }}>
-        {PageContent}
+        <div className="w-full min-h-screen bg-black flex justify-center">
+          <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
+            <div className="flex flex-col">
+              {contentBlocks.map((block) => {
+                if (!block) return null;
+                switch (block.type) {
+                  case 'image':
+                    const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover" style={{ width: `${block.width || 100}%` }} />;
+                    return (
+                      <div key={block.id} className="w-full flex justify-center">
+                        {block.linkUrl ? (
+                          <a href={block.linkUrl} target="_blank" rel="noopener noreferrer" style={{ width: `${block.width || 100}%` }}>
+                            {imageElement}
+                          </a>
+                        ) : (
+                          imageElement
+                        )}
+                      </div>
+                    );
+                  case 'video':
+                    return <VideoBlockPlayer key={block.id} block={block} onVideoLoad={handleVideoLoad} />;
+                  case 'text':
+                    const dimensions = imageDimensions[block.id];
+                    const textBlockStyle: React.CSSProperties = {
+                      backgroundImage: `url(${block.backgroundImageUrl})`,
+                      width: '100%',
+                      maxWidth: '100%',
+                    };
+                    if (block.useImageDimensions && dimensions) {
+                      textBlockStyle.aspectRatio = `${dimensions.width} / ${dimensions.height}`;
+                    } else {
+                      textBlockStyle.minHeight = '16rem';
+                    }
+
+                    return (
+                      <div key={block.id} className="w-full flex justify-center">
+                        <div
+                          className="flex flex-col items-center justify-start p-4 bg-cover bg-center"
+                          style={textBlockStyle}
+                        >
+                          {Array.isArray(block.items) && block.items.map(item => {
+                            if (!item) return null;
+                            return (
+                              <div 
+                                key={item.id} 
+                                style={{ 
+                                  marginTop: `${item.marginTop || 0}px`,
+                                  marginRight: `${item.marginRight || 0}px`,
+                                  marginBottom: `${item.marginBottom || 0}px`,
+                                  marginLeft: `${item.marginLeft || 0}px`,
+                                }}
+                              >
+                                {item.type === 'text' ? (
+                                  <p
+                                    className="text-center"
+                                    style={{
+                                      fontSize: `${item.fontSize || 32}px`,
+                                      color: item.color || '#000000',
+                                      fontWeight: item.fontWeight || 'bold',
+                                      fontStyle: item.fontStyle || 'normal',
+                                      fontFamily: item.fontFamily || 'sans-serif',
+                                      lineHeight: 1.2,
+                                      textTransform: item.isCaps ? 'uppercase' : 'none',
+                                    }}
+                                  >
+                                    {item.isGuestName ? guest.name : (item.isGuestRole ? guest.role : item.text)}
+                                  </p>
+                                ) : (
+                                  <img 
+                                    src={item.imageUrl} 
+                                    alt="Profile item" 
+                                    style={{ 
+                                      width: `${item.width}%`, 
+                                      margin: '0 auto' 
+                                    }} 
+                                  />
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    );
+                  default:
+                    return null;
+                }
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
