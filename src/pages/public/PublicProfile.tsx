@@ -199,7 +199,7 @@ const PublicProfile = () => {
                         className="flex flex-col items-center justify-start p-4 bg-cover bg-center"
                         style={textBlockStyle}
                       >
-                        {(block as TextBlock).items.map(item => (
+                        {(block as TextBlock).items?.map(item => (
                           <div 
                             key={item.id} 
                             style={{ 
