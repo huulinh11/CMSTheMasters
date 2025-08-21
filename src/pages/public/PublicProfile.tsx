@@ -15,9 +15,9 @@ const PublicProfile = () => {
   const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
   const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
 
-  // --- 1. Data Fetching: ONLY fetch the guest data ---
+  // --- 1. Data Fetching: ONLY fetch the guest data. No templates. ---
   const { data: guest, isLoading: isLoadingGuest, isError: isErrorGuest } = useQuery<CombinedGuest | null>({
-    queryKey: ['public_profile_guest_final', slug],
+    queryKey: ['public_profile_guest_final', slug], // Use a new key to avoid stale data
     queryFn: async () => {
         if (!slug) return null;
         const { data: vipGuest } = await supabase.from('vip_guests').select('*').eq('slug', slug).single();
@@ -29,7 +29,7 @@ const PublicProfile = () => {
     enabled: !!slug,
   });
 
-  // --- 2. Data Processing: Directly use pre-computed data ---
+  // --- 2. Data Processing: Directly use pre-computed data. No merging logic. ---
   const contentBlocks = useMemo(() => {
     if (!guest || !Array.isArray(guest.profile_content)) {
       return [];
