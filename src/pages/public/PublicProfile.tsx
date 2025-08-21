@@ -47,73 +47,60 @@ const PublicProfile = () => {
     }
   });
 
+  const activeTemplate = useMemo(() => {
+    if (!guest || !templates || templates.length === 0) {
+      return null;
+    }
+    if (guest.template_id) {
+      return templates.find(t => t.id === guest.template_id) || null;
+    }
+    return templates.find(t => t.assigned_roles?.includes(guest.role)) || null;
+  }, [guest, templates]);
+
   const contentBlocks = useMemo(() => {
     if (!guest) {
       return [];
     }
 
-    const getUnmigratedBlocks = (): ContentBlock[] => {
-      let template: ProfileTemplate | null = null;
-      if (guest.template_id) {
-        template = templates.find(t => t.id === guest.template_id) || null;
-      }
-      if (!template) {
-        template = templates.find(t => t.assigned_roles?.includes(guest.role)) || null;
-      }
+    const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
 
-      if (template) {
-        const templateContent = Array.isArray(template.content) ? template.content : [];
-        const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
-        const userContentMap = new Map(userContent.map((b) => [b.id, b]));
+    if (activeTemplate) {
+      const templateContent = Array.isArray(activeTemplate.content) ? activeTemplate.content : [];
+      const userContentMap = new Map(userContent.map((b) => [b.id, b]));
 
-        return templateContent.map((templateBlock): ContentBlock => {
-          const userBlock = userContentMap.get(templateBlock.id);
-          if (!userBlock || userBlock.type !== templateBlock.type) {
-            return templateBlock;
-          }
-          switch (templateBlock.type) {
-            case 'image':
-              if (userBlock.type === 'image') return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
-              break;
-            case 'video':
-              if (userBlock.type === 'video') return { ...templateBlock, videoUrl: userBlock.videoUrl };
-              break;
-            case 'text':
-              if (userBlock.type === 'text') {
-                const userItems = Array.isArray(userBlock.items) ? userBlock.items : [];
-                const templateItems = Array.isArray(templateBlock.items) ? templateBlock.items : [];
-                const userItemsMap = new Map(userItems.map(item => [item.id, item]));
-                const mergedItems = templateItems.map(templateItem => {
-                  const userItem = userItemsMap.get(templateItem.id);
-                  if (!userItem || userItem.type !== templateItem.type) return templateItem;
-                  if (templateItem.type === 'text' && userItem.type === 'text') return { ...templateItem, text: userItem.text };
-                  if (templateItem.type === 'image' && userItem.type === 'image') return { ...templateItem, imageUrl: userItem.imageUrl };
-                  return templateItem;
-                });
-                return { ...templateBlock, items: mergedItems };
-              }
-              break;
-          }
+      return templateContent.map((templateBlock): ContentBlock => {
+        const userBlock = userContentMap.get(templateBlock.id);
+        if (!userBlock || userBlock.type !== templateBlock.type) {
           return templateBlock;
-        });
-      }
-      return Array.isArray(guest.profile_content) ? guest.profile_content : [];
-    };
-
-    const unmigratedBlocks = getUnmigratedBlocks();
-
-    return unmigratedBlocks.map(block => {
-      if (block.type === 'text') {
-        const textBlock = block as any;
-        if (textBlock.texts && !textBlock.items) {
-          const migratedItems = textBlock.texts.map((t: any) => ({ ...t, type: 'text' }));
-          const { texts, ...restOfBlock } = textBlock;
-          return { ...restOfBlock, items: migratedItems };
         }
-      }
-      return block;
-    });
-  }, [guest, templates]);
+        switch (templateBlock.type) {
+          case 'image':
+            if (userBlock.type === 'image') return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
+            break;
+          case 'video':
+            if (userBlock.type === 'video') return { ...templateBlock, videoUrl: userBlock.videoUrl };
+            break;
+          case 'text':
+            if (userBlock.type === 'text') {
+              const userItems = Array.isArray(userBlock.items) ? userBlock.items : [];
+              const templateItems = Array.isArray(templateBlock.items) ? templateBlock.items : [];
+              const userItemsMap = new Map(userItems.map(item => [item.id, item]));
+              const mergedItems = templateItems.map(templateItem => {
+                const userItem = userItemsMap.get(templateItem.id);
+                if (!userItem || userItem.type !== templateItem.type) return templateItem;
+                if (templateItem.type === 'text' && userItem.type === 'text') return { ...templateItem, text: userItem.text };
+                if (templateItem.type === 'image' && userItem.type === 'image') return { ...templateItem, imageUrl: userItem.imageUrl };
+                return templateItem;
+              });
+              return { ...templateBlock, items: mergedItems };
+            }
+            break;
+        }
+        return templateBlock;
+      });
+    }
+    return userContent;
+  }, [guest, activeTemplate]);
 
   useEffect(() => {
     const newDimensions: Record<string, { width: number; height: number }> = {};
