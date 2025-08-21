@@ -3,21 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
-import { useMemo, useState, useEffect, useCallback } from "react";
-import { ContentBlock, TextBlock } from "@/types/profile-content";
-import { VideoBlockPlayer } from "@/components/public-profile/VideoBlockPlayer";
-import CustomLoadingScreen from "@/components/public-profile/CustomLoadingScreen";
+import { ProfileTemplate } from "@/types/profile-template";
+import { useMemo } from "react";
+import { ContentBlock, TextBlockItem } from "@/types/profile-content";
 
-type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: ContentBlock[] | null };
+type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: any | null };
 
 const PublicProfile = () => {
   const { slug } = useParams();
-  const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
-  const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
 
-  // --- 1. Data Fetching: ONLY fetch the guest data. No templates. ---
-  const { data: guest, isLoading: isLoadingGuest, isError: isErrorGuest } = useQuery<CombinedGuest | null>({
-    queryKey: ['public_profile_guest_final', slug],
+  // Query 1: Lấy dữ liệu khách mời
+  const { data: guest, isLoading: isLoadingGuest, isError: isErrorGuest, error: guestError } = useQuery<CombinedGuest | null>({
+    queryKey: ['public_profile_guest_diag_4', slug],
     queryFn: async () => {
         if (!slug) return null;
         const { data: vipGuest } = await supabase.from('vip_guests').select('*').eq('slug', slug).single();
@@ -29,182 +26,122 @@ const PublicProfile = () => {
     enabled: !!slug,
   });
 
-  const { data: settings, isLoading: isLoadingSettings } = useQuery({
-    queryKey: ['checklist_settings'],
+  // Query 2: Lấy danh sách templates
+  const { data: templates, isLoading: isLoadingTemplates, isError: isErrorTemplates, error: templatesError } = useQuery<ProfileTemplate[]>({
+    queryKey: ['profile_templates_diag_4'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('checklist_settings').select('loader_config, loading_text_config').limit(1).single();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    }
+      const { data, error } = await supabase.from('profile_templates').select('*');
+      if (error) throw error;
+      return data || [];
+    },
   });
 
-  // --- 2. Data Processing: Directly use pre-computed data. No merging logic. ---
   const contentBlocks = useMemo(() => {
-    if (!guest || !Array.isArray(guest.profile_content)) {
+    if (!guest || !templates) {
       return [];
     }
-    return guest.profile_content;
-  }, [guest]);
+    const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
+    
+    let activeTemplate: ProfileTemplate | null = null;
+    if (guest.template_id) {
+      activeTemplate = templates.find(t => t.id === guest.template_id) || null;
+    }
+    if (!activeTemplate) {
+      activeTemplate = templates.find(t => t.assigned_roles?.includes(guest.role)) || null;
+    }
 
-  useEffect(() => {
-    const newDimensions: Record<string, { width: number; height: number }> = {};
-    const promises = contentBlocks
-      .filter((block): block is TextBlock => block.type === 'text' && !!block.useImageDimensions && !!block.backgroundImageUrl && !imageDimensions[block.id])
-      .map(block => new Promise<void>(resolve => {
-        const img = new Image();
-        img.onload = () => {
-          newDimensions[block.id] = { width: img.naturalWidth, height: img.naturalHeight };
-          resolve();
-        };
-        img.onerror = () => resolve();
-        img.src = block.backgroundImageUrl!;
-      }));
+    if (activeTemplate) {
+      const templateContent = Array.isArray(activeTemplate.content) ? activeTemplate.content : [];
+      const userContentMap = new Map(userContent.map((b) => [b.id, b]));
 
-    if (promises.length > 0) {
-      Promise.all(promises).then(() => {
-        if (Object.keys(newDimensions).length > 0) {
-          setImageDimensions(prev => ({ ...prev, ...newDimensions }));
+      return templateContent.map((templateBlock): ContentBlock => {
+        const userBlock = userContentMap.get(templateBlock.id);
+        if (!userBlock || userBlock.type !== templateBlock.type) return templateBlock;
+        
+        switch (templateBlock.type) {
+          case 'image':
+            if (userBlock.type === 'image') return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
+            break;
+          case 'video':
+            if (userBlock.type === 'video') return { ...templateBlock, videoUrl: userBlock.videoUrl };
+            break;
+          case 'text':
+            if (userBlock.type === 'text') {
+              const userItems = (Array.isArray(userBlock.items) ? userBlock.items : []) as TextBlockItem[];
+              const templateItems = (Array.isArray(templateBlock.items) ? templateBlock.items : []) as TextBlockItem[];
+              const userItemsMap = new Map(userItems.map(item => [item.id, item]));
+
+              const mergedItems = templateItems.map((templateItem): TextBlockItem => {
+                const userItem = userItemsMap.get(templateItem.id);
+                
+                if (!userItem || userItem.type !== templateItem.type) {
+                  return templateItem;
+                }
+
+                if (templateItem.type === 'text' && userItem.type === 'text') {
+                  return { ...templateItem, text: userItem.text };
+                }
+                if (templateItem.type === 'image' && userItem.type === 'image') {
+                  return { ...templateItem, imageUrl: userItem.imageUrl };
+                }
+                
+                return templateItem;
+              });
+              return { ...templateBlock, items: mergedItems };
+            }
+            break;
         }
+        return templateBlock;
       });
     }
-  }, [contentBlocks]);
+    return userContent;
+  }, [guest, templates]);
 
-  const videoBlocks = useMemo(() => contentBlocks.filter(b => b.type === 'video'), [contentBlocks]);
+  const isLoading = isLoadingGuest || isLoadingTemplates;
+  const isError = isErrorGuest || isErrorTemplates;
+  const error = guestError || templatesError;
 
-  const handleVideoLoad = useCallback((videoId: string) => {
-    setLoadedVideoIds(prev => {
-      if (prev.has(videoId)) return prev;
-      const newSet = new Set(prev);
-      newSet.add(videoId);
-      return newSet;
-    });
-  }, []);
-
-  useEffect(() => {
-    setLoadedVideoIds(new Set());
-  }, [guest]);
-
-  // --- 3. Conditional Returns ---
-  const isLoading = isLoadingGuest || isLoadingSettings;
   if (isLoading) {
-    return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-gray-100">
+        <p className="text-lg">Đang tải và xử lý dữ liệu...</p>
+      </div>
+    );
   }
 
-  if (isErrorGuest || !guest) {
+  if (isError) {
     return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center p-4">
-        <div className="text-center p-8 bg-white/70 rounded-xl shadow-lg max-w-sm w-full">
-          <h1 className="text-2xl font-bold text-red-600">Không tìm thấy Profile</h1>
-          <p className="text-slate-600 mt-2">Liên kết có thể đã sai hoặc profile đã bị xóa.</p>
+      <div className="w-full min-h-screen flex items-center justify-center bg-red-50 p-4">
+        <div>
+          <h1 className="text-xl font-bold text-red-700">Lỗi tải dữ liệu</h1>
+          <pre className="mt-2 text-sm text-red-600 bg-red-100 p-2 rounded">{error?.message}</pre>
         </div>
       </div>
     );
   }
 
-  // --- 4. Main Render Logic ---
-  const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
-  const showContentLoader = videoBlocks.length > 0 && !areAllVideosLoaded;
+  if (!guest) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-yellow-50 p-4">
+        <h1 className="text-xl font-bold text-yellow-700">Không tìm thấy profile cho slug: "{slug}"</h1>
+      </div>
+    );
+  }
 
   return (
-    <>
-      {showContentLoader && (
-        <div className="fixed inset-0 w-full h-screen z-50">
-          <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />
-        </div>
-      )}
-      <div style={{ visibility: showContentLoader ? 'hidden' : 'visible' }}>
-        <div className="w-full min-h-screen bg-black flex justify-center">
-          <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
-            <div className="flex flex-col">
-              {contentBlocks.map((block) => {
-                if (!block) return null;
-                switch (block.type) {
-                  case 'image':
-                    const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover" style={{ width: `${block.width || 100}%` }} />;
-                    return (
-                      <div key={block.id} className="w-full flex justify-center">
-                        {block.linkUrl ? (
-                          <a href={block.linkUrl} target="_blank" rel="noopener noreferrer" style={{ width: `${block.width || 100}%` }}>
-                            {imageElement}
-                          </a>
-                        ) : (
-                          imageElement
-                        )}
-                      </div>
-                    );
-                  case 'video':
-                    return <VideoBlockPlayer key={block.id} block={block} onVideoLoad={handleVideoLoad} />;
-                  case 'text':
-                    const dimensions = imageDimensions[block.id];
-                    const textBlockStyle: React.CSSProperties = {
-                      backgroundImage: block.backgroundImageUrl ? `url(${block.backgroundImageUrl})` : undefined,
-                      width: '100%',
-                      maxWidth: '100%',
-                    };
-                    if (block.useImageDimensions && dimensions) {
-                      textBlockStyle.aspectRatio = `${dimensions.width} / ${dimensions.height}`;
-                    } else {
-                      textBlockStyle.minHeight = '16rem';
-                    }
-
-                    return (
-                      <div key={block.id} className="w-full flex justify-center">
-                        <div
-                          className="flex flex-col items-center justify-start p-4 bg-cover bg-center"
-                          style={textBlockStyle}
-                        >
-                          {Array.isArray(block.items) && block.items.map(item => {
-                            if (!item) return null;
-                            return (
-                              <div 
-                                key={item.id} 
-                                style={{ 
-                                  marginTop: `${item.marginTop || 0}px`,
-                                  marginRight: `${item.marginRight || 0}px`,
-                                  marginBottom: `${item.marginBottom || 0}px`,
-                                  marginLeft: `${item.marginLeft || 0}px`,
-                                }}
-                              >
-                                {item.type === 'text' ? (
-                                  <p
-                                    className="text-center"
-                                    style={{
-                                      fontSize: `${item.fontSize || 32}px`,
-                                      color: item.color || '#000000',
-                                      fontWeight: item.fontWeight || 'bold',
-                                      fontStyle: item.fontStyle || 'normal',
-                                      fontFamily: item.fontFamily || 'sans-serif',
-                                      lineHeight: 1.2,
-                                      textTransform: item.isCaps ? 'uppercase' : 'none',
-                                    }}
-                                  >
-                                    {item.isGuestName ? guest.name : (item.isGuestRole ? guest.role : item.text)}
-                                  </p>
-                                ) : (
-                                  item.imageUrl && <img 
-                                    src={item.imageUrl} 
-                                    alt="Profile item" 
-                                    style={{ 
-                                      width: `${item.width}%`, 
-                                      margin: '0 auto' 
-                                    }} 
-                                  />
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    );
-                  default:
-                    return null;
-                }
-              })}
-            </div>
-          </div>
+    <div className="w-full min-h-screen bg-black flex justify-center">
+      <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
+        <div className="flex flex-col">
+          <h2 className="p-4 text-lg font-bold">Render Chẩn đoán (Bước 4)</h2>
+          <p className="p-4">Nếu bạn thấy danh sách dưới đây, việc lặp qua contentBlocks đã thành công.</p>
+          {contentBlocks.map((block) => {
+            if (!block) return <div key={Math.random()}>Null block found!</div>;
+            return <div key={block.id} className="p-2 border-b">Block Type: {block.type}</div>;
+          })}
+          {contentBlocks.length === 0 && <div className="p-2">Không có content blocks để hiển thị.</div>}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
