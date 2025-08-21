@@ -7,7 +7,7 @@ import { ProfileTemplate } from "@/types/profile-template";
 import { useMemo } from "react";
 import { ContentBlock, TextBlockItem } from "@/types/profile-content";
 
-type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: ContentBlock[] | null };
+type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: any | null };
 
 const PublicProfile = () => {
   const { slug } = useParams();
