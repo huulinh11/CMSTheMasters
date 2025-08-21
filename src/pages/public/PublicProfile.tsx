@@ -29,7 +29,7 @@ const PublicProfile = () => {
     enabled: !!slug,
   });
 
-  const { data: templates, isLoading: isLoadingTemplates } = useQuery<ProfileTemplate[]>({
+  const { data: templates = [], isLoading: isLoadingTemplates } = useQuery<ProfileTemplate[]>({
     queryKey: ['profile_templates'],
     queryFn: async () => {
       const { data, error } = await supabase.from('profile_templates').select('*');
@@ -38,19 +38,10 @@ const PublicProfile = () => {
     },
   });
 
-  const { data: settings, isLoading: isLoadingSettings } = useQuery({
-    queryKey: ['checklist_settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('checklist_settings').select('loader_config, loading_text_config').limit(1).single();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    }
-  });
-
-  const isDataReady = !isLoadingGuest && !isLoadingTemplates && !isLoadingSettings && guest;
-
   const contentBlocks = useMemo(() => {
-    if (!isDataReady) return [];
+    if (isLoadingGuest || isLoadingTemplates || !guest) {
+      return [];
+    }
 
     const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
     
@@ -97,7 +88,7 @@ const PublicProfile = () => {
       });
     }
     return userContent;
-  }, [isDataReady, guest, templates]);
+  }, [isLoadingGuest, isLoadingTemplates, guest, templates]);
 
   useEffect(() => {
     const newDimensions: Record<string, { width: number; height: number }> = {};
@@ -138,7 +129,7 @@ const PublicProfile = () => {
   }, [guest]);
 
   const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
-  const showContentLoader = !isDataReady || (videoBlocks.length > 0 && !areAllVideosLoaded);
+  const showContentLoader = isLoadingGuest || isLoadingTemplates || (videoBlocks.length > 0 && !areAllVideosLoaded);
 
   const PageContent = useMemo(() => {
     if (!guest) return null;
@@ -236,28 +227,26 @@ const PublicProfile = () => {
     );
   }, [guest, contentBlocks, handleVideoLoad, imageDimensions]);
 
-  if (!isDataReady) {
-    if (isLoadingGuest || isLoadingTemplates || isLoadingSettings) {
-      return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
-    }
-    
-    if (isErrorGuest || !guest) {
-      return (
-        <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center p-4">
-          <div className="text-center p-8 bg-white/70 rounded-xl shadow-lg max-w-sm w-full">
-            <h1 className="text-2xl font-bold text-red-600">Không tìm thấy Profile</h1>
-            <p className="text-slate-600 mt-2">Liên kết có thể đã sai hoặc profile đã bị xóa.</p>
-          </div>
+  if (isLoadingGuest || isLoadingTemplates) {
+    return <CustomLoadingScreen />;
+  }
+
+  if (isErrorGuest || !guest) {
+    return (
+      <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center p-4">
+        <div className="text-center p-8 bg-white/70 rounded-xl shadow-lg max-w-sm w-full">
+          <h1 className="text-2xl font-bold text-red-600">Không tìm thấy Profile</h1>
+          <p className="text-slate-600 mt-2">Liên kết có thể đã sai hoặc profile đã bị xóa.</p>
         </div>
-      );
-    }
+      </div>
+    );
   }
 
   return (
     <>
       {showContentLoader && (
         <div className="fixed inset-0 w-full h-screen z-50">
-          <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />
+          <CustomLoadingScreen />
         </div>
       )}
       <div style={{ visibility: showContentLoader ? 'hidden' : 'visible' }}>
