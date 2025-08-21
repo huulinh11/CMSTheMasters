@@ -5,7 +5,6 @@ import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { ContentBlock, TextBlock } from "@/types/profile-content";
-import { ProfileTemplate } from "@/types/profile-template";
 import { VideoBlockPlayer } from "@/components/public-profile/VideoBlockPlayer";
 import CustomLoadingScreen from "@/components/public-profile/CustomLoadingScreen";
 
@@ -16,9 +15,9 @@ const PublicProfile = () => {
   const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
   const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
 
-  // --- 1. Data Fetching Hooks ---
+  // --- 1. Data Fetching: ONLY fetch the guest data ---
   const { data: guest, isLoading: isLoadingGuest, isError: isErrorGuest } = useQuery<CombinedGuest | null>({
-    queryKey: ['public_profile_guest', slug],
+    queryKey: ['public_profile_guest_final', slug],
     queryFn: async () => {
         if (!slug) return null;
         const { data: vipGuest } = await supabase.from('vip_guests').select('*').eq('slug', slug).single();
@@ -30,74 +29,13 @@ const PublicProfile = () => {
     enabled: !!slug,
   });
 
-  const { data: templates, isLoading: isLoadingTemplates } = useQuery<ProfileTemplate[]>({
-    queryKey: ['profile_templates'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('profile_templates').select('*');
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const { data: settings, isLoading: isLoadingSettings } = useQuery({
-    queryKey: ['checklist_settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('checklist_settings').select('loader_config, loading_text_config').limit(1).single();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    }
-  });
-
-  // --- 2. Data Processing Hooks ---
+  // --- 2. Data Processing: Directly use pre-computed data ---
   const contentBlocks = useMemo(() => {
-    if (!guest || !templates) return [];
-    const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
-    
-    let activeTemplate: ProfileTemplate | null = null;
-    if (guest.template_id) {
-      activeTemplate = templates.find(t => t.id === guest.template_id) || null;
+    if (!guest || !Array.isArray(guest.profile_content)) {
+      return [];
     }
-    if (!activeTemplate) {
-      activeTemplate = templates.find(t => t.assigned_roles?.includes(guest.role)) || null;
-    }
-
-    if (activeTemplate) {
-      const templateContent = Array.isArray(activeTemplate.content) ? activeTemplate.content : [];
-      const userContentMap = new Map(userContent.map((b) => [b.id, b]));
-
-      return templateContent.map((templateBlock): ContentBlock | null => {
-        if (!templateBlock) return null;
-        const userBlock = userContentMap.get(templateBlock.id);
-        if (!userBlock || userBlock.type !== templateBlock.type) return templateBlock;
-        
-        switch (templateBlock.type) {
-          case 'image':
-            if (userBlock.type === 'image') return { ...templateBlock, imageUrl: userBlock.imageUrl, linkUrl: userBlock.linkUrl };
-            break;
-          case 'video':
-            if (userBlock.type === 'video') return { ...templateBlock, videoUrl: userBlock.videoUrl };
-            break;
-          case 'text':
-            if (userBlock.type === 'text') {
-              const userItems = Array.isArray(userBlock.items) ? userBlock.items : [];
-              const templateItems = Array.isArray(templateBlock.items) ? templateBlock.items : [];
-              const userItemsMap = new Map(userItems.map(item => [item.id, item]));
-              const mergedItems = templateItems.map(templateItem => {
-                const userItem = userItemsMap.get(templateItem.id);
-                if (!userItem || userItem.type !== templateItem.type) return templateItem;
-                if (templateItem.type === 'text' && userItem.type === 'text') return { ...templateItem, text: userItem.text };
-                if (templateItem.type === 'image' && userItem.type === 'image') return { ...templateItem, imageUrl: userItem.imageUrl };
-                return templateItem;
-              });
-              return { ...templateBlock, items: mergedItems };
-            }
-            break;
-        }
-        return templateBlock;
-      }).filter((b): b is ContentBlock => b !== null);
-    }
-    return userContent;
-  }, [guest, templates]);
+    return guest.profile_content;
+  }, [guest]);
 
   useEffect(() => {
     const newDimensions: Record<string, { width: number; height: number }> = {};
@@ -137,10 +75,9 @@ const PublicProfile = () => {
     setLoadedVideoIds(new Set());
   }, [guest]);
 
-  // --- 3. Conditional Returns (After all hooks) ---
-  const isLoading = isLoadingGuest || isLoadingTemplates || isLoadingSettings;
-  if (isLoading) {
-    return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
+  // --- 3. Conditional Returns ---
+  if (isLoadingGuest) {
+    return <CustomLoadingScreen />;
   }
 
   if (isErrorGuest || !guest) {
@@ -162,7 +99,7 @@ const PublicProfile = () => {
     <>
       {showContentLoader && (
         <div className="fixed inset-0 w-full h-screen z-50">
-          <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />
+          <CustomLoadingScreen />
         </div>
       )}
       <div style={{ visibility: showContentLoader ? 'hidden' : 'visible' }}>
@@ -173,7 +110,6 @@ const PublicProfile = () => {
                 if (!block) return null;
                 switch (block.type) {
                   case 'image':
-                    if (!block.imageUrl) return null;
                     const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover" style={{ width: `${block.width || 100}%` }} />;
                     return (
                       <div key={block.id} className="w-full flex justify-center">
@@ -187,7 +123,6 @@ const PublicProfile = () => {
                       </div>
                     );
                   case 'video':
-                    if (!block.videoUrl) return null;
                     return <VideoBlockPlayer key={block.id} block={block} onVideoLoad={handleVideoLoad} />;
                   case 'text':
                     const dimensions = imageDimensions[block.id];
