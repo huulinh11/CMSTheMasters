@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
-import { Upload, Copy, Trash2, Search } from "lucide-react";
+import { Upload, Copy, Trash2, Search, Eye } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import {
   AlertDialog,
@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { ImagePreviewDialog } from "@/components/image-library/ImagePreviewDialog";
 
 const BUCKET_NAME = 'avatars';
 const FOLDER_NAME = 'image-library';
@@ -30,6 +31,7 @@ const ImageLibrary = () => {
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const { session } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
+  const [previewingFile, setPreviewingFile] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['image-library-files', currentPage],
@@ -171,13 +173,16 @@ const ImageLibrary = () => {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-6 gap-4">
           {filteredFiles.map(file => (
-            <div key={file.id} className="group relative aspect-square border rounded-lg overflow-hidden">
-              <img src={file.publicURL} alt={file.name} className="w-full h-full object-cover" />
+            <div key={file.id} className="mb-4 break-inside-avoid group relative border rounded-lg overflow-hidden">
+              <img src={file.publicURL} alt={file.name} className="w-full h-auto" />
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
                 <p className="text-white text-xs truncate">{file.name}</p>
                 <div className="flex gap-1 mt-1">
+                  <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => setPreviewingFile(file.publicURL)}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
                   <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => handleCopyUrl(file.publicURL)}>
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -207,6 +212,11 @@ const ImageLibrary = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ImagePreviewDialog
+        open={!!previewingFile}
+        onOpenChange={() => setPreviewingFile(null)}
+        imageUrl={previewingFile}
+      />
     </div>
   );
 };
