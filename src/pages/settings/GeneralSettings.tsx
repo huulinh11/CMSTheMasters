@@ -20,6 +20,7 @@ type GeneralSettingsData = {
   favicon_url?: string | null;
   og_image_url?: string | null;
   sidebar_title?: string | null;
+  event_photos_link?: string | null;
 };
 
 const GeneralSettings = () => {
@@ -31,7 +32,7 @@ const GeneralSettings = () => {
   const { data, isLoading } = useQuery<GeneralSettingsData | null>({
     queryKey: ['general_settings'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('checklist_settings').select('id, qr_scan_sound_url, default_dashboard_tab, service_commission_rate, website_title, favicon_url, og_image_url, sidebar_title').limit(1).single();
+      const { data, error } = await supabase.from('checklist_settings').select('id, qr_scan_sound_url, default_dashboard_tab, service_commission_rate, website_title, favicon_url, og_image_url, sidebar_title, event_photos_link').limit(1).single();
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     }
@@ -145,6 +146,23 @@ const GeneralSettings = () => {
             <ImageSourceSelector
               value={settings.og_image_url || ''}
               onValueChange={url => handleConfigChange('og_image_url', url)}
+              onUploadingChange={setIsUploading}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Hình ảnh sự kiện</CardTitle>
+          <CardDescription>Dán link chung cho hình ảnh sự kiện. Link này sẽ hiển thị cho tất cả khách mời.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Link hình ảnh sự kiện</Label>
+            <ImageSourceSelector
+              value={settings.event_photos_link || ''}
+              onValueChange={url => handleConfigChange('event_photos_link', url)}
               onUploadingChange={setIsUploading}
             />
           </div>
