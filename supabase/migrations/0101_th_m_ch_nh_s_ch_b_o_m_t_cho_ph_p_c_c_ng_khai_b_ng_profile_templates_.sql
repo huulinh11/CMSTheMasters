@@ -1,0 +1,1 @@
+CREATE POLICY "Public can read profile templates" ON public.profile_templates FOR SELECT USING (true);
