@@ -33,6 +33,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { removeAccents } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTablePagination } from "@/components/DataTablePagination";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
   has_history: boolean;
@@ -62,6 +72,8 @@ const GuestsPage = () => {
   const [historyGuest, setHistoryGuest] = useState<CombinedGuestRevenue | null>(null);
   const [upsaleGuest, setUpsaleGuest] = useState<GuestRevenue | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+  const [isBulkZnsAlertOpen, setIsBulkZnsAlertOpen] = useState(false);
 
   const userRole = useMemo(() => profile?.role || user?.user_metadata?.role, [profile, user]);
   const canDelete = useMemo(() => !!(userRole && ['Admin', 'Quản lý'].includes(userRole)), [userRole]);
@@ -321,6 +333,60 @@ const GuestsPage = () => {
     onError: (error: Error) => showError(`Lỗi: ${error.message}`),
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (guestIds: string[]) => {
+        const vipsToDelete = guestIds.filter(id => combinedGuests.find(g => g.id === id)?.type === 'Chức vụ');
+        const regularsToDelete = guestIds.filter(id => combinedGuests.find(g => g.id === id)?.type === 'Khách mời');
+
+        const promises = [];
+        if (vipsToDelete.length > 0) {
+            promises.push(supabase.from('vip_guests').delete().in('id', vipsToDelete));
+        }
+        if (regularsToDelete.length > 0) {
+            promises.push(supabase.from('guests').delete().in('id', regularsToDelete));
+        }
+
+        const results = await Promise.all(promises);
+        const firstError = results.find(res => res.error);
+        if (firstError) throw firstError.error;
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+        queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+        setSelectedGuests([]);
+        showSuccess("Đã xóa các khách mời đã chọn.");
+    },
+    onError: (error: Error) => showError(`Lỗi: ${error.message}`),
+    onSettled: () => setIsBulkDeleteAlertOpen(false),
+  });
+
+  const bulkZnsMutation = useMutation({
+      mutationFn: async ({ guestIds, sent }: { guestIds: string[], sent: boolean }) => {
+          const vipsToUpdate = guestIds.filter(id => combinedGuests.find(g => g.id === id)?.type === 'Chức vụ');
+          const regularsToUpdate = guestIds.filter(id => combinedGuests.find(g => g.id === id)?.type === 'Khách mời');
+
+          const promises = [];
+          if (vipsToUpdate.length > 0) {
+              promises.push(supabase.from('vip_guests').update({ zns_sent: sent }).in('id', vipsToUpdate));
+          }
+          if (regularsToUpdate.length > 0) {
+              promises.push(supabase.from('guests').update({ zns_sent: sent }).in('id', regularsToUpdate));
+          }
+
+          const results = await Promise.all(promises);
+          const firstError = results.find(res => res.error);
+          if (firstError) throw firstError.error;
+      },
+      onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+          queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+          setSelectedGuests([]);
+          showSuccess("Đã cập nhật trạng thái ZNS.");
+      },
+      onError: (error: Error) => showError(`Lỗi: ${error.message}`),
+      onSettled: () => setIsBulkZnsAlertOpen(false),
+  });
+
   const handleVipSubmit = (values: VipGuestFormValues) => {
     addVipGuestMutation.mutate(values);
   };
@@ -366,7 +432,6 @@ const GuestsPage = () => {
       <PageHeader title="Quản lý khách mời">
         <div className="flex items-center gap-2">
           {!isMobile && <ImportExportActions guestsToExport={filteredGuests} />}
-          <Button onClick={() => setIsAddDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
         </div>
       </PageHeader>
       
@@ -404,7 +469,22 @@ const GuestsPage = () => {
             <TabsTrigger value="Khách mời" className="text-base rounded-lg text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-md">Khách mời</TabsTrigger>
           </TabsList>
         </Tabs>
-        <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-slate-800">Tổng: {filteredGuests.length}</h2>
+          {selectedGuests.length > 0 ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{selectedGuests.length} đã chọn</span>
+              <Button size="sm" variant="outline" onClick={() => setIsBulkZnsAlertOpen(true)}>Đánh dấu ZNS</Button>
+              {canDelete && (
+                <Button size="sm" variant="destructive" onClick={() => setIsBulkDeleteAlertOpen(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Xóa
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Button onClick={() => setIsAddDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Thêm</Button>
+          )}
+        </div>
         {isLoading ? (
           <Skeleton className="h-96 w-full" />
         ) : isMobile ? (
@@ -432,6 +512,34 @@ const GuestsPage = () => {
         onDelete={handleDelete}
         roleConfigs={roleConfigs}
       />
+      <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có chắc chắn?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này sẽ xóa vĩnh viễn {selectedGuests.length} khách mời đã chọn. Thao tác này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={() => bulkDeleteMutation.mutate(selectedGuests)}>Xóa</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={isBulkZnsAlertOpen} onOpenChange={setIsBulkZnsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận cập nhật ZNS</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn đánh dấu là "đã gửi ZNS" cho {selectedGuests.length} khách mời đã chọn không?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={() => bulkZnsMutation.mutate({ guestIds: selectedGuests, sent: true })}>Xác nhận</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {/* Other dialogs */}
     </div>
   );
