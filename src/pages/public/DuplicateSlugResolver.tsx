@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocation, useOutletContext } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,7 @@ const DuplicateSlugResolver = ({ slug }: DuplicateSlugResolverProps) => {
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,14 +27,24 @@ const DuplicateSlugResolver = ({ slug }: DuplicateSlugResolverProps) => {
     }
     setIsLoading(true);
     try {
-      const { error } = await supabase.from('slug_resolution_requests').insert({
-        requested_slug: slug,
-        provided_name: name,
-        provided_phone: phone,
+      // Call RPC function to handle resolution
+      const { data, error } = await supabase.rpc('resolve_slug_conflict', {
+        p_requested_slug: slug,
+        p_provided_name: name,
+        p_provided_phone: phone
       });
+
       if (error) throw error;
-      setIsSubmitted(true);
-      showSuccess("Yêu cầu của bạn đã được gửi đi!");
+
+      if (data.status === 'approved') {
+        showSuccess("Xác thực thành công! Đang chuyển hướng...");
+        // Redirect to the correct profile
+        navigate(`/profile/${data.new_slug}`, { replace: true });
+      } else {
+        // Status is 'pending'
+        setIsSubmitted(true);
+        showSuccess("Yêu cầu của bạn đã được gửi đi!");
+      }
     } catch (error: any) {
       showError(`Lỗi: ${error.message}`);
     } finally {
@@ -60,15 +71,15 @@ const DuplicateSlugResolver = ({ slug }: DuplicateSlugResolverProps) => {
     <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Xác thực thông tin</CardTitle>
+          <CardTitle>Thông báo cập nhật thông tin</CardTitle>
           <CardDescription>
-            Xin lỗi bạn, có vẻ như có sự nhầm lẫn trong dữ liệu. Vui lòng điền thông tin dưới đây để Ban tổ chức cập nhật đúng profile cho bạn.
+            Xin lỗi bạn, Do trùng tên khách mời nên có sự nhầm lẫn trong dữ liệu. Vui lòng điền thông tin dưới đây để Ban tổ chức cập nhật đúng profile cho bạn. Xin cảm ơn.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Tên (như trong thiệp mời)</Label>
+              <Label htmlFor="name">Tên (tên hiển thị trong thiệp mời)</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="space-y-2">
