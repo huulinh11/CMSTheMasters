@@ -16,6 +16,7 @@ const PublicProfile = () => {
   const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
   const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
 
+  // --- 1. Data Fetching Hooks (All at the top) ---
   const { data: guest, isLoading: isLoadingGuest, isError: isErrorGuest } = useQuery<CombinedGuest | null>({
     queryKey: ['public_profile_guest', slug],
     queryFn: async () => {
@@ -47,8 +48,11 @@ const PublicProfile = () => {
     }
   });
 
+  // --- 2. Memoization and Effect Hooks (All at the top) ---
   const contentBlocks = useMemo(() => {
-    if (!guest || !templates) return [];
+    if (!guest || !templates) {
+      return [];
+    }
     const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
     
     let activeTemplate: ProfileTemplate | null = null;
@@ -135,10 +139,8 @@ const PublicProfile = () => {
     setLoadedVideoIds(new Set());
   }, [guest]);
 
+  // --- 3. Conditional Returns (After all hooks) ---
   const isLoading = isLoadingGuest || isLoadingTemplates || isLoadingSettings;
-  const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
-  const showLoader = isLoading || (!isLoading && videoBlocks.length > 0 && !areAllVideosLoaded);
-
   if (isLoading) {
     return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
   }
@@ -154,16 +156,20 @@ const PublicProfile = () => {
     );
   }
 
+  // --- 4. Main Render Logic ---
+  const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
+  const showContentLoader = videoBlocks.length > 0 && !areAllVideosLoaded;
+
   return (
     <>
-      {showLoader && (
+      {showContentLoader && (
         <div className="fixed inset-0 w-full h-screen z-50">
           <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />
         </div>
       )}
-      <div style={{ display: showLoader ? 'none' : 'block' }}>
+      <div style={{ visibility: showContentLoader ? 'hidden' : 'visible' }}>
         <div className="w-full min-h-screen bg-black flex justify-center">
-          <div className="w-full max-w-md bg-white min-h-screen shadow-lg relative">
+          <div className="w-full bg-white min-h-screen relative">
             <div className="flex flex-col">
               {contentBlocks.map((block) => {
                 if (!block) return null;
