@@ -169,7 +169,7 @@ const PublicProfile = () => {
       )}
       <div style={{ visibility: showContentLoader ? 'hidden' : 'visible' }}>
         <div className="w-full min-h-screen bg-black flex justify-center">
-          <div className="w-full bg-white min-h-screen relative">
+          <div className="w-full max-w-[420px] bg-white min-h-screen shadow-lg relative">
             <div className="flex flex-col">
               {contentBlocks.map((block) => {
                 if (!block) return null;
