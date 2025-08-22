@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
 import { VipGuest } from "@/types/vip-guest";
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { ContentBlock, TextBlock } from "@/types/profile-content";
 import { ProfileTemplate } from "@/types/profile-template";
 import { VideoBlockPlayer } from "@/components/public-profile/VideoBlockPlayer";
@@ -11,10 +11,14 @@ import CustomLoadingScreen from "@/components/public-profile/CustomLoadingScreen
 
 type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: ContentBlock[] | null };
 
+const DESIGN_WIDTH = 420; // Chiều rộng gốc mà template được thiết kế
+
 const PublicProfile = () => {
   const { slug } = useParams();
   const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
   const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scaleFactor, setScaleFactor] = useState(1);
 
   // --- 1. Data Fetching Hooks (All at the top) ---
   const { data: guest, isLoading: isLoadingGuest, isError: isErrorGuest } = useQuery<CombinedGuest | null>({
@@ -50,9 +54,7 @@ const PublicProfile = () => {
 
   // --- 2. Memoization and Effect Hooks (All at the top) ---
   const contentBlocks = useMemo(() => {
-    if (!guest || !templates) {
-      return [];
-    }
+    if (!guest || !templates) return [];
     const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
     
     let activeTemplate: ProfileTemplate | null = null;
@@ -139,6 +141,19 @@ const PublicProfile = () => {
     setLoadedVideoIds(new Set());
   }, [guest]);
 
+  useEffect(() => {
+    const observer = new ResizeObserver(entries => {
+      if (entries[0]) {
+        const width = entries[0].contentRect.width;
+        setScaleFactor(width / DESIGN_WIDTH);
+      }
+    });
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
+
   // --- 3. Conditional Returns (After all hooks) ---
   const isLoading = isLoadingGuest || isLoadingTemplates || isLoadingSettings;
   if (isLoading) {
@@ -169,7 +184,7 @@ const PublicProfile = () => {
       )}
       <div style={{ visibility: showContentLoader ? 'hidden' : 'visible' }}>
         <div className="w-full min-h-screen bg-black flex justify-center items-center">
-          <div className="w-full max-w-[420px] bg-white shadow-lg relative">
+          <div ref={containerRef} className="w-full max-w-[420px] bg-white shadow-lg relative">
             <div className="flex flex-col">
               {contentBlocks.map((block) => {
                 if (!block) return null;
@@ -214,17 +229,17 @@ const PublicProfile = () => {
                               <div 
                                 key={item.id} 
                                 style={{ 
-                                  marginTop: `${item.marginTop || 0}px`,
-                                  marginRight: `${item.marginRight || 0}px`,
-                                  marginBottom: `${item.marginBottom || 0}px`,
-                                  marginLeft: `${item.marginLeft || 0}px`,
+                                  marginTop: `${(item.marginTop || 0) * scaleFactor}px`,
+                                  marginRight: `${(item.marginRight || 0) * scaleFactor}px`,
+                                  marginBottom: `${(item.marginBottom || 0) * scaleFactor}px`,
+                                  marginLeft: `${(item.marginLeft || 0) * scaleFactor}px`,
                                 }}
                               >
                                 {item.type === 'text' ? (
                                   <p
                                     className="text-center"
                                     style={{
-                                      fontSize: `${item.fontSize || 32}px`,
+                                      fontSize: `${(item.fontSize || 32) * scaleFactor}px`,
                                       color: item.color || '#000000',
                                       fontWeight: item.fontWeight || 'bold',
                                       fontStyle: item.fontStyle || 'normal',
