@@ -134,7 +134,7 @@ const GuestsPage = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['all_vip_guests_for_referral'] });
       queryClient.invalidateQueries({ queryKey: ['guests'] });
       queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
       queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
