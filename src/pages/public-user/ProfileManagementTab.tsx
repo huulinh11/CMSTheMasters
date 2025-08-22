@@ -20,6 +20,7 @@ import { ProfileTemplate } from "@/types/profile-template";
 import { TemplateManagementDialog } from "@/components/public-user/TemplateManagementDialog";
 import { EditTemplateDialog } from "@/components/public-user/EditTemplateDialog";
 import { AssignTemplateDialog } from "@/components/public-user/AssignTemplateDialog";
+import { DuplicateTemplateDialog } from "@/components/public-user/DuplicateTemplateDialog";
 
 type CombinedGuest = (VipGuest | Guest) & { type: 'Chức vụ' | 'Khách mời', profile_status?: ProfileStatus };
 
@@ -33,6 +34,7 @@ const ProfileManagementTab = () => {
   const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Partial<ProfileTemplate> | null>(null);
   const [isAssignTemplateOpen, setIsAssignTemplateOpen] = useState(false);
+  const [duplicatingTemplate, setDuplicatingTemplate] = useState<ProfileTemplate | null>(null);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
@@ -156,7 +158,6 @@ const ProfileManagementTab = () => {
       const { error } = await supabase.from('profile_templates').upsert(template);
       if (error) throw error;
       
-      // If assigned_roles changed, apply to guests
       if (template.assigned_roles && template.id) {
         for (const role of template.assigned_roles) {
           const { error: rpcError } = await supabase.rpc('apply_template_to_role', {
@@ -211,6 +212,25 @@ const ProfileManagementTab = () => {
       setIsAssignTemplateOpen(false);
     },
     onError: (error: Error) => showError(error.message),
+  });
+
+  const duplicateTemplateMutation = useMutation({
+    mutationFn: async ({ name, roles, content }: { name: string; roles: string[]; content: ContentBlock[] | null }) => {
+      const { error } = await supabase.from('profile_templates').insert({
+        name,
+        assigned_roles: roles,
+        content,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile_templates'] });
+      showSuccess("Nhân bản template thành công!");
+      setDuplicatingTemplate(null);
+    },
+    onError: (error: Error) => {
+      showError(`Lỗi nhân bản: ${error.message}`);
+    },
   });
 
   useEffect(() => {
@@ -374,6 +394,7 @@ const ProfileManagementTab = () => {
         onEdit={(template) => { setEditingTemplate(template); setIsEditTemplateOpen(true); }}
         onDelete={(id) => deleteTemplateMutation.mutate(id)}
         onAssign={() => { setIsTemplateManagerOpen(false); setIsAssignTemplateOpen(true); }}
+        onDuplicate={(template) => setDuplicatingTemplate(template)}
       />
       <EditTemplateDialog
         open={isEditTemplateOpen}
@@ -391,6 +412,22 @@ const ProfileManagementTab = () => {
         guests={allGuests}
         onAssign={(templateId, guestIds) => assignTemplateMutation.mutate({ templateId, guestIds })}
         isAssigning={assignTemplateMutation.isPending}
+      />
+      <DuplicateTemplateDialog
+        open={!!duplicatingTemplate}
+        onOpenChange={() => setDuplicatingTemplate(null)}
+        template={duplicatingTemplate}
+        onDuplicate={({ name, roles }) => {
+          if (duplicatingTemplate) {
+            duplicateTemplateMutation.mutate({
+              name,
+              roles,
+              content: duplicatingTemplate.content,
+            });
+          }
+        }}
+        isDuplicating={duplicateTemplateMutation.isPending}
+        allRoles={roleConfigs}
       />
     </div>
   );

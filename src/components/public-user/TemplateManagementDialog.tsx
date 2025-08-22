@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +7,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Copy } from "lucide-react";
 import { ProfileTemplate } from "@/types/profile-template";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -20,6 +19,7 @@ interface TemplateManagementDialogProps {
   onEdit: (template: ProfileTemplate) => void;
   onDelete: (templateId: string) => void;
   onAssign: () => void;
+  onDuplicate: (template: ProfileTemplate) => void;
 }
 
 export const TemplateManagementDialog = ({
@@ -30,6 +30,7 @@ export const TemplateManagementDialog = ({
   onEdit,
   onDelete,
   onAssign,
+  onDuplicate,
 }: TemplateManagementDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -58,6 +59,13 @@ export const TemplateManagementDialog = ({
                       )}
                     </div>
                     <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDuplicate(template)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
