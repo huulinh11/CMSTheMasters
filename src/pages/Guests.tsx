@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { VipGuest, VipGuestFormValues } from "@/types/vip-guest";
 import { Guest, GuestFormValues } from "@/types/guest";
@@ -47,6 +47,7 @@ const GuestsPage = () => {
   const { profile, user } = useAuth();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
+  const slugCheckPerformed = useRef(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState('all');
@@ -146,7 +147,7 @@ const GuestsPage = () => {
   });
 
   useEffect(() => {
-    if (!isLoadingVip && !isLoadingRegular && !backfillSlugsMutation.isPending) {
+    if (!isLoadingVip && !isLoadingRegular && !backfillSlugsMutation.isPending && !slugCheckPerformed.current) {
       const vipGuestsToUpdate = allVipGuests.map(g => ({ 
         id: g.id, 
         slug: generateGuestSlug(g.name, g.id) 
@@ -168,7 +169,10 @@ const GuestsPage = () => {
       });
 
       if (vipUpdates.length > 0 || regularUpdates.length > 0) {
+        slugCheckPerformed.current = true;
         backfillSlugsMutation.mutate({ vipUpdates: vipUpdates, regularUpdates: regularUpdates });
+      } else {
+        slugCheckPerformed.current = true;
       }
     }
   }, [allVipGuests, regularData, isLoadingVip, isLoadingRegular, backfillSlugsMutation]);
