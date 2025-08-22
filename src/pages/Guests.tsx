@@ -43,6 +43,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AddVipGuestDialog } from "@/components/guests/AddVipGuestDialog";
+import { AddGuestDialog } from "@/components/guests/AddGuestDialog";
 
 export type CombinedGuestRevenue = ((GuestRevenue & { type: 'Khách mời' }) | (VipGuestRevenue & { type: 'Chức vụ' })) & {
   has_history: boolean;
@@ -305,6 +307,48 @@ const GuestsPage = () => {
     },
   });
 
+  const editVipGuestMutation = useMutation({
+    mutationFn: async (values: VipGuestFormValues & { id: string }) => {
+      const { sponsorship_amount, paid_amount, ...guestData } = values;
+      const { error: guestError } = await supabase.from('vip_guests').update(guestData).eq('id', values.id);
+      if (guestError) throw guestError;
+  
+      if (sponsorship_amount !== undefined) {
+        const { error: revenueError } = await supabase.from('vip_guest_revenue').upsert({ guest_id: values.id, sponsorship: sponsorship_amount }, { onConflict: 'guest_id' });
+        if (revenueError) throw revenueError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+      showSuccess("Cập nhật khách chức vụ thành công!");
+    },
+    onError: (error: Error) => showError(`Lỗi: ${error.message}`),
+    onSettled: () => {
+      setEditingGuest(null);
+    },
+  });
+  
+  const editRegularGuestMutation = useMutation({
+    mutationFn: async (values: GuestFormValues & { id: string }) => {
+      const { sponsorship_amount, paid_amount, payment_source, ...guestData } = values;
+      const { error: guestError } = await supabase.from('guests').update(guestData).eq('id', values.id);
+      if (guestError) throw guestError;
+  
+      if (sponsorship_amount !== undefined || payment_source) {
+        const { error: revenueError } = await supabase.from('guest_revenue').upsert({ guest_id: values.id, sponsorship: sponsorship_amount || 0, payment_source: payment_source || 'Trống' }, { onConflict: 'guest_id' });
+        if (revenueError) throw revenueError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+      showSuccess("Cập nhật khách mời thành công!");
+    },
+    onError: (error: Error) => showError(`Lỗi: ${error.message}`),
+    onSettled: () => {
+      setEditingGuest(null);
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (guest: CombinedGuestRevenue) => {
       const tableName = guest.type === 'Chức vụ' ? 'vip_guests' : 'guests';
@@ -425,6 +469,11 @@ const GuestsPage = () => {
     }
   };
 
+  const handleEditFromDetails = (guestToEdit: any) => {
+    setViewingGuest(null);
+    setEditingGuest(guestToEdit);
+  };
+
   const isLoading = isLoadingVip || isLoadingRegular;
 
   return (
@@ -503,12 +552,36 @@ const GuestsPage = () => {
         allVipGuests={allVipGuests}
         roleConfigs={roleConfigs}
       />
+      <AddVipGuestDialog
+        open={!!editingGuest && editingGuest.type === 'Chức vụ'}
+        onOpenChange={() => setEditingGuest(null)}
+        onSubmit={(values) => {
+          if (editingGuest) {
+            editVipGuestMutation.mutate({ ...values, id: editingGuest.id });
+          }
+        }}
+        defaultValues={editingGuest}
+        allGuests={allVipGuests}
+        roleConfigs={roleConfigs.filter(r => r.type === 'Chức vụ')}
+      />
+      <AddGuestDialog
+        open={!!editingGuest && editingGuest.type === 'Khách mời'}
+        onOpenChange={() => setEditingGuest(null)}
+        onSubmit={(values) => {
+          if (editingGuest) {
+            editRegularGuestMutation.mutate({ ...values, id: editingGuest.id });
+          }
+        }}
+        defaultValues={editingGuest}
+        allVipGuests={allVipGuests}
+        roleConfigs={roleConfigs.filter(r => r.type === 'Khách mời')}
+      />
       <GuestDetailsDialog
         guestId={viewingGuest?.id || null}
         guestType={viewingGuest?.type || null}
         open={!!viewingGuest}
         onOpenChange={() => setViewingGuest(null)}
-        onEdit={setEditingGuest}
+        onEdit={handleEditFromDetails}
         onDelete={handleDelete}
         roleConfigs={roleConfigs}
       />
