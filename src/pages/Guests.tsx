@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { VipGuest, VipGuestFormValues } from "@/types/vip-guest";
 import { Guest, GuestFormValues } from "@/types/guest";
@@ -47,6 +47,7 @@ const GuestsPage = () => {
   const { profile, user } = useAuth();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
+  const slugCheckPerformed = useRef(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState('all');
@@ -112,6 +113,69 @@ const GuestsPage = () => {
       return data || [];
     }
   });
+
+  const backfillSlugsMutation = useMutation({
+    mutationFn: async ({ vipUpdates, regularUpdates }: { vipUpdates: { id: string, slug: string }[], regularUpdates: { id: string, slug: string }[] }) => {
+      const promises = [];
+      if (vipUpdates.length > 0) {
+        for (const update of vipUpdates) {
+          promises.push(supabase.from('vip_guests').update({ slug: update.slug }).eq('id', update.id));
+        }
+      }
+      if (regularUpdates.length > 0) {
+        for (const update of regularUpdates) {
+          promises.push(supabase.from('guests').update({ slug: update.slug }).eq('id', update.id));
+        }
+      }
+      
+      const results = await Promise.all(promises);
+      const firstError = results.find(res => res.error);
+      if (firstError) {
+        throw new Error(firstError.error!.message);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all_vip_guests_for_referral'] });
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+      showSuccess("Đã cập nhật lại toàn bộ link public!");
+    },
+    onError: (error: Error) => {
+      showError(`Lỗi cập nhật link public: ${error.message}`);
+    }
+  });
+
+  useEffect(() => {
+    if (!isLoadingVip && !isLoadingRegular && !backfillSlugsMutation.isPending && !slugCheckPerformed.current) {
+      const vipGuestsToUpdate = allVipGuests.map(g => ({ 
+        id: g.id, 
+        slug: generateGuestSlug(g.name, g.id) 
+      }));
+
+      const regularGuestsToUpdate = (regularData || []).map((g: any) => ({ 
+        id: g.id, 
+        slug: generateGuestSlug(g.name, g.id) 
+      }));
+      
+      const vipUpdates = vipGuestsToUpdate.filter(update => {
+        const currentGuest = allVipGuests.find(g => g.id === update.id);
+        return currentGuest && currentGuest.slug !== update.slug;
+      });
+
+      const regularUpdates = regularGuestsToUpdate.filter(update => {
+        const currentGuest = (regularData || []).find((g: any) => g.id === update.id);
+        return currentGuest && currentGuest.slug !== update.slug;
+      });
+
+      if (vipUpdates.length > 0 || regularUpdates.length > 0) {
+        slugCheckPerformed.current = true;
+        backfillSlugsMutation.mutate({ vipUpdates: vipUpdates, regularUpdates: regularUpdates });
+      } else {
+        slugCheckPerformed.current = true;
+      }
+    }
+  }, [allVipGuests, regularData, isLoadingVip, isLoadingRegular, backfillSlugsMutation]);
 
   const combinedGuests = useMemo(() => {
     const vips = (vipData || []).map((g: any) => ({ ...g, type: 'Chức vụ' as const }));
