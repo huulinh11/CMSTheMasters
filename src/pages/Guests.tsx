@@ -343,6 +343,22 @@ const GuestsPage = () => {
     }
   };
 
+  const handleSelectGuest = (guestId: string) => {
+    setSelectedGuests(prev => 
+      prev.includes(guestId) 
+        ? prev.filter(id => id !== guestId) 
+        : [...prev, guestId]
+    );
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedGuests(paginatedGuests.map(g => g.id));
+    } else {
+      setSelectedGuests([]);
+    }
+  };
+
   const isLoading = isLoadingVip || isLoadingRegular;
 
   return (
@@ -392,9 +408,9 @@ const GuestsPage = () => {
         {isLoading ? (
           <Skeleton className="h-96 w-full" />
         ) : isMobile ? (
-          <CombinedGuestCards guests={paginatedGuests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
+          <CombinedGuestCards guests={paginatedGuests} selectedGuests={selectedGuests} onSelectGuest={handleSelectGuest} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
         ) : (
-          <CombinedGuestTable guests={paginatedGuests} selectedGuests={selectedGuests} onSelectGuest={() => {}} onSelectAll={() => {}} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
+          <CombinedGuestTable guests={paginatedGuests} selectedGuests={selectedGuests} onSelectGuest={handleSelectGuest} onSelectAll={handleSelectAll} onView={(g) => setViewingGuest({ id: g.id, type: g.type === 'Chức vụ' ? 'vip' : 'regular' })} onEdit={setEditingGuest} onPay={setPayingGuest} onHistory={setHistoryGuest} onUpsale={handleUpsale} onDelete={handleDelete} onZnsChange={handleZnsChange} canDelete={canDelete} />
         )}
         <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
