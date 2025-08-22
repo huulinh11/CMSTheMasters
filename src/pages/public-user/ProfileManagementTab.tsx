@@ -237,11 +237,11 @@ const ProfileManagementTab = () => {
     if (!isLoadingVip && !isLoadingRegular && !backfillSlugsMutation.isPending) {
       const vipGuestsToUpdate = vipGuests
         .filter(g => !g.slug)
-        .map(g => ({ id: g.id, slug: generateGuestSlug(g.name) }));
+        .map(g => ({ id: g.id, slug: generateGuestSlug(g.name, g.id) }));
 
       const regularGuestsToUpdate = regularGuests
         .filter(g => !g.slug)
-        .map(g => ({ id: g.id, slug: generateGuestSlug(g.name) }));
+        .map(g => ({ id: g.id, slug: generateGuestSlug(g.name, g.id) }));
 
       if (vipGuestsToUpdate.length > 0 || regularGuestsToUpdate.length > 0) {
         backfillSlugsMutation.mutate({ vipUpdates: vipGuestsToUpdate, regularUpdates: regularGuestsToUpdate });

@@ -1,5 +1,5 @@
-export const generateGuestSlug = (name: string): string => {
-  const slug = name
+export const generateGuestSlug = (name: string, id: string): string => {
+  const nameSlug = name
     .toLowerCase()
     .normalize("NFD") // Separate accent from letter
     .replace(/[\u0300-\u036f]/g, "") // Remove accents
@@ -10,6 +10,7 @@ export const generateGuestSlug = (name: string): string => {
     .replace(/^-+/, '') // Trim - from start of text
     .replace(/-+$/, ''); // Trim - from end of text
   
-  // Append a short random string to ensure uniqueness easily
-  return `${slug}-${crypto.randomUUID().slice(0, 6)}`;
+  const idSlug = id.toLowerCase();
+
+  return `${nameSlug}-${idSlug}`;
 };

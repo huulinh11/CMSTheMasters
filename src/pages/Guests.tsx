@@ -113,6 +113,66 @@ const GuestsPage = () => {
     }
   });
 
+  const backfillSlugsMutation = useMutation({
+    mutationFn: async ({ vipUpdates, regularUpdates }: { vipUpdates: { id: string, slug: string }[], regularUpdates: { id: string, slug: string }[] }) => {
+      const promises = [];
+      if (vipUpdates.length > 0) {
+        for (const update of vipUpdates) {
+          promises.push(supabase.from('vip_guests').update({ slug: update.slug }).eq('id', update.id));
+        }
+      }
+      if (regularUpdates.length > 0) {
+        for (const update of regularUpdates) {
+          promises.push(supabase.from('guests').update({ slug: update.slug }).eq('id', update.id));
+        }
+      }
+      
+      const results = await Promise.all(promises);
+      const firstError = results.find(res => res.error);
+      if (firstError) {
+        throw new Error(firstError.error!.message);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vip_guests'] });
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+      queryClient.invalidateQueries({ queryKey: ['vip_revenue'] });
+      queryClient.invalidateQueries({ queryKey: ['guest_revenue_details'] });
+      showSuccess("Đã cập nhật lại toàn bộ link public!");
+    },
+    onError: (error: Error) => {
+      showError(`Lỗi cập nhật link public: ${error.message}`);
+    }
+  });
+
+  useEffect(() => {
+    if (!isLoadingVip && !isLoadingRegular && !backfillSlugsMutation.isPending) {
+      const vipGuestsToUpdate = allVipGuests.map(g => ({ 
+        id: g.id, 
+        slug: generateGuestSlug(g.name, g.id) 
+      }));
+
+      const regularGuestsToUpdate = (regularData || []).map((g: any) => ({ 
+        id: g.id, 
+        slug: generateGuestSlug(g.name, g.id) 
+      }));
+      
+      const vipUpdates = vipGuestsToUpdate.filter(update => {
+        const currentGuest = allVipGuests.find(g => g.id === update.id);
+        return currentGuest && currentGuest.slug !== update.slug;
+      });
+
+      const regularUpdates = regularGuestsToUpdate.filter(update => {
+        const currentGuest = (regularData || []).find((g: any) => g.id === update.id);
+        return currentGuest && currentGuest.slug !== update.slug;
+      });
+
+      if (vipUpdates.length > 0 || regularUpdates.length > 0) {
+        backfillSlugsMutation.mutate({ vipUpdates: vipUpdates, regularUpdates: regularUpdates });
+      }
+    }
+  }, [allVipGuests, regularData, isLoadingVip, isLoadingRegular, backfillSlugsMutation]);
+
   const combinedGuests = useMemo(() => {
     const vips = (vipData || []).map((g: any) => ({ ...g, type: 'Chức vụ' as const }));
     const regulars = (regularData || []).map((g: any) => ({ ...g, type: 'Khách mời' as const }));
@@ -126,15 +186,15 @@ const GuestsPage = () => {
 
   const filteredGuests = useMemo(() => {
     return combinedGuests.filter(guest => {
-      const searchMatch = searchTerm === '' ||
-        removeAccents(guest.name.toLowerCase()).includes(removeAccents(searchTerm.toLowerCase())) ||
-        (guest.phone && guest.phone.includes(searchTerm)) ||
-        (guest.type === 'Chức vụ' && guest.secondaryInfo && removeAccents(guest.secondaryInfo.toLowerCase()).includes(removeAccents(searchTerm.toLowerCase())));
+      const searchTermLower = searchTerm.toLowerCase();
+      const guestMatch = removeAccents(guest.name.toLowerCase()).includes(removeAccents(searchTermLower)) ||
+                         (guest.phone && guest.phone.includes(searchTerm)) ||
+                         (guest.type === 'Chức vụ' && guest.secondaryInfo && removeAccents(guest.secondaryInfo.toLowerCase()).includes(removeAccents(searchTermLower)));
       
       const typeMatch = typeFilter === 'all' || guest.type === typeFilter;
       const roleMatch = roleFilter === 'all' || guest.role === roleFilter;
 
-      return searchMatch && typeMatch && roleMatch;
+      return guestMatch && typeMatch && roleMatch;
     });
   }, [combinedGuests, searchTerm, typeFilter, roleFilter]);
 
@@ -163,7 +223,7 @@ const GuestsPage = () => {
       const newId = `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
 
       const { sponsorship_amount, paid_amount, ...guestData } = values;
-      const newGuest = { ...guestData, id: newId, slug: generateGuestSlug(values.name) };
+      const newGuest = { ...guestData, id: newId, slug: generateGuestSlug(values.name, newId) };
 
       const { error: guestError } = await supabase.from('vip_guests').insert(newGuest);
       if (guestError) throw guestError;
@@ -204,7 +264,7 @@ const GuestsPage = () => {
       const newId = `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
 
       const { sponsorship_amount, paid_amount, payment_source, ...guestData } = values;
-      const newGuest = { ...guestData, id: newId, slug: generateGuestSlug(values.name) };
+      const newGuest = { ...guestData, id: newId, slug: generateGuestSlug(values.name, newId) };
 
       const { error: guestError } = await supabase.from('guests').insert(newGuest);
       if (guestError) throw guestError;

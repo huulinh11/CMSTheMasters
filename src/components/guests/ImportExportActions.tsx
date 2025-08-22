@@ -218,7 +218,7 @@ export const ImportExportActions = ({ guestsToExport }: ImportExportActionsProps
         const commonData = {
           id: guestId, name: row.name, role: row.role, phone: row.phone,
           referrer: referrerValue, notes: row.notes || null, materials: row.materials || null,
-          slug: row.slug || generateGuestSlug(row.name),
+          slug: row.slug || generateGuestSlug(row.name, guestId),
         };
 
         if (isVip) {
