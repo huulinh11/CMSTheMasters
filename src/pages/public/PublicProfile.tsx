@@ -168,18 +168,18 @@ const PublicProfile = () => {
         </div>
       )}
       <div style={{ visibility: showContentLoader ? 'hidden' : 'visible' }}>
-        <div className="w-full min-h-screen bg-black flex justify-center">
-          <div className="w-full max-w-[420px] bg-white min-h-screen shadow-lg relative">
+        <div className="w-full min-h-screen bg-black flex justify-center items-center">
+          <div className="w-full max-w-[420px] bg-white shadow-lg relative">
             <div className="flex flex-col">
               {contentBlocks.map((block) => {
                 if (!block) return null;
                 switch (block.type) {
                   case 'image':
-                    const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover" style={{ width: `${block.width || 100}%` }} />;
+                    const imageElement = <img src={block.imageUrl} alt="Profile content" className="h-auto object-cover w-full" />;
                     return (
-                      <div key={block.id} className="w-full flex justify-center">
+                      <div key={block.id} className="w-full flex justify-center" style={{ width: `${block.width || 100}%`, margin: '0 auto' }}>
                         {block.linkUrl ? (
-                          <a href={block.linkUrl} target="_blank" rel="noopener noreferrer" style={{ width: `${block.width || 100}%` }}>
+                          <a href={block.linkUrl} target="_blank" rel="noopener noreferrer" className="w-full">
                             {imageElement}
                           </a>
                         ) : (
