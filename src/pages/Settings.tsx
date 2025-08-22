@@ -12,6 +12,7 @@ const settingsItems = [
   { to: "/settings/general", label: "Chung" },
   { to: "/settings/loading-screen", label: "Cấu hình màn hình chờ profile" },
   { to: "/settings/library", label: "Thư viện" },
+  { to: "/settings/slug-resolution", label: "Xử lý link" },
 ];
 
 const SettingsIndex = () => (

@@ -19,6 +19,7 @@ import MenuSettings from "./pages/settings/MenuSettings";
 import LoadingScreenSettings from "./pages/settings/LoadingScreenSettings";
 import ImageLibrary from "./pages/settings/ImageLibrary";
 import HonorRollSettings from "./pages/settings/HonorRollSettings";
+import SlugResolutionSettings from "./pages/settings/SlugResolutionSettings";
 import NotFound from "./pages/NotFound";
 import PublicUser from "./pages/PublicUser";
 import PublicProfile from "./pages/public/PublicProfile";
@@ -87,6 +88,7 @@ const router = createBrowserRouter([
               { path: "general", element: <GeneralSettings /> },
               { path: "loading-screen", element: <LoadingScreenSettings /> },
               { path: "library", element: <ImageLibrary /> },
+              { path: "slug-resolution", element: <SlugResolutionSettings /> },
             ]
           }
         ],

@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
@@ -8,31 +8,22 @@ import { ContentBlock, TextBlock } from "@/types/profile-content";
 import { ProfileTemplate } from "@/types/profile-template";
 import { VideoBlockPlayer } from "@/components/public-profile/VideoBlockPlayer";
 import CustomLoadingScreen from "@/components/public-profile/CustomLoadingScreen";
+import DuplicateSlugResolver from "./DuplicateSlugResolver";
 
 type CombinedGuest = (Guest | VipGuest) & { image_url?: string; profile_content?: ContentBlock[] | null };
 
-const DESIGN_WIDTH = 420; // Chiều rộng gốc mà template được thiết kế
+const DESIGN_WIDTH = 420;
 
 const PublicProfile = () => {
-  const { slug } = useParams();
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const [status, setStatus] = useState<'loading' | 'found' | 'not_found' | 'resolution_needed'>('loading');
+  const [guest, setGuest] = useState<CombinedGuest | null>(null);
+  
   const [loadedVideoIds, setLoadedVideoIds] = useState(new Set<string>());
   const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const [scaleFactor, setScaleFactor] = useState(1);
-
-  // --- 1. Data Fetching Hooks (All at the top) ---
-  const { data: guest, isLoading: isLoadingGuest, isError: isErrorGuest } = useQuery<CombinedGuest | null>({
-    queryKey: ['public_profile_guest', slug],
-    queryFn: async () => {
-        if (!slug) return null;
-        const { data: vipGuest } = await supabase.from('vip_guests').select('*').eq('slug', slug).single();
-        if (vipGuest) return vipGuest as VipGuest;
-        const { data: regularGuest } = await supabase.from('guests').select('*').eq('slug', slug).single();
-        if (regularGuest) return regularGuest as Guest;
-        return null;
-    },
-    enabled: !!slug,
-  });
 
   const { data: templates, isLoading: isLoadingTemplates } = useQuery<ProfileTemplate[]>({
     queryKey: ['profile_templates'],
@@ -52,7 +43,66 @@ const PublicProfile = () => {
     }
   });
 
-  // --- 2. Memoization and Effect Hooks (All at the top) ---
+  useEffect(() => {
+    const resolveSlug = async () => {
+      if (!slug) {
+        setStatus('not_found');
+        return;
+      }
+
+      // Step 1: Check for a direct slug match (new, stable format)
+      const slugParts = slug.split('-');
+      const guestId = slugParts[slugParts.length - 1];
+      
+      const { data: directGuest } = await supabase.from('vip_guests').select('*').eq('slug', slug).single();
+      if (directGuest) {
+        setGuest(directGuest as VipGuest);
+        setStatus('found');
+        return;
+      }
+      const { data: directRegularGuest } = await supabase.from('guests').select('*').eq('slug', slug).single();
+      if (directRegularGuest) {
+        setGuest(directRegularGuest as Guest);
+        setStatus('found');
+        return;
+      }
+
+      // Step 2: Check for an alias match in the new table
+      const { data: alias } = await supabase.from('slug_aliases').select('guest_id, guest_type').eq('old_slug', slug).single();
+      if (alias) {
+        const tableName = alias.guest_type === 'vip' ? 'vip_guests' : 'guests';
+        const { data: aliasedGuest } = await supabase.from(tableName).select('*').eq('id', alias.guest_id).single();
+        if (aliasedGuest) {
+          navigate(`/profile/${aliasedGuest.slug}`, { replace: true });
+          return;
+        }
+      }
+
+      // Step 3: Try name-based lookup for legacy slugs
+      const namePart = slug.substring(0, slug.lastIndexOf('-'));
+      const { data: vipMatches } = await supabase.from('vip_guests').select('id, name, slug').ilike('slug', `${namePart}-%`);
+      const { data: regularMatches } = await supabase.from('guests').select('id, name, slug').ilike('slug', `${namePart}-%`);
+      const allMatches = [...(vipMatches || []), ...(regularMatches || [])];
+
+      if (allMatches.length === 1) {
+        // Found a single match, create an alias and redirect
+        const matchedGuest = allMatches[0];
+        const guestType = (vipMatches || []).some(g => g.id === matchedGuest.id) ? 'vip' : 'regular';
+        await supabase.from('slug_aliases').insert({ old_slug: slug, guest_id: matchedGuest.id, guest_type: guestType });
+        navigate(`/profile/${matchedGuest.slug}`, { replace: true });
+      } else if (allMatches.length > 1) {
+        // Multiple matches, needs user resolution
+        setStatus('resolution_needed');
+      } else {
+        // No matches found
+        setStatus('not_found');
+      }
+    };
+
+    setStatus('loading');
+    resolveSlug();
+  }, [slug, navigate]);
+
   const contentBlocks = useMemo(() => {
     if (!guest || !templates) return [];
     const userContent = Array.isArray(guest.profile_content) ? guest.profile_content : [];
@@ -154,13 +204,15 @@ const PublicProfile = () => {
     return () => observer.disconnect();
   }, []);
 
-  // --- 3. Conditional Returns (After all hooks) ---
-  const isLoading = isLoadingGuest || isLoadingTemplates || isLoadingSettings;
-  if (isLoading) {
+  if (status === 'loading' || isLoadingTemplates || isLoadingSettings) {
     return <CustomLoadingScreen loaderConfig={settings?.loader_config} textConfig={settings?.loading_text_config} />;
   }
 
-  if (isErrorGuest || !guest) {
+  if (status === 'resolution_needed' && slug) {
+    return <DuplicateSlugResolver slug={slug} />;
+  }
+
+  if (status === 'not_found' || !guest) {
     return (
       <div className="w-full min-h-screen bg-gradient-to-br from-[#fff5ea] to-[#e5b899] flex items-center justify-center p-4">
         <div className="text-center p-8 bg-white/70 rounded-xl shadow-lg max-w-sm w-full">
@@ -171,7 +223,6 @@ const PublicProfile = () => {
     );
   }
 
-  // --- 4. Main Render Logic ---
   const areAllVideosLoaded = loadedVideoIds.size >= videoBlocks.length;
   const showContentLoader = videoBlocks.length > 0 && !areAllVideosLoaded;
 
