@@ -21,8 +21,8 @@ const DuplicateSlugResolver = ({ slug }: DuplicateSlugResolverProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone) {
-      showError("Vui lòng điền đầy đủ thông tin.");
+    if (!name) {
+      showError("Vui lòng điền tên của bạn.");
       return;
     }
     setIsLoading(true);
@@ -83,8 +83,8 @@ const DuplicateSlugResolver = ({ slug }: DuplicateSlugResolverProps) => {
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Số điện thoại</Label>
-              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+              <Label htmlFor="phone">Số điện thoại (không bắt buộc)</Label>
+              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
