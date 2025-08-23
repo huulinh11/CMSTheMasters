@@ -6,16 +6,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { showSuccess, showError } from '@/utils/toast';
 import { Guest } from '@/types/guest';
 import { VipGuest } from '@/types/vip-guest';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type ResolutionRequest = {
   id: string;
@@ -31,6 +39,7 @@ type CombinedGuestForSlug = (Guest | VipGuest) & { type: 'Chức vụ' | 'Khách
 const SlugResolutionSettings = () => {
   const queryClient = useQueryClient();
   const [selectedGuest, setSelectedGuest] = useState<Record<string, string>>({});
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   const { data: requests = [], isLoading } = useQuery<ResolutionRequest[]>({
     queryKey: ['slug_resolution_requests'],
@@ -70,11 +79,6 @@ const SlugResolutionSettings = () => {
     onError: (error: Error) => showError(error.message),
   });
 
-  const getPotentialMatches = (name: string) => {
-    const nameLower = name.toLowerCase();
-    return allGuests.filter(g => g.name.toLowerCase().includes(nameLower));
-  };
-
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-slate-800">Yêu cầu xử lý link trùng lặp</h2>
@@ -95,42 +99,67 @@ const SlugResolutionSettings = () => {
             </TableHeader>
             <TableBody>
               {requests.length > 0 ? (
-                requests.map((req) => {
-                  const potentialMatches = getPotentialMatches(req.provided_name);
-                  return (
-                    <TableRow key={req.id}>
-                      <TableCell>{format(new Date(req.created_at), 'dd/MM/yyyy HH:mm')}</TableCell>
-                      <TableCell>
-                        <div>{req.provided_name}</div>
-                        <div className="text-sm text-muted-foreground">{req.provided_phone}</div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground truncate max-w-xs">{req.requested_slug}</TableCell>
-                      <TableCell><Badge variant={req.status === 'pending' ? 'secondary' : (req.status === 'approved' ? 'default' : 'destructive')}>{req.status}</Badge></TableCell>
-                      <TableCell>
-                        {req.status === 'pending' && (
-                          <Select onValueChange={(value) => setSelectedGuest(prev => ({ ...prev, [req.id]: value }))}>
-                            <SelectTrigger className="w-[250px]">
-                              <SelectValue placeholder="Chọn khách mời..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {potentialMatches.map(guest => (
-                                <SelectItem key={guest.id} value={guest.id}>{guest.name} ({guest.role})</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        {req.status === 'pending' && (
-                          <>
-                            <Button size="sm" onClick={() => mutation.mutate({ requestId: req.id, status: 'approved', guestId: selectedGuest[req.id], guestType: allGuests.find(g => g.id === selectedGuest[req.id])?.type === 'Chức vụ' ? 'vip' : 'regular', oldSlug: req.requested_slug })} disabled={!selectedGuest[req.id]}>Duyệt</Button>
-                            <Button size="sm" variant="destructive" onClick={() => mutation.mutate({ requestId: req.id, status: 'rejected' })}>Từ chối</Button>
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                requests.map((req) => (
+                  <TableRow key={req.id}>
+                    <TableCell>{format(new Date(req.created_at), 'dd/MM/yyyy HH:mm')}</TableCell>
+                    <TableCell>
+                      <div>{req.provided_name}</div>
+                      <div className="text-sm text-muted-foreground">{req.provided_phone}</div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground truncate max-w-xs">{req.requested_slug}</TableCell>
+                    <TableCell><Badge variant={req.status === 'pending' ? 'secondary' : (req.status === 'approved' ? 'default' : 'destructive')}>{req.status}</Badge></TableCell>
+                    <TableCell>
+                      {req.status === 'pending' && (
+                        <Popover open={openPopoverId === req.id} onOpenChange={(isOpen) => setOpenPopoverId(isOpen ? req.id : null)}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" role="combobox" className="w-[250px] justify-between">
+                              {selectedGuest[req.id]
+                                ? allGuests.find(g => g.id === selectedGuest[req.id])?.name
+                                : "Chọn khách mời..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[250px] p-0">
+                            <Command>
+                              <CommandInput placeholder="Tìm khách theo tên, ID..." />
+                              <CommandList>
+                                <CommandEmpty>Không tìm thấy.</CommandEmpty>
+                                <CommandGroup>
+                                  {allGuests.map(guest => (
+                                    <CommandItem
+                                      key={guest.id}
+                                      value={`${guest.name} ${guest.id}`}
+                                      onSelect={() => {
+                                        setSelectedGuest(prev => ({ ...prev, [req.id]: guest.id }));
+                                        setOpenPopoverId(null);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          selectedGuest[req.id] === guest.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {guest.name} ({guest.role})
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      {req.status === 'pending' && (
+                        <>
+                          <Button size="sm" onClick={() => mutation.mutate({ requestId: req.id, status: 'approved', guestId: selectedGuest[req.id], guestType: allGuests.find(g => g.id === selectedGuest[req.id])?.type === 'Chức vụ' ? 'vip' : 'regular', oldSlug: req.requested_slug })} disabled={!selectedGuest[req.id]}>Duyệt</Button>
+                          <Button size="sm" variant="destructive" onClick={() => mutation.mutate({ requestId: req.id, status: 'rejected' })}>Từ chối</Button>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
