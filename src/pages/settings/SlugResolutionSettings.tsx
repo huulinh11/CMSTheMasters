@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/command";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { removeAccents } from '@/lib/utils';
 
 type ResolutionRequest = {
   id: string;
@@ -128,7 +129,7 @@ const SlugResolutionSettings = () => {
                                   {allGuests.map(guest => (
                                     <CommandItem
                                       key={guest.id}
-                                      value={`${guest.name} ${guest.id}`}
+                                      value={`${guest.name} ${guest.id} ${removeAccents(guest.name)}`}
                                       onSelect={() => {
                                         setSelectedGuest(prev => ({ ...prev, [req.id]: guest.id }));
                                         setOpenPopoverId(null);
